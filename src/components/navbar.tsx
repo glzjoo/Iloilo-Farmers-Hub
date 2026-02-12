@@ -1,0 +1,56 @@
+import logo from '../assets/icons/logo.png';
+import searchIcon from '../assets/icons/search.svg';
+import cartIcon from '../assets/icons/shopping-cart.svg';
+import accountIcon from '../assets/icons/account-icon.svg';
+import languageIcon from '../assets/icons/language-logo.svg';
+import { Link } from 'react-router-dom';
+
+export default function Navbar() {
+    return (
+        <header className="w-full">
+            <nav className="bg-green-700 w-full">
+                <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-2 gap-4">
+                    <Link to="/" className="flex items-center gap-2 text-white no-underline shrink-0">
+                        <img src={logo} className="w-9 h-9 rounded-full object-cover" />
+                        <span className="font-bold text-sm tracking-wide whitespace-nowrap">ILOILO FARMERS HUB</span>
+                    </Link>
+
+                    <div className="flex items-center bg-white rounded-full px-4 py-1.5 gap-2 flex-1 max-w-md">
+                        <input
+                            type="text"
+                            placeholder="Search"
+                            className="border-none outline-none bg-transparent text-sm w-full text-gray-700"
+                        />
+                        <img src={searchIcon} className="w-4 h-4 opacity-50" />
+                    </div>
+
+                    <div className="flex items-center gap-4 shrink-0">
+                        <button className="flex items-center gap-1 bg-transparent border-none cursor-pointer text-white">
+                            <img src={languageIcon} className="w-5 h-5 brightness-0 invert" />
+                            <span className="text-xs font-medium">English</span>
+                            <span className="text-xs">▾</span>
+                        </button>
+
+                        <button className="bg-transparent border-none cursor-pointer p-1">
+                            <img src={cartIcon} className="w-5 h-5 brightness-0 invert" />
+                        </button>
+                        <Link to="/login" className="flex items-center gap-1 p-1 no-underline">
+                            <img src={accountIcon} className="w-5 h-5 brightness-0 invert" />
+                            <span className="text-white text-xs font-medium">Sign Up | Login</span>
+                        </Link>
+                    </div>
+                </div>
+            </nav>
+
+            <div className="bg-white border-b border-gray-200 shadow-sm">
+                <div className="max-w-7xl mx-auto flex items-center justify-center gap-10 px-6 py-3">
+                    <Link to="/shop" className="text-gray-700 no-underline text-sm font-semibold hover:text-green-700 transition-colors">SHOP</Link>
+                    <Link to="/subscriptions" className="text-gray-700 no-underline text-sm font-semibold hover:text-green-700 transition-colors">SUBSCRIPTIONS</Link>
+                    <Link to="/become-a-seller" className="text-gray-700 no-underline text-sm font-semibold hover:text-green-700 transition-colors">BECOME A SELLER</Link>
+                    <Link to="/discounts" className="text-gray-700 no-underline text-sm font-semibold hover:text-green-700 transition-colors">DISCOUNTS</Link>
+                    <Link to="/about" className="text-gray-700 no-underline text-sm font-semibold hover:text-green-700 transition-colors">ABOUT US</Link>
+                </div>
+            </div>
+        </header>
+    );
+}
