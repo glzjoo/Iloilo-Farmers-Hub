@@ -10,7 +10,6 @@ export default function Navbar() {
     return (
         <header className="w-full sticky top-0 z-50">
             <nav className="bg-primary w-full">
-                {/* Top row — Language selector */}
                 <div className="max-w-7xl mx-auto flex justify-end px-6 pt-2">
                     <button className="flex items-center gap-1 bg-transparent border-none cursor-pointer text-white">
                         <img src={languageIcon} className="w-5 h-5 brightness-0 invert" />
@@ -19,7 +18,6 @@ export default function Navbar() {
                     </button>
                 </div>
 
-                {/* Main row — Logo, Search, Icons */}
                 <div className="max-w-7xl mx-auto flex items-center justify-between px-6 pb-4 pt-1 gap-4">
                     <Link to="/" className="flex items-center gap-2 text-white no-underline shrink-0">
                         <img src={logo} className="w-11 h-11 rounded-full object-cover" />
