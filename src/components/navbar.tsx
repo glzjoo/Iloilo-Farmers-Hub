@@ -5,14 +5,25 @@ import accountIcon from '../assets/icons/account-icon.svg';
 import languageIcon from '../assets/icons/language-logo.svg';
 import { Link } from 'react-router-dom';
 
+
 export default function Navbar() {
     return (
-        <header className="w-full">
-            <nav className="bg-green-700 w-full">
-                <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-2 gap-4">
+        <header className="w-full sticky top-0 z-50">
+            <nav className="bg-primary w-full">
+                {/* Top row — Language selector */}
+                <div className="max-w-7xl mx-auto flex justify-end px-6 pt-2">
+                    <button className="flex items-center gap-1 bg-transparent border-none cursor-pointer text-white">
+                        <img src={languageIcon} className="w-5 h-5 brightness-0 invert" />
+                        <span className="text-xs font-medium">English</span>
+                        <span className="text-xs">▾</span>
+                    </button>
+                </div>
+
+                {/* Main row — Logo, Search, Icons */}
+                <div className="max-w-7xl mx-auto flex items-center justify-between px-6 pb-4 pt-1 gap-4">
                     <Link to="/" className="flex items-center gap-2 text-white no-underline shrink-0">
-                        <img src={logo} className="w-9 h-9 rounded-full object-cover" />
-                        <span className="font-bold text-sm tracking-wide whitespace-nowrap">ILOILO FARMERS HUB</span>
+                        <img src={logo} className="w-11 h-11 rounded-full object-cover" />
+                        <span className="font-primary font-bold text-lg tracking-wide whitespace-nowrap">ILOILO FARMERS HUB</span>
                     </Link>
 
                     <div className="flex items-center bg-white rounded-full px-4 py-1.5 gap-2 flex-1 max-w-md">
@@ -21,22 +32,16 @@ export default function Navbar() {
                             placeholder="Search"
                             className="border-none outline-none bg-transparent text-sm w-full text-gray-700"
                         />
-                        <img src={searchIcon} className="w-4 h-4 opacity-50" />
+                        <img src={searchIcon} className="w-5 h-5 opacity-50" />
                     </div>
 
-                    <div className="flex items-center gap-4 shrink-0">
-                        <button className="flex items-center gap-1 bg-transparent border-none cursor-pointer text-white">
-                            <img src={languageIcon} className="w-5 h-5 brightness-0 invert" />
-                            <span className="text-xs font-medium">English</span>
-                            <span className="text-xs">▾</span>
-                        </button>
-
+                    <div className="flex items-center gap-2 shrink-0">
                         <button className="bg-transparent border-none cursor-pointer p-1">
-                            <img src={cartIcon} className="w-5 h-5 brightness-0 invert" />
+                            <img src={cartIcon} className="w-8 h-8 brightness-0 invert" />
                         </button>
-                        <Link to="/login" className="flex items-center gap-1 p-1 no-underline">
-                            <img src={accountIcon} className="w-5 h-5 brightness-0 invert" />
-                            <span className="text-white text-xs font-medium">Sign Up | Login</span>
+                        <Link to="/login" className="flex items-center gap-2 p-1 no-underline">
+                            <img src={accountIcon} className="w-8 h-8 brightness-0 invert" />
+                            <span className="text-white text-base font-medium ml-1">Sign Up | Login</span>
                         </Link>
                     </div>
                 </div>
