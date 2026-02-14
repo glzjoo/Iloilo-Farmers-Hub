@@ -3,14 +3,14 @@ import searchIcon from '../assets/icons/search.svg';
 import cartIcon from '../assets/icons/shopping-cart.svg';
 import accountIcon from '../assets/icons/account-icon.svg';
 import languageIcon from '../assets/icons/language-logo.svg';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import HamburgerFilter from './HamburgerFilter';
+import { useActiveLink } from '../hooks/useActiveLink';
 
 
-export default function Navbar() {
-    const location = useLocation();
-    const linkClass = (path: string) =>
-        `no-underline text-sm font-semibold transition-colors ${location.pathname === path ? 'text-primary' : 'text-gray-700 hover:text-green-700'
-        }`;
+
+export default function NavbarWithFilter() {
+    const linkClass = useActiveLink();
     return (
         <header className="w-full sticky top-0 z-50">
             <nav className="bg-primary w-full">
@@ -50,7 +50,10 @@ export default function Navbar() {
             </nav>
 
             <div className="bg-white border-b border-gray-200 shadow-sm">
-                <div className="max-w-7xl mx-auto flex items-center justify-center gap-10 px-6 py-3">
+                <div className="max-w-7xl mx-auto relative flex items-center justify-center gap-10 px-6 py-3">
+                    <div className="absolute left-6">
+                        <HamburgerFilter />
+                    </div>
                     <Link to="/" className={linkClass('/')}>HOME</Link>
                     <Link to="/shop" className={linkClass('/shop')}>SHOP</Link>
                     <Link to="/subscriptions" className={linkClass('/subscriptions')}>SUBSCRIPTIONS</Link>

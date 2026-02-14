@@ -3,7 +3,6 @@ import StatsBar from "../components/StatsBar";
 import BestSellers from "../components/BestSellers";
 import NowAvailable from "../components/NowAvailable";
 import ReviewSection from "../components/ReviewSection";
-import Footer from "../components/Footer";
 
 export default function LandingPage() {
     return (
@@ -13,7 +12,6 @@ export default function LandingPage() {
             <BestSellers />
             <NowAvailable />
             <ReviewSection />
-            <Footer />
         </main>
     );
 }
