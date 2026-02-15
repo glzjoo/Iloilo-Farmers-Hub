@@ -2,7 +2,7 @@
 
 export default function AboutUsMotoSection() {
     return (
-        <section className="w-full min-h-[600px] relative">
+        <section className="w-full min-h-fit relative pb-20">
             <h1 className="text-5xl text-center font-primary font-semibold text-primary pt-10 pb-11">About Us</h1>
             <div className="flex justify-center gap-10 px-10">
                 <div className="max-w-xl">

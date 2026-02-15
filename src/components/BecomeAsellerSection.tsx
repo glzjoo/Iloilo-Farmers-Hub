@@ -2,7 +2,7 @@
 
 export default function BecomeAsellerSection() {
     return (
-        <section className="w-full min-h-[900px] relative">
+        <section className="w-full min-h-fit relative pb-20">
             <h1 className="text-5xl text-center font-primary font-semibold text-primary pt-10 pb-11">Become a Seller at Iloilo
                 Farmers Hub</h1>
             <p className="text-center text-xl font-primary text-black mb-10 px-10 pb-10">Bring your products to more customers and grow your business with Iloilo Farmers Hub
