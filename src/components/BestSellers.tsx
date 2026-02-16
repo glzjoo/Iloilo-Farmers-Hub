@@ -41,6 +41,7 @@ const bestSellers = [
     },
 ];
 
+
 export default function BestSellers() {
     return (
         <section className="w-full py-8">

@@ -55,7 +55,6 @@ export default function ShopAll() {
     return (
         <section className="w-full py-8">
             <div className="max-w-7xl mx-auto px-6">
-                <h2 className="text-4xl font-bold text-primary font-primary text-center">SHOP ALL</h2>
                 <div className="flex items-center justify-between mb-12">
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
