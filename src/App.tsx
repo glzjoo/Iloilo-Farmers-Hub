@@ -7,6 +7,7 @@ import AboutUs from './pages/AboutUs';
 import Subscriptions from './pages/Subscriptions';
 import Footer from './components/Footer';
 import BecomeASeller from './pages/BecomeASeller';
+import Discounts from './pages/Discounts';
 
 function AppLayout() {
     const location = useLocation();
@@ -21,6 +22,7 @@ function AppLayout() {
                 <Route path="/about" element={<AboutUs />} />
                 <Route path="/subscriptions" element={<Subscriptions />} />
                 <Route path="/become-a-seller" element={<BecomeASeller />} />
+                <Route path="/discounts" element={<Discounts />} />
             </Routes>
             <Footer />
         </div>

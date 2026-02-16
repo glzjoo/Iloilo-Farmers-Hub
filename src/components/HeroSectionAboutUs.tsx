@@ -1,7 +1,5 @@
 import aboutUsHero from '../assets/images/about-us-hero.png';
 
-
-
 export default function HeroSectionAboutUs() {
     return (
         <section className="w-full h-[600px] relative">
