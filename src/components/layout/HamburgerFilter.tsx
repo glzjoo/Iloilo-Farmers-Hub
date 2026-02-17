@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import hamburgeIcon from '../assets/icons/hamburge-icon.svg';
-import arrowLeftIcon from '../assets/icons/arrow-left.svg';
+import hamburgeIcon from '../../assets/icons/hamburge-icon.svg';
+import arrowLeftIcon from '../../assets/icons/arrow-left.svg';
 
 const trendingItems = ['avocado', 'bananas', 'rice', 'chicken'];
 

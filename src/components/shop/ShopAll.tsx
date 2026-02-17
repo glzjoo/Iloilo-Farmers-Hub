@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import minus from '../assets/icons/minus.svg'
-import add from '../assets/icons/add.svg'
-import tomatoes from '../assets/images/tomatoes.png'
-import eggplant from '../assets/images/eggplant.png'
-import mangoes from '../assets/images/mangoes.png'
-import onions from '../assets/images/onions.png'
-import carrots from '../assets/images/carrots.png'
-import watermelon from '../assets/images/watermelon.png'
+import minus from '../../assets/icons/minus.svg'
+import add from '../../assets/icons/add.svg'
+import tomatoes from '../../assets/images/tomatoes.png'
+import eggplant from '../../assets/images/eggplant.png'
+import mangoes from '../../assets/images/mangoes.png'
+import onions from '../../assets/images/onions.png'
+import carrots from '../../assets/images/carrots.png'
+import watermelon from '../../assets/images/watermelon.png'
 
 const shopAll = [
     {

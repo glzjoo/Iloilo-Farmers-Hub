@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import farmerImage from '../assets/images/farmer.png';
+import farmerImage from '../../assets/images/farmer.png';
 
 export default function HeroSection() {
     return (

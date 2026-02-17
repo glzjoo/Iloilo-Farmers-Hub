@@ -1,5 +1,5 @@
-import MessageColumn from "../components/MessageColumn";
-import MessagesLayout from "../components/MessagesLayout";
+import MessageColumn from "../components/messages/MessageColumn";
+import MessagesLayout from "../components/messages/MessagesLayout";
 
 export default function MessagesPage() {
     return (

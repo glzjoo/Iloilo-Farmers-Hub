@@ -1,8 +1,8 @@
-import yourStoreFront from '../assets/icons/subscriptions-logo/your-store-front.png';
-import easyOrder from '../assets/icons/subscriptions-logo/easy-order.png';
-import sellMoreEarn from '../assets/icons/subscriptions-logo/sell-more-earn.png';
-import mobileFriendly from '../assets/icons/subscriptions-logo/mobile-friendly-dashboard.png';
-import sellerSupport from '../assets/icons/subscriptions-logo/seller-support.png';
+import yourStoreFront from '../../assets/icons/subscriptions-logo/your-store-front.png';
+import easyOrder from '../../assets/icons/subscriptions-logo/easy-order.png';
+import sellMoreEarn from '../../assets/icons/subscriptions-logo/sell-more-earn.png';
+import mobileFriendly from '../../assets/icons/subscriptions-logo/mobile-friendly-dashboard.png';
+import sellerSupport from '../../assets/icons/subscriptions-logo/seller-support.png';
 
 const services = [
     {

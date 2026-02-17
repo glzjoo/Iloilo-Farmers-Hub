@@ -1,8 +1,8 @@
-import HeroSection from "../components/HeroSection";
-import StatsBar from "../components/StatsBar";
-import BestSellers from "../components/BestSellers";
-import NowAvailable from "../components/NowAvailable";
-import ReviewSection from "../components/ReviewSection";
+import HeroSection from "../components/home/HeroSection";
+import StatsBar from "../components/layout/StatsBar";
+import BestSellers from "../components/home/BestSellers";
+import NowAvailable from "../components/home/NowAvailable";
+import ReviewSection from "../components/shop/ReviewSection";
 
 export default function LandingPage() {
     return (

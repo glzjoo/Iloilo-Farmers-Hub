@@ -1,4 +1,4 @@
-import type { Farmer } from "../types";
+import type { Farmer } from "../../types";
 
 interface MessageProfileProps {
     farmer: Farmer;

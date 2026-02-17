@@ -1,5 +1,5 @@
 import CartItem from './CartItem';
-import okra from '../assets/images/item-pictures/okra.png';
+import okra from '../../assets/images/item-pictures/okra.png';
 
 const cartItems = [
     {

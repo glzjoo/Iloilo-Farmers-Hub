@@ -1,6 +1,6 @@
-import ItemSection from "../components/ItemSection";
-import RelatedProducts from "../components/RelatedProducts";
-import ItemReview from "../components/ItemReview";
+import ItemSection from "../components/shop/ItemSection";
+import RelatedProducts from "../components/shop/RelatedProducts";
+import ItemReview from "../components/shop/ItemReview";
 
 export default function ItemsDetailsPage() {
     return (

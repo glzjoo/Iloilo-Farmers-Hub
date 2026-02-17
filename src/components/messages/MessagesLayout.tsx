@@ -1,5 +1,5 @@
 import MessageProfile from "./MessageProfile";
-import addbutton from '../assets/icons/add.svg';
+import addbutton from '../../assets/icons/add.svg';
 
 const selectedContact = {
     uid: '1',

@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import okra from '../assets/images/item-pictures/okra.png';
-import item2 from '../assets/images/item-pictures/item-2.png';
-import item3 from '../assets/images/item-pictures/item-3.png';
-import item4 from '../assets/images/item-pictures/item-4.png';
+import okra from '../../assets/images/item-pictures/okra.png';
+import item2 from '../../assets/images/item-pictures/item-2.png';
+import item3 from '../../assets/images/item-pictures/item-3.png';
+import item4 from '../../assets/images/item-pictures/item-4.png';
 
 const product = {
     name: 'Okra',

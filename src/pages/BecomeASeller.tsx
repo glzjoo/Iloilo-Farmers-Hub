@@ -1,5 +1,5 @@
-import HeroSectionAboutUs from '../components/HeroSectionAboutUs';
-import BecomeAsellerSection from '../components/BecomeAsellerSection';
+import HeroSectionAboutUs from '../components/about/HeroSectionAboutUs';
+import BecomeAsellerSection from '../components/about/BecomeAsellerSection';
 
 
 export default function BecomeASeller() {

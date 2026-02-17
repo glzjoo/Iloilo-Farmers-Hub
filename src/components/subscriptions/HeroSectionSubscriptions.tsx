@@ -1,5 +1,5 @@
-import subscriptionsHero from '../assets/images/subscription-hero.png';
-import arrowRightCircle from '../assets/icons/Arrow-right-circle.svg';
+import subscriptionsHero from '../../assets/images/subscription-hero.png';
+import arrowRightCircle from '../../assets/icons/Arrow-right-circle.svg';
 
 export default function HeroSectionSubscriptions() {
     return (

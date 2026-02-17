@@ -1,4 +1,4 @@
-import checkIcon from '../assets/icons/Check.svg';
+import checkIcon from '../../assets/icons/Check.svg';
 
 const plans = [
     {

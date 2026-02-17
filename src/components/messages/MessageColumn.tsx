@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import searchIcon from '../assets/icons/search.svg';
+import searchIcon from '../../assets/icons/search.svg';
 
 
 const contacts = [

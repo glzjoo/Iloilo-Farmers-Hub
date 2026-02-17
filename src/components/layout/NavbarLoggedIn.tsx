@@ -1,12 +1,12 @@
-import logo from '../assets/icons/logo.png';
-import searchIcon from '../assets/icons/search.svg';
-import cartIcon from '../assets/icons/shopping-cart.svg';
-import languageIcon from '../assets/icons/language-logo.svg';
+import logo from '../../assets/icons/logo.png';
+import searchIcon from '../../assets/icons/search.svg';
+import cartIcon from '../../assets/icons/shopping-cart.svg';
+import languageIcon from '../../assets/icons/language-logo.svg';
 import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
-import messagesIcon from '../assets/icons/messages.svg';
-import accountSettingsIcon from '../assets/icons/account-settings.svg';
-import logOutIcon from '../assets/icons/log-out.svg';
+import messagesIcon from '../../assets/icons/messages.svg';
+import accountSettingsIcon from '../../assets/icons/account-settings.svg';
+import logOutIcon from '../../assets/icons/log-out.svg';
 
 export default function NavbarLoggedIn() {
     const [showDropdown, setShowDropdown] = useState(false);

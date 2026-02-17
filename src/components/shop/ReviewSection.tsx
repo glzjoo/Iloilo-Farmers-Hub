@@ -1,4 +1,4 @@
-import starsRating from '../assets/icons/stars-rating.svg';
+import starsRating from '../../assets/icons/stars-rating.svg';
 
 const ratingBars = [
     { stars: 5, percent: 80 },

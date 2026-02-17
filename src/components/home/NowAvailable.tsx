@@ -1,7 +1,7 @@
-import tomatoes_available from "../assets/images/tomatoes_available.png";
-import ampalaya_available from "../assets/images/ampalaya_available.png";
-import pumpkin_available from "../assets/images/pumpkin_available.png";
-import watermelon_available from "../assets/images/watermelon_available.jpg";
+import tomatoes_available from "../../assets/images/tomatoes_available.png";
+import ampalaya_available from "../../assets/images/ampalaya_available.png";
+import pumpkin_available from "../../assets/images/pumpkin_available.png";
+import watermelon_available from "../../assets/images/watermelon_available.jpg";
 
 const nowAvailable = [
     {

@@ -1,4 +1,4 @@
-import samplePhotoFarmer from '../assets/images/sample-photo-farmer.jpg';
+import samplePhotoFarmer from '../../assets/images/sample-photo-farmer.jpg';
 
 const stories = [
     {

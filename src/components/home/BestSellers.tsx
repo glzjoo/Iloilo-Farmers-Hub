@@ -1,12 +1,12 @@
-import tomatoes from '../assets/images/tomatoes.png';
-import eggplant from '../assets/images/eggplant.png';
-import mangoes from '../assets/images/mangoes.png';
-import filter from '../assets/icons/Filter.svg';
-import buyItem from '../assets/icons/buy-item.svg';
-import onions from '../assets/images/onions.png';
-import carrots from '../assets/images/carrots.png';
-import watermelon from '../assets/images/watermelon.png';
-import addtocart from '../assets/icons/add-to-cart.svg'
+import tomatoes from '../../assets/images/tomatoes.png';
+import eggplant from '../../assets/images/eggplant.png';
+import mangoes from '../../assets/images/mangoes.png';
+import filter from '../../assets/icons/Filter.svg';
+import buyItem from '../../assets/icons/buy-item.svg';
+import onions from '../../assets/images/onions.png';
+import carrots from '../../assets/images/carrots.png';
+import watermelon from '../../assets/images/watermelon.png';
+import addtocart from '../../assets/icons/add-to-cart.svg'
 
 const bestSellers = [
     {

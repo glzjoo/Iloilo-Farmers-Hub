@@ -1,16 +1,16 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Shop from './pages/Shop';
-import Navbar from './components/Navbar';
-import NavbarWithFilter from './components/NavbarWithFilter';
+import Navbar from './components/layout/Navbar';
+import NavbarWithFilter from './components/layout/NavbarWithFilter';
 import AboutUs from './pages/AboutUs';
 import Subscriptions from './pages/Subscriptions';
-import Footer from './components/Footer';
+import Footer from './components/layout/Footer';
 import BecomeASeller from './pages/BecomeASeller';
 import CartPage from './pages/CartPage';
 import ItemsDetailsPage from './pages/ItemsDetailsPage';
 import MessagesPage from './pages/MessagesPage';
-import NavbarLoggedIn from './components/NavbarLoggedIn';
+import NavbarLoggedIn from './components/layout/NavbarLoggedIn';
 
 // Pages that use the logged-in navbar
 const loggedInPages = ['/item-details', '/cart', '/messages', '/account-setting'];

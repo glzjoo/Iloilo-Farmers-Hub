@@ -1,5 +1,5 @@
-import itemReviewProfile from '../assets/images/item-pictures/item-review-profile.jpg';
-import Filter from '../assets/icons/Filter.svg';
+import itemReviewProfile from '../../assets/images/item-pictures/item-review-profile.jpg';
+import Filter from '../../assets/icons/Filter.svg';
 
 const reviews = [
     {

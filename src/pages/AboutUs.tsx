@@ -1,5 +1,5 @@
-import HeroSectionAboutUs from '../components/HeroSectionAboutUs';
-import AboutUsMotoSection from '../components/AboutUsMotoSection';
+import HeroSectionAboutUs from '../components/about/HeroSectionAboutUs';
+import AboutUsMotoSection from '../components/about/AboutUsMotoSection';
 
 export default function AboutUs() {
     return (

@@ -1,4 +1,4 @@
-import ShopAll from "../components/ShopAll";
+import ShopAll from "../components/shop/ShopAll";
 
 export default function Shop() {
     return (
