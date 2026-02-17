@@ -2,7 +2,7 @@ import ItemSection from "../components/ItemSection";
 import RelatedProducts from "../components/RelatedProducts";
 import ItemReview from "../components/ItemReview";
 
-const ItemsDetailsPage = () => {
+export default function ItemsDetailsPage() {
     return (
         <>
             <ItemSection />
@@ -11,5 +11,3 @@ const ItemsDetailsPage = () => {
         </>
     );
 }
-
-export default ItemsDetailsPage;

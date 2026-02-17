@@ -1,9 +1,7 @@
-import ItemCheckout from "../components/ItemCheckout";
+import ItemsCheckout from "../components/ItemsCheckout";
 
 export default function CartPage() {
     return (
-        <section>
-            <ItemCheckout />
-        </section>
+        <ItemsCheckout />
     );
 }
