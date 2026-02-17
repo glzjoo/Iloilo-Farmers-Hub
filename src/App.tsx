@@ -9,14 +9,26 @@ import Footer from './components/Footer';
 import BecomeASeller from './pages/BecomeASeller';
 import CartPage from './pages/CartPage';
 import ItemsDetailsPage from './pages/ItemsDetailsPage';
+import MessagesPage from './pages/MessagesPage';
+import NavbarLoggedIn from './components/NavbarLoggedIn';
+
+// Pages that use the logged-in navbar
+const loggedInPages = ['/item-details', '/cart', '/messages', '/account-setting'];
 
 function AppLayout() {
     const location = useLocation();
     const isShopPage = location.pathname === '/shop';
+    const isLoggedIn = loggedInPages.includes(location.pathname);
+
+    const getNavbar = () => {
+        if (isLoggedIn) return <NavbarLoggedIn />;
+        if (isShopPage) return <NavbarWithFilter />;
+        return <Navbar />;
+    };
+
     return (
         <div className="flex flex-col min-h-screen">
-            {isShopPage ? <NavbarWithFilter /> : <Navbar />}
-
+            {getNavbar()}
             <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/shop" element={<Shop />} />
@@ -25,6 +37,7 @@ function AppLayout() {
                 <Route path="/become-a-seller" element={<BecomeASeller />} />
                 <Route path="/item-details" element={<ItemsDetailsPage />} />
                 <Route path="/cart" element={<CartPage />} />
+                <Route path="/messages" element={<MessagesPage />} />
             </Routes>
             <Footer />
         </div>

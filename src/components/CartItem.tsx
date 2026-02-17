@@ -1,4 +1,3 @@
-import okra from "../assets/images/item-pictures/okra.png";
 import { useState } from "react";
 
 interface CartItemProps {

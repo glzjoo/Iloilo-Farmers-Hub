@@ -1,4 +1,4 @@
-import CartItem from '../pages/CartItem';
+import CartItem from './CartItem';
 import okra from '../assets/images/item-pictures/okra.png';
 
 const cartItems = [
@@ -47,7 +47,7 @@ export default function ItemsCheckout() {
 
                 <div className="flex justify-center mt-10">
                     <button className="px-10 py-3 bg-primary text-white font-primary font-semibold rounded-full cursor-pointer border-none hover:bg-green-700">
-                        Go back to shopping?
+                        Back to shopping
                     </button>
                 </div>
             </div>

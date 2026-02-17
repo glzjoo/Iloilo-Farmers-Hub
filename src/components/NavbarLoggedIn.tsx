@@ -81,10 +81,10 @@ export default function NavbarLoggedIn() {
                                     <div className="py-2">
                                         <button className="flex items-center gap-3 w-full px-4 py-3 bg-transparent border-none cursor-pointer hover:bg-gray-50 text-left">
                                             <img src={messagesIcon} className="w-5 h-5" />
-                                            <div>
+                                            <Link to="/messages">
                                                 <p className="text-sm font-semibold text-black">Messages</p>
                                                 <p className="text-xs text-gray-400">4 unread messages</p>
-                                            </div>
+                                            </Link>
                                         </button>
                                         <button className="flex items-center gap-3 w-full px-4 py-3 bg-transparent border-none cursor-pointer hover:bg-gray-50 text-left">
                                             <img src={accountSettingsIcon} className="w-5 h-5" />
