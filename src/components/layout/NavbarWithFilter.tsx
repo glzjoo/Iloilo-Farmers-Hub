@@ -41,9 +41,13 @@ export default function NavbarWithFilter() {
                         <button className="bg-transparent border-none cursor-pointer p-1">
                             <img src={cartIcon} className="w-8 h-8 brightness-0 invert" />
                         </button>
-                        <Link to="/login" className="flex items-center gap-2 p-1 no-underline">
+                        <Link to="/signup" className="flex items-center gap-2 p-1 no-underline">
                             <img src={accountIcon} className="w-8 h-8 brightness-0 invert" />
-                            <span className="text-white text-base font-medium ml-1">Sign Up | Login</span>
+                            <span className="text-white text-base font-medium ml-1">Sign Up</span>
+                        </Link>
+                        <span className="text-white text-base font-medium">|</span>
+                        <Link to="/login" className="no-underline">
+                            <span className="text-white text-base font-medium">Login</span>
                         </Link>
                     </div>
                 </div>
@@ -58,7 +62,6 @@ export default function NavbarWithFilter() {
                     <Link to="/shop" className={linkClass('/shop')}>SHOP</Link>
                     <Link to="/subscriptions" className={linkClass('/subscriptions')}>SUBSCRIPTIONS</Link>
                     <Link to="/become-a-seller" className={linkClass('/become-a-seller')}>BECOME A SELLER</Link>
-                    <Link to="/discounts" className={linkClass('/discounts')}>DISCOUNTS</Link>
                     <Link to="/about" className={linkClass('/about')}>ABOUT US</Link>
                 </div>
             </div>

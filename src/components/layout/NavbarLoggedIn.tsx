@@ -114,7 +114,6 @@ export default function NavbarLoggedIn() {
                     <Link to="/shop" className={linkClass('/shop')}>SHOP</Link>
                     <Link to="/subscriptions" className={linkClass('/subscriptions')}>SUBSCRIPTIONS</Link>
                     <Link to="/become-a-seller" className={linkClass('/become-a-seller')}>BECOME A SELLER</Link>
-                    <Link to="/discounts" className={linkClass('/discounts')}>DISCOUNTS</Link>
                     <Link to="/about" className={linkClass('/about')}>ABOUT US</Link>
                 </div>
             </div>

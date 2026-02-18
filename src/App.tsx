@@ -10,7 +10,10 @@ import BecomeASeller from './pages/BecomeASeller';
 import CartPage from './pages/CartPage';
 import ItemsDetailsPage from './pages/ItemsDetailsPage';
 import MessagesPage from './pages/MessagesPage';
+import FarmerSignupPage from './pages/FarmerSignupPage';
+import LoginPage from './pages/LoginPage';
 import NavbarLoggedIn from './components/layout/NavbarLoggedIn';
+import ConsumerSignupPage from './pages/ConsumerSignupPage';
 
 // Pages that use the logged-in navbar
 const loggedInPages = ['/item-details', '/cart', '/messages', '/account-setting'];
@@ -38,6 +41,9 @@ function AppLayout() {
                 <Route path="/item-details" element={<ItemsDetailsPage />} />
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/messages" element={<MessagesPage />} />
+                <Route path="/farmer-signup" element={<FarmerSignupPage />} />
+                <Route path="/consumer-signup" element={<ConsumerSignupPage />} />
+                <Route path="/login" element={<LoginPage />} />
             </Routes>
             <Footer />
         </div>
