@@ -1,5 +1,4 @@
 import logo from '../../assets/icons/logo.png';
-import searchIcon from '../../assets/icons/search.svg';
 import cartIcon from '../../assets/icons/shopping-cart.svg';
 import languageIcon from '../../assets/icons/language-logo.svg';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -8,6 +7,7 @@ import messagesIcon from '../../assets/icons/messages.svg';
 import accountSettingsIcon from '../../assets/icons/account-settings.svg';
 import logOutIcon from '../../assets/icons/log-out.svg';
 import { useAuth } from '../../context/AuthContext';
+import SearchBar from '../Search/SearchBar';
 
 export default function NavbarLoggedIn() {
     const [showDropdown, setShowDropdown] = useState(false);
@@ -34,14 +34,7 @@ export default function NavbarLoggedIn() {
                         <span className="font-primary font-bold text-lg tracking-wide whitespace-nowrap">ILOILO FARMERS HUB</span>
                     </Link>
 
-                    <div className="flex items-center bg-white rounded-full px-4 py-1.5 gap-2 flex-1 max-w-md">
-                        <input
-                            type="text"
-                            placeholder="Search"
-                            className="border-none outline-none bg-transparent text-sm w-full text-gray-700"
-                        />
-                        <img src={searchIcon} className="w-5 h-5 opacity-50" />
-                    </div>
+                    <SearchBar />
 
                     <div className="flex items-center gap-3 shrink-0">
                         <Link to="/cart">
@@ -50,7 +43,7 @@ export default function NavbarLoggedIn() {
                             </button>
                         </Link>
 
-                        {/* Profile button with dropdown */}
+                        {/* Profile button*/}
                         <div className="relative">
                             <button
                                 onClick={() => setShowDropdown(!showDropdown)}
