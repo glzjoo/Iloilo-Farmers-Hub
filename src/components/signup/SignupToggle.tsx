@@ -7,7 +7,6 @@ export default function SignupToggle() {
 
     return (
         <div className="flex items-center gap-3">
-            <span className="text-sm font-primary font-medium text-gray-600">Sign up as:</span>
             <div className="relative flex rounded-full bg-gray-800 p-1">
                 <div
                     className="absolute top-1 bottom-1 rounded-full bg-primary transition-all duration-300 ease-in-out"

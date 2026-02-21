@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import Shop from './pages/Shop';
 import Navbar from './components/layout/Navbar';
@@ -12,16 +13,16 @@ import ItemsDetailsPage from './pages/ItemsDetailsPage';
 import MessagesPage from './pages/MessagesPage';
 import FarmerSignupPage from './pages/FarmerSignupPage';
 import LoginPage from './pages/LoginPage';
+import OtpPage from './pages/OtpPage';
 import NavbarLoggedIn from './components/layout/NavbarLoggedIn';
 import ConsumerSignupPage from './pages/ConsumerSignupPage';
+import ProfileInfoModal from './pages/ProfileInfoModal';
 
-// Pages that use the logged-in navbar
-const loggedInPages = ['/item-details', '/cart', '/messages', '/account-setting'];
 
 function AppLayout() {
     const location = useLocation();
+    const { isLoggedIn } = useAuth();
     const isShopPage = location.pathname === '/shop';
-    const isLoggedIn = loggedInPages.includes(location.pathname);
 
     const getNavbar = () => {
         if (isLoggedIn) return <NavbarLoggedIn />;
@@ -44,6 +45,8 @@ function AppLayout() {
                 <Route path="/farmer-signup" element={<FarmerSignupPage />} />
                 <Route path="/consumer-signup" element={<ConsumerSignupPage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/otp" element={<OtpPage />} />
+                <Route path="/profile" element={<ProfileInfoModal />} />
             </Routes>
             <Footer />
         </div>
@@ -52,9 +55,11 @@ function AppLayout() {
 
 function App() {
     return (
-        <BrowserRouter>
-            <AppLayout />
-        </BrowserRouter>
+        <AuthProvider>
+            <BrowserRouter>
+                <AppLayout />
+            </BrowserRouter>
+        </AuthProvider>
     );
 }
 

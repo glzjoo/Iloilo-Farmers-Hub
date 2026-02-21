@@ -2,15 +2,18 @@ import logo from '../../assets/icons/logo.png';
 import searchIcon from '../../assets/icons/search.svg';
 import cartIcon from '../../assets/icons/shopping-cart.svg';
 import languageIcon from '../../assets/icons/language-logo.svg';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import messagesIcon from '../../assets/icons/messages.svg';
 import accountSettingsIcon from '../../assets/icons/account-settings.svg';
 import logOutIcon from '../../assets/icons/log-out.svg';
+import { useAuth } from '../../context/AuthContext';
 
 export default function NavbarLoggedIn() {
     const [showDropdown, setShowDropdown] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
+    const { logout } = useAuth();
     const linkClass = (path: string) =>
         `no-underline text-sm font-semibold transition-colors ${location.pathname === path ? 'text-primary' : 'text-gray-700 hover:text-green-700'}`;
 
@@ -86,18 +89,21 @@ export default function NavbarLoggedIn() {
                                                 <p className="text-xs text-gray-400">4 unread messages</p>
                                             </Link>
                                         </button>
-                                        <button className="flex items-center gap-3 w-full px-4 py-3 bg-transparent border-none cursor-pointer hover:bg-gray-50 text-left">
+                                        <Link to="/profile" className="flex items-center gap-3 w-full px-4 py-3 no-underline hover:bg-gray-50 text-left">
                                             <img src={accountSettingsIcon} className="w-5 h-5" />
                                             <div>
                                                 <p className="text-sm font-semibold text-black">Account Setting</p>
                                                 <p className="text-xs text-gray-400">Manage your profile</p>
                                             </div>
-                                        </button>
-                                        <button className="flex items-center gap-3 w-full px-4 py-3 bg-transparent border-none cursor-pointer hover:bg-gray-50 text-left">
+                                        </Link>
+                                        <button
+                                            onClick={() => { logout(); navigate('/'); setShowDropdown(false); }}
+                                            className="flex items-center gap-3 w-full px-4 py-3 bg-transparent border-none cursor-pointer hover:bg-gray-50 text-left"
+                                        >
                                             <img src={logOutIcon} className="w-5 h-5" />
                                             <div>
                                                 <p className="text-sm font-semibold text-red-500">Log Out</p>
-                                                <p className="text-xs text-red-400">Sign up of your account</p>
+                                                <p className="text-xs text-red-400">Sign out of your account</p>
                                             </div>
                                         </button>
                                     </div>

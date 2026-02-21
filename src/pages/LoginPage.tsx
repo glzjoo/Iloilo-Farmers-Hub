@@ -6,7 +6,7 @@ export default function LoginPage() {
     return (
         <section
             style={{ backgroundImage: `url(${background})` }}
-            className="flex items-center justify-center py-16"
+            className="flex items-center justify-center bg-cover bg-no-repeat bg-center min-h-screen"
         >
             <LoginSection />
         </section>
