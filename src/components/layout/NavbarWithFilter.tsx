@@ -32,9 +32,11 @@ export default function NavbarWithFilter() {
 
                     <div className="flex items-center gap-2 shrink-0">
                         <button className="bg-transparent border-none cursor-pointer p-1">
-                            <img src={cartIcon} className="w-8 h-8 brightness-0 invert" />
+                            <Link to="/cart" className="flex items-center gap-2 p-1 no-underline">
+                                <img src={cartIcon} className="w-8 h-8 brightness-0 invert" />
+                            </Link>
                         </button>
-                        <Link to="/signup" className="flex items-center gap-2 p-1 no-underline">
+                        <Link to="/farmer-signup" className="flex items-center gap-2 p-1 no-underline">
                             <img src={accountIcon} className="w-8 h-8 brightness-0 invert" />
                             <span className="text-white text-base font-medium ml-1">Sign Up</span>
                         </Link>
