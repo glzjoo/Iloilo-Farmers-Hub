@@ -25,6 +25,7 @@ export interface Consumer {
     phoneNo: string;
     email: string;
     address: string;
+    profileImage?: string;
     createdAt: Date;
 }
 

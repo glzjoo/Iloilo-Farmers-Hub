@@ -1,121 +1,383 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';  //link not used??
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import logo from '../../assets/icons/logo.png';
-import { Link } from 'react-router-dom';
 import SignupToggle from './SignupToggle';
+import { farmerSignupSchema, type FarmerSignupData } from '../../lib/validations';
+import { useAuth } from '../../context/AuthContext';
+import { useSanitizedInput } from '../../hooks/useSanitizedInput';
 
 export default function FarmerSignup() {
+  const navigate = useNavigate();
+  const { signUpFarmer } = useAuth();
+  const { sanitizeName, sanitizeFarmName, sanitizeEmail, sanitizePhone } = useSanitizedInput();
+  const [isLoading, setIsLoading] = useState(false);
+  const [firebaseError, setFirebaseError] = useState<string | null>(null);
 
-    return (
-        <section className="flex items-center justify-center py-16 px-4">
-            <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-10">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-                    <div className="flex items-center gap-3">
-                        <img src={logo} className="w-11 h-11 rounded-full object-cover" />
-                        <span className="font-primary font-bold text-2xl">Farmer's Information</span>
-                    </div>
-                    <SignupToggle />
-                </div>
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+    reset,
+    trigger,
+  } = useForm<FarmerSignupData>({
+    resolver: zodResolver(farmerSignupSchema),
+    mode: 'onChange',
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      farmName: '',
+      farmAddress: '',
+      phoneNo: '',
+      farmType: 'Vegetables',
+      password: '',
+      confirmPassword: '',
+      agreeToTerms: false,
+    },
+  });
 
-                {/* Form — two column grid */}
-                <div className="grid grid-cols-2 gap-x-8 gap-y-5">
-                    <div>
-                        <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">First name</label>
-                        <input
-                            type="text"
-                            placeholder="Enter your first name"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none focus:border-primary"
-                        />
-                    </div>
+  const onSubmit = async (data: FarmerSignupData) => {
+    setIsLoading(true);
+    setFirebaseError(null);
+    
+    try {
+      await signUpFarmer(data);
+      // Navigate to ID verification page after successful signup
+      navigate('/id-verification', { 
+        state: { email: data.email, phoneNo: data.phoneNo, userType: 'farmer' } 
+      });
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      setFirebaseError(error.message || 'Failed to create account. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-                    <div>
-                        <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">Last name</label>
-                        <input
-                            type="text"
-                            placeholder="Enter your last name"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none focus:border-primary"
-                        />
-                    </div>
+  const handleClear = () => {
+    reset();
+    setFirebaseError(null);
+  };
 
-                    <div>
-                        <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">Farm Name</label>
-                        <input
-                            type="text"
-                            placeholder="Enter your farm name"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none focus:border-primary"
-                        />
-                    </div>
+  const getInputClass = (fieldName: keyof FarmerSignupData) => {
+    const baseClass = "w-full border rounded-lg px-4 py-2.5 text-sm font-primary outline-none transition-colors";
+    return errors[fieldName] 
+      ? `${baseClass} border-red-500 focus:border-red-500 bg-red-50` 
+      : `${baseClass} border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary`;
+  };
 
-                    <div>
-                        <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">Farm Address</label>
-                        <input
-                            type="text"
-                            placeholder="Enter your farm address"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none focus:border-primary"
-                        />
-                    </div>
+  return (
+    <section className="flex items-center justify-center py-16 px-4">
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-10">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <img src={logo} className="w-11 h-11 rounded-full object-cover" alt="Logo" />
+            <span className="font-primary font-bold text-2xl">Farmer's Information</span>
+          </div>
+          <SignupToggle />
+        </div>
 
-                    <div>
-                        <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">Contact Number</label>
-                        <input
-                            type="text"
-                            placeholder="Enter your contact number"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none focus:border-primary"
-                        />
-                    </div>
+        {/* Firebase Error Display */}
+        {firebaseError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm font-primary">{firebaseError}</p>
+          </div>
+        )}
 
-                    <div>
-                        <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">Farm type</label>
-                        <select className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none focus:border-primary bg-white cursor-pointer">
-                            <option value="Rice">Rice</option>
-                            <option value="Corn">Corn</option>
-                            <option value="Vegetables">Vegetables</option>
-                            <option value="Fruits">Fruits</option>
-                            <option value="Livestock">Livestock</option>
-                            <option value="Poultry">Poultry</option>
-                            <option value="Fishery">Fishery</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
+        {/* Form */}
+        <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-2 gap-x-8 gap-y-5">
+          {/* First Name */}
+          <div>
+            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
+              First name <span className="text-red-500">*</span>
+            </label>
+            <Controller
+              name="firstName"
+              control={control}
+              render={({ field }) => (
+                <input
+                  {...field}
+                  type="text"
+                  placeholder="Enter your first name"
+                  className={getInputClass('firstName')}
+                  onChange={(e) => {
+                    const sanitized = sanitizeName(e.target.value);
+                    field.onChange(sanitized);
+                    if (sanitized.length >= 2) trigger('firstName');
+                  }}
+                  onBlur={() => trigger('firstName')}
+                />
+              )}
+            />
+            {errors.firstName && (
+              <p className="mt-1 text-xs text-red-500 font-primary flex items-center gap-1">
+                <span>⚠</span> {errors.firstName.message}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-gray-400 font-primary">
+              Letters, spaces, hyphens, and apostrophes only
+            </p>
+          </div>
 
-                    <div>
-                        <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">Password</label>
-                        <input
-                            type="password"
-                            placeholder="Enter your password"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none focus:border-primary"
-                        />
-                    </div>
+          {/* Last Name */}
+          <div>
+            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
+              Last name <span className="text-red-500">*</span>
+            </label>
+            <Controller
+              name="lastName"
+              control={control}
+              render={({ field }) => (
+                <input
+                  {...field}
+                  type="text"
+                  placeholder="Enter your last name"
+                  className={getInputClass('lastName')}
+                  onChange={(e) => {
+                    const sanitized = sanitizeName(e.target.value);
+                    field.onChange(sanitized);
+                    if (sanitized.length >= 2) trigger('lastName');
+                  }}
+                  onBlur={() => trigger('lastName')}
+                />
+              )}
+            />
+            {errors.lastName && (
+              <p className="mt-1 text-xs text-red-500 font-primary flex items-center gap-1">
+                <span>⚠</span> {errors.lastName.message}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-gray-400 font-primary">
+              Letters, spaces, hyphens, and apostrophes only
+            </p>
+          </div>
 
-                    <div>
-                        <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">Confirm Password</label>
-                        <input
-                            type="password"
-                            placeholder="Confirm your password"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none focus:border-primary"
-                        />
-                    </div>
-                </div>
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
+              Email <span className="text-red-500">*</span>
+            </label>
+            <Controller
+              name="email"
+              control={control}
+              render={({ field }) => (
+                <input
+                  {...field}
+                  type="email"
+                  placeholder="example@email.com"
+                  className={getInputClass('email')}
+                  onChange={(e) => {
+                    const sanitized = sanitizeEmail(e.target.value);
+                    field.onChange(sanitized);
+                    if (sanitized.includes('@') && sanitized.includes('.')) {
+                      trigger('email');
+                    }
+                  }}
+                  onBlur={() => trigger('email')}
+                />
+              )}
+            />
+            {errors.email && (
+              <p className="mt-1 text-xs text-red-500 font-primary flex items-center gap-1">
+                <span>⚠</span> {errors.email.message}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-gray-400 font-primary">
+              Format: name@domain.com
+            </p>
+          </div>
 
-                {/* Terms & Conditions */}
-                <div className="flex justify-end mt-6">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" className="w-4 h-4 accent-primary cursor-pointer" />
-                        <span className="text-sm font-primary text-primary font-medium underline">I agree to Terms & Conditions</span>
-                    </label>
-                </div>
+          {/* Farm Name */}
+          <div>
+            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
+              Farm Name <span className="text-red-500">*</span>
+            </label>
+            <Controller
+              name="farmName"
+              control={control}
+              render={({ field }) => (
+                <input
+                  {...field}
+                  type="text"
+                  placeholder="Enter your farm name"
+                  className={getInputClass('farmName')}
+                  onChange={(e) => {
+                    const sanitized = sanitizeFarmName(e.target.value);
+                    field.onChange(sanitized);
+                    if (sanitized.length >= 2) trigger('farmName');
+                  }}
+                  onBlur={() => trigger('farmName')}
+                />
+              )}
+            />
+            {errors.farmName && (
+              <p className="mt-1 text-xs text-red-500 font-primary flex items-center gap-1">
+                <span>⚠</span> {errors.farmName.message}
+              </p>
+            )}
+          </div>
 
-                {/* Buttons */}
-                <div className="flex items-center justify-between mt-8">
-                    <Link to="/" className="no-underline">
-                        <button className="px-12 py-2.5 rounded-full border-2 border-red-500 text-red-500 font-primary font-bold bg-white cursor-pointer hover:bg-gray-50 text-lg">
-                            Clear All
-                        </button>
-                    </Link>
-                    <button className="px-10 py-2.5 rounded-full border-none bg-primary text-white font-primary font-bold cursor-pointer hover:bg-green-700 text-lg">
-                        Create Account
-                    </button>
-                </div>
+          {/* Farm Address */}
+          <div className="col-span-2">
+            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
+              Farm Address <span className="text-red-500">*</span>
+            </label>
+            <input
+              {...register('farmAddress')}
+              type="text"
+              placeholder="Enter your complete farm address"
+              className={getInputClass('farmAddress')}
+            />
+            {errors.farmAddress && (
+              <p className="mt-1 text-xs text-red-500 font-primary">{errors.farmAddress.message}</p>
+            )}
+          </div>
+
+          {/* Contact Number */}
+          <div>
+            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
+              Contact Number <span className="text-red-500">*</span>
+            </label>
+            <Controller
+              name="phoneNo"
+              control={control}
+              render={({ field }) => (
+                <input
+                  {...field}
+                  type="tel"
+                  placeholder="09123456789"
+                  className={getInputClass('phoneNo')}
+                  onChange={(e) => {
+                    const sanitized = sanitizePhone(e.target.value);
+                    field.onChange(sanitized);
+                    if (sanitized.length === 11) trigger('phoneNo');
+                  }}
+                  onBlur={() => trigger('phoneNo')}
+                />
+              )}
+            />
+            {errors.phoneNo && (
+              <p className="mt-1 text-xs text-red-500 font-primary">{errors.phoneNo.message}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-400 font-primary">
+              11 digits starting with 09
+            </p>
+          </div>
+
+          {/* Farm Type */}
+          <div>
+            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
+              Farm Type <span className="text-red-500">*</span>
+            </label>
+            <select
+              {...register('farmType')}
+              className={getInputClass('farmType')}
+            >
+              <option value="Rice">Rice</option>
+              <option value="Corn">Corn</option>
+              <option value="Vegetables">Vegetables</option>
+              <option value="Fruits">Fruits</option>
+              <option value="Livestock">Livestock</option>
+              <option value="Poultry">Poultry</option>
+              <option value="Fishery">Fishery</option>
+              <option value="Other">Other</option>
+            </select>
+            {errors.farmType && (
+              <p className="mt-1 text-xs text-red-500 font-primary">{errors.farmType.message}</p>
+            )}
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
+              Password <span className="text-red-500">*</span>
+            </label>
+            <input
+              {...register('password')}
+              type="password"
+              placeholder="Create a strong password"
+              className={getInputClass('password')}
+            />
+            {errors.password && (
+              <p className="mt-1 text-xs text-red-500 font-primary">{errors.password.message}</p>
+            )}
+            <ul className="mt-1 text-xs text-gray-400 font-primary space-y-0.5">
+              <li>• At least 8 characters</li>
+              <li>• One uppercase, one lowercase</li>
+              <li>• One number, one special character</li>
+            </ul>
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
+              Confirm Password <span className="text-red-500">*</span>
+            </label>
+            <input
+              {...register('confirmPassword')}
+              type="password"
+              placeholder="Confirm your password"
+              className={getInputClass('confirmPassword')}
+            />
+            {errors.confirmPassword && (
+              <p className="mt-1 text-xs text-red-500 font-primary">{errors.confirmPassword.message}</p>
+            )}
+          </div>
+
+          {/* Terms & Conditions - Full Width */}
+          <div className="col-span-2 flex justify-end mt-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                {...register('agreeToTerms')}
+                type="checkbox"
+                className={`w-4 h-4 accent-primary cursor-pointer ${errors.agreeToTerms ? 'border-red-500' : ''}`}
+              />
+              <span className={`text-sm font-primary font-medium underline ${errors.agreeToTerms ? 'text-red-500' : 'text-primary'}`}>
+                I agree to Terms & Conditions
+              </span>
+            </label>
+          </div>
+          {errors.agreeToTerms && (
+            <div className="col-span-2 flex justify-end">
+              <p className="text-xs text-red-500 font-primary">{errors.agreeToTerms.message}</p>
             </div>
-        </section>
-    );
+          )}
+
+          {/* Buttons - Full Width */}
+          <div className="col-span-2 flex items-center justify-between mt-6">
+            <button
+              type="button"
+              onClick={handleClear}
+              disabled={isLoading}
+              className="px-12 py-2.5 rounded-full border-2 border-red-500 text-red-500 font-primary font-bold bg-white cursor-pointer hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed text-lg transition-colors"
+            >
+              Clear All
+            </button>
+            
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-10 py-2.5 rounded-full border-none bg-primary text-white font-primary font-bold cursor-pointer hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-lg transition-colors flex items-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating...
+                </>
+              ) : (
+                'Create Account'
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  );
 }

@@ -13,12 +13,19 @@ export function useSanitizedInput() {
   // Strict email sanitization
   const sanitizeEmail = useCallback((value: string): string => {
     return value
-      .toLowerCase()                                    // Force lowercase
-      .replace(/[^a-z0-9._%+-@]/g, '')                  // Remove invalid characters
+      .replace(/[^a-zA-Z0-9._%+-@]/g, '')                // Remove invalid characters
       .replace(/\.{2,}/g, '.')                          // Replace multiple dots with single
       .replace(/^\.+/, '')                              // Remove leading dots
       .replace(/@\.+/g, '@')                            // Remove dots after @
       .trim();
+  }, []);
+
+    // Farm name allows: letters, numbers, spaces, &, -, ', and .
+  const sanitizeFarmName = useCallback((value: string): string => {
+    return value
+      .replace(/[^a-zA-Z0-9\s&'-.]/g, '')  // Allow letters, numbers, spaces, &, ', -, and .
+      .replace(/\s{2,}/g, ' ')              // Replace multiple spaces with single space
+      .trimStart();                         // Don't allow leading spaces
   }, []);
 
   // Phone number sanitization (Philippine format)
@@ -33,5 +40,5 @@ export function useSanitizedInput() {
     return digitsOnly.startsWith('09') ? digitsOnly : '09' + digitsOnly.slice(0, 9);
   }, []);
 
-  return { sanitizeName, sanitizeEmail, sanitizePhone };
+  return { sanitizeName, sanitizeEmail, sanitizePhone, sanitizeFarmName };
 }
