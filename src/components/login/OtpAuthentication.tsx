@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from '../../assets/icons/logo.png';
 import { useAuth } from '../../context/AuthContext';
@@ -7,6 +7,8 @@ export default function OtpAuthentication() {
     const navigate = useNavigate();
     const { login } = useAuth();
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleOtpChange = (index: number, value: string) => {
         if (value.length === 1 && index < 5) {
@@ -17,6 +19,32 @@ export default function OtpAuthentication() {
     const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Backspace' && !e.currentTarget.value && index > 0) {
             inputRefs.current[index - 1]?.focus();
+        }
+    };
+
+    const handleVerify = async () => {
+        setError('');
+        const code = inputRefs.current.map((input) => input?.value || '').join('');
+
+        if (code.length !== 6) {
+            setError('Please enter all 6 digits');
+            return;
+        }
+
+        if (!window.confirmationResult) {
+            setError('Session expired. Please go back and try again.');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await window.confirmationResult.confirm(code);
+            login();
+            navigate('/');
+        } catch (err: any) {
+            setError(err.message || 'Invalid code. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -48,11 +76,16 @@ export default function OtpAuthentication() {
                     </div>
                     <p className="text-xs font-primary text-gray-500 text-center">A code has been sent to your number</p>
 
+                    {error && (
+                        <p className="text-red-500 text-xs font-primary text-center">{error}</p>
+                    )}
+
                     <button
-                        onClick={() => { login(); navigate('/'); }}
-                        className="w-full bg-primary text-white font-primary font-semibold py-2.5 rounded-full border-none cursor-pointer hover:bg-green-700 mt-2"
+                        onClick={handleVerify}
+                        disabled={loading}
+                        className="w-full bg-primary text-white font-primary font-semibold py-2.5 rounded-full border-none cursor-pointer hover:bg-green-700 mt-2 disabled:opacity-50"
                     >
-                        Verify
+                        {loading ? 'Verifying...' : 'Verify'}
                     </button>
 
                     <p className="text-sm font-primary text-center text-gray-600 mt-2">
