@@ -1,5 +1,5 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { Routes, Route, useLocation } from 'react-router-dom';  // removed BrowserRouter (if need BrowserRouter e balik lng)
+import { useAuth } from './context/AuthContext';  // i dont think needed pa ang AuthProvider so i removed it from here, but if needed, just import it again
 import LandingPage from './pages/LandingPage';
 import Shop from './pages/Shop';
 import Navbar from './components/layout/Navbar';
@@ -17,7 +17,7 @@ import OtpPage from './pages/OtpPage';
 import NavbarLoggedIn from './components/layout/NavbarLoggedIn';
 import ConsumerSignupPage from './pages/ConsumerSignupPage';
 import ProfileInfoModal from './pages/ProfileInfoModal';
-
+import IDVerificationPage from './pages/IDVerificationPage';
 
 function AppLayout() {
     const location = useLocation();
@@ -43,6 +43,7 @@ function AppLayout() {
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/messages" element={<MessagesPage />} />
                 <Route path="/farmer-signup" element={<FarmerSignupPage />} />
+                <Route path="/id-verification" element={<IDVerificationPage />} />
                 <Route path="/consumer-signup" element={<ConsumerSignupPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/otp" element={<OtpPage />} />
@@ -54,13 +55,7 @@ function AppLayout() {
 }
 
 function App() {
-    return (
-        <AuthProvider>
-            <BrowserRouter>
-                <AppLayout />
-            </BrowserRouter>
-        </AuthProvider>
-    );
+    return <AppLayout />;  // just simpliefied wrapper
 }
 
 export default App;
