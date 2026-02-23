@@ -293,11 +293,6 @@ export default function FarmerSignup() {
             {errors.password && (
               <p className="mt-1 text-xs text-red-500 font-primary">{errors.password.message}</p>
             )}
-            <ul className="mt-1 text-xs text-gray-400 font-primary space-y-0.5">
-              <li>• At least 8 characters</li>
-              <li>• One uppercase, one lowercase</li>
-              <li>• One number, one special character</li>
-            </ul>
           </div>
 
           {/* Confirm Password */}

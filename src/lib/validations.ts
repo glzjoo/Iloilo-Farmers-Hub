@@ -45,17 +45,17 @@ export const consumerSignupSchema = z.object({
   
   phoneNo: z
     .string()
-    .regex(/^09\d{9}$/, 'Please enter a valid Philippine mobile number (e.g., 09123456789)'),
+    .regex(/^09\d{9}$/, 'e.g. 09123456789'),
   
   interest: z.enum(['Rice', 'Corn', 'Vegetables', 'Fruits', 'Livestock', 'Poultry', 'Fishery', 'Other']),
   
   password: z
     .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+    .min(8, 'must be at least 8 characters')
+    .regex(/[A-Z]/, 'must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'must contain at least one special character'),
   
   confirmPassword: z.string(),
   
@@ -113,17 +113,17 @@ export const farmerSignupSchema = z.object({
   
   phoneNo: z
     .string()
-    .regex(/^09\d{9}$/, 'Please enter a valid Philippine mobile number (e.g., 09123456789)'),
+    .regex(/^09\d{9}$/, 'e.g., 09123456789'),
   
   farmType: z.enum(['Rice', 'Corn', 'Vegetables', 'Fruits', 'Livestock', 'Poultry', 'Fishery', 'Other']),
   
   password: z
     .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+    .min(8, 'must be at least 8 characters')
+    .regex(/[A-Z]/, 'must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'must contain at least one special character'),
   
   confirmPassword: z.string(),
   
