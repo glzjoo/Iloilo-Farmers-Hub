@@ -55,9 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUpConsumer = async (data: ConsumerSignupData): Promise<void> => {
     try {
+      // Use phone-based auth or generate placeholder email
+      const emailForAuth = data.email || `${data.phoneNo}@ifh.user`;
+      
       const userCredential = await createUserWithEmailAndPassword(
         auth,
-        data.email,
+        emailForAuth,
         data.password
       );
 
@@ -69,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const userProfileData: UserProfile = {
         uid: newUser.uid,
-        email: data.email,
+        email: data.email || null,
         displayName: `${data.firstName} ${data.lastName}`,
         role: 'consumer',
         createdAt: new Date(),
@@ -80,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         firstName: data.firstName,
         lastName: data.lastName,
         phoneNo: data.phoneNo,
-        email: data.email,
+        email: data.email || null,
         address: data.address,
         profileImage: '',
         createdAt: new Date(),
@@ -95,6 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ...consumerData,
           interest: data.interest,
           createdAt: serverTimestamp(),
+          authEmail: emailForAuth,
+          hasRealEmail: !!data.email,
         }),
       ]);
 
@@ -112,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const errorMessages: Record<string, string> = {
-        'auth/email-already-in-use': 'An account with this email already exists.',
+        'auth/email-already-in-use': 'An account with this email/phone already exists.',
         'auth/invalid-email': 'Please enter a valid email address.',
         'auth/operation-not-allowed': 'Account creation is currently disabled.',
         'auth/weak-password': 'Password is too weak. Please use a stronger password.',
@@ -125,9 +130,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUpFarmer = async (data: FarmerSignupData): Promise<void> => {
     try {
+      // Use phone-based auth or generate placeholder email
+      const emailForAuth = data.email || `${data.phoneNo}@ifh.farmer`;
+      
       const userCredential = await createUserWithEmailAndPassword(
         auth,
-        data.email,
+        emailForAuth,
         data.password
       );
 
@@ -139,7 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const userProfileData: UserProfile = {
         uid: newUser.uid,
-        email: data.email,
+        email: data.email || null,
         displayName: `${data.firstName} ${data.lastName}`,
         role: 'farmer',
         createdAt: new Date(),
@@ -150,9 +158,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         firstName: data.firstName,
         lastName: data.lastName,
         phoneNo: data.phoneNo,
-        email: data.email,
-        idType: 'pending', // Will be updated after ID verification
-        cardAddress: data.farmAddress, // Using farm address as card address for now
+        email: data.email || null,
+        idType: 'pending',
+        cardAddress: data.farmAddress,
         profileImage: '',
         createdAt: new Date(),
       };
@@ -167,8 +175,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           farmName: data.farmName,
           farmAddress: data.farmAddress,
           farmType: data.farmType,
-          verificationStatus: 'pending', // pending, verified, rejected
+          verificationStatus: 'pending',
           createdAt: serverTimestamp(),
+          authEmail: emailForAuth,
+          hasRealEmail: !!data.email,
         }),
       ]);
 
@@ -186,7 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const errorMessages: Record<string, string> = {
-        'auth/email-already-in-use': 'An account with this email already exists.',
+        'auth/email-already-in-use': 'An account with this email/phone already exists.',
         'auth/invalid-email': 'Please enter a valid email address.',
         'auth/operation-not-allowed': 'Account creation is currently disabled.',
         'auth/weak-password': 'Password is too weak. Please use a stronger password.',

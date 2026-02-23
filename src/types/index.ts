@@ -1,6 +1,6 @@
 export interface UserProfile {
     uid: string;
-    email: string;
+    email: string | null;
     displayName: string;
     role: 'farmer' | 'consumer';
     createdAt: Date;
@@ -11,7 +11,7 @@ export interface Farmer {
     firstName: string;
     lastName: string;
     phoneNo: string;
-    email: string;
+    email: string | null;
     idType: string;
     cardAddress: string;
     profileImage?: string;
@@ -23,7 +23,7 @@ export interface Consumer {
     firstName: string;
     lastName: string;
     phoneNo: string;
-    email: string;
+    email: string | null;
     address: string;
     profileImage?: string;
     createdAt: Date;
