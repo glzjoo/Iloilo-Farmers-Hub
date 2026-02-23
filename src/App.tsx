@@ -17,6 +17,7 @@ import OtpPage from './pages/OtpPage';
 import NavbarLoggedIn from './components/layout/NavbarLoggedIn';
 import ConsumerSignupPage from './pages/ConsumerSignupPage';
 import ProfileInfoModal from './pages/ProfileInfoModal';
+import IDVerificationPage from './pages/IDVerificationPage';
 
 function AppLayout() {
     const location = useLocation();
@@ -42,6 +43,7 @@ function AppLayout() {
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/messages" element={<MessagesPage />} />
                 <Route path="/farmer-signup" element={<FarmerSignupPage />} />
+                <Route path="/id-verification" element={<IDVerificationPage />} />
                 <Route path="/consumer-signup" element={<ConsumerSignupPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/otp" element={<OtpPage />} />

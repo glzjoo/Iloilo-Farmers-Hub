@@ -31,3 +31,6 @@ dist-ssr
 .env.production
 .env.test
 .env.*.local
+
+# server keys
+server/vision-key.json
