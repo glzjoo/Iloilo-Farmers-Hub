@@ -119,9 +119,6 @@ export default function ConsumerSignup() {
                 <span>⚠</span> {errors.firstName.message}
               </p>
             )}
-            <p className="mt-1 text-xs text-gray-400 font-primary">
-              Letters, spaces, hyphens, and apostrophes only
-            </p>
           </div>
 
           {/* Last Name with Sanitization */}
@@ -152,9 +149,6 @@ export default function ConsumerSignup() {
                 <span>⚠</span> {errors.lastName.message}
               </p>
             )}
-            <p className="mt-1 text-xs text-gray-400 font-primary">
-              Letters, spaces, hyphens, and apostrophes only
-            </p>
           </div>
 
           {/* Email with Enhanced Validation */}
@@ -188,9 +182,6 @@ export default function ConsumerSignup() {
                 <span>⚠</span> {errors.email.message}
               </p>
             )}
-            <p className="mt-1 text-xs text-gray-400 font-primary">
-              Format: name@domain.com
-            </p>
           </div>
 
           {/* Home Address */}
@@ -235,9 +226,6 @@ export default function ConsumerSignup() {
             {errors.phoneNo && (
               <p className="mt-1 text-xs text-red-500 font-primary">{errors.phoneNo.message}</p>
             )}
-            <p className="mt-1 text-xs text-gray-400 font-primary">
-              11 digits starting with 09
-            </p>
           </div>
 
           {/* Interest */}
