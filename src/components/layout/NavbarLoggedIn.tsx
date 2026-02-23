@@ -1,5 +1,5 @@
 import logo from '../../assets/icons/logo.png';
-import cartIcon from '../../assets/icons/shopping-cart.svg';
+import savedItemsIcon from '../../assets/icons/saved-items.png';
 import languageIcon from '../../assets/icons/language-logo.svg';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
@@ -39,7 +39,7 @@ export default function NavbarLoggedIn() {
                     <div className="flex items-center gap-3 shrink-0">
                         <Link to="/cart">
                             <button className="bg-transparent border-none cursor-pointer p-1">
-                                <img src={cartIcon} className="w-7 h-7 brightness-0 invert" />
+                                <img src={savedItemsIcon} className="w-7 h-7 brightness-0 invert" />
                             </button>
                         </Link>
 

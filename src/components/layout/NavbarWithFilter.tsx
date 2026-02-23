@@ -1,6 +1,5 @@
 import logo from '../../assets/icons/logo.png';
-import cartIcon from '../../assets/icons/shopping-cart.svg';
-import accountIcon from '../../assets/icons/account-icon.svg';
+import savedItemsIcon from '../../assets/icons/saved-items.png';
 import languageIcon from '../../assets/icons/language-logo.svg';
 import { Link } from 'react-router-dom';
 import HamburgerFilter from './HamburgerFilter';
@@ -33,11 +32,10 @@ export default function NavbarWithFilter() {
                     <div className="flex items-center gap-2 shrink-0">
                         <button className="bg-transparent border-none cursor-pointer p-1">
                             <Link to="/cart" className="flex items-center gap-2 p-1 no-underline">
-                                <img src={cartIcon} className="w-8 h-8 brightness-0 invert" />
+                                <img src={savedItemsIcon} className="w-6 h-6 brightness-0 invert" />
                             </Link>
                         </button>
-                        <Link to="/farmer-signup" className="flex items-center gap-2 p-1 no-underline">
-                            <img src={accountIcon} className="w-8 h-8 brightness-0 invert" />
+                        <Link to="/farmer-signup" className="no-underline">
                             <span className="text-white text-base font-medium ml-1">Sign Up</span>
                         </Link>
                         <span className="text-white text-base font-medium">|</span>
