@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';  //link not used??
+import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import logo from '../../assets/icons/logo.png';
@@ -10,7 +10,7 @@ import { useSanitizedInput } from '../../hooks/useSanitizedInput';
 
 export default function FarmerSignup() {
   const navigate = useNavigate();
-  const { signUpFarmer } = useAuth();
+  const { prepareFarmerSignup } = useAuth(); // CHANGED: Use prepare instead of signUp
   const { sanitizeName, sanitizeFarmName, sanitizeEmail, sanitizePhone } = useSanitizedInput();
   const [isLoading, setIsLoading] = useState(false);
   const [firebaseError, setFirebaseError] = useState<string | null>(null);
@@ -44,14 +44,20 @@ export default function FarmerSignup() {
     setFirebaseError(null);
     
     try {
-      await signUpFarmer(data);
-      // Navigate to ID verification page after successful signup
+      // CHANGED: Store data temporarily, get tempId for verification flow
+      const tempId = await prepareFarmerSignup(data);
+      
+      // Navigate to ID verification with tempId and form data
       navigate('/id-verification', { 
-        state: { email: data.email, phoneNo: data.phoneNo, userType: 'farmer' } 
+        state: { 
+          tempId,           // Pass tempId to complete signup later
+          farmerData: data, // Pass form data for display/cross-reference
+          userType: 'farmer' 
+        } 
       });
     } catch (error: any) {
-      console.error('Signup error:', error);
-      setFirebaseError(error.message || 'Failed to create account. Please try again.');
+      console.error('Signup preparation error:', error);
+      setFirebaseError(error.message || 'Failed to initialize signup. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -87,6 +93,13 @@ export default function FarmerSignup() {
             <p className="text-red-600 text-sm font-primary">{firebaseError}</p>
           </div>
         )}
+
+        {/* Info Banner */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-blue-700 text-sm font-primary">
+            <span className="font-bold">Next Step:</span> After submitting, you'll need to verify your identity using your ID card and a selfie. Your account will be created after successful verification.
+          </p>
+        </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-2 gap-x-8 gap-y-5">
@@ -153,7 +166,7 @@ export default function FarmerSignup() {
           {/* Email */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Email <span className="text-red-500">*</span>
+              Email <span className="text-gray-400 text-xs italic">(Optional)</span>
             </label>
             <Controller
               name="email"
@@ -352,10 +365,10 @@ export default function FarmerSignup() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Creating...
+                  Preparing...
                 </>
               ) : (
-                'Create Account'
+                'Continue to Verification'
               )}
             </button>
           </div>

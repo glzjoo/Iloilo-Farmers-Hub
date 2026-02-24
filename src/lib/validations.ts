@@ -1,13 +1,18 @@
 import { z } from 'zod';
 
-// Custom email validation regex for stricter validation
-const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
 // Name validation - letters, spaces, and common name characters only
 const nameRegex = /^[a-zA-Z\s'-]+$/;
 
 // Farm name validation - allow letters, numbers, spaces, and common business characters
 const farmNameRegex = /^[a-zA-Z0-9\s&'-]+$/;
+
+const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+// Optional email - validates format only if not empty
+const optionalEmail = z.union([
+  z.string().regex(emailRegex, 'e.g. sample@gmail.com').optional(),
+  z.literal(''),
+  z.undefined()
+]).optional();
 
 export const consumerSignupSchema = z.object({
   firstName: z
@@ -24,19 +29,8 @@ export const consumerSignupSchema = z.object({
     .regex(nameRegex, 'Last name can only contain letters, spaces, hyphens, and apostrophes')
     .transform((val) => val.trim()),
   
-  email: z
-    .string()
-    .min(5, 'Email is too short')
-    .max(100, 'Email is too long')
-    .regex(emailRegex, 'Please enter a valid email address (e.g., user@example.com)')
-    .transform((val) => val.toLowerCase().trim())
-    .refine((email) => !email.includes('..'), {
-      message: 'Email cannot contain consecutive dots',
-    })
-    .refine((email) => !email.startsWith('.') && !email.endsWith('.'), {
-      message: 'Email cannot start or end with a dot',
-    }),
-  
+  email: optionalEmail,
+ 
   address: z
     .string()
     .min(5, 'Please enter a complete address')
@@ -45,7 +39,7 @@ export const consumerSignupSchema = z.object({
   
   phoneNo: z
     .string()
-    .regex(/^09\d{9}$/, 'e.g. 09123456789'),
+    .regex(/^09\d{9}$/, 'e.g., 09123456789'),
   
   interest: z.enum(['Rice', 'Corn', 'Vegetables', 'Fruits', 'Livestock', 'Poultry', 'Fishery', 'Other']),
   
@@ -85,18 +79,7 @@ export const farmerSignupSchema = z.object({
     .regex(nameRegex, 'Last name can only contain letters, spaces, hyphens, and apostrophes')
     .transform((val) => val.trim()),
   
-  email: z
-    .string()
-    .min(5, 'Email is too short')
-    .max(100, 'Email is too long')
-    .regex(emailRegex, 'Please enter a valid email address (e.g., user@example.com)')
-    .transform((val) => val.toLowerCase().trim())
-    .refine((email) => !email.includes('..'), {
-      message: 'Email cannot contain consecutive dots',
-    })
-    .refine((email) => !email.startsWith('.') && !email.endsWith('.'), {
-      message: 'Email cannot start or end with a dot',
-    }),
+  email: optionalEmail,
   
   farmName: z
     .string()
