@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { useAuth } from '../../context/AuthContext';
 import logo from '../../assets/icons/logo.png';
 import type { FarmerSignupData } from '../../lib/validations';
+import CameraCapture from './CameraCapture'; // NEW: Import the component
 
 const idVerificationSchema = z.object({
   idType: z.enum(['passport', 'drivers_license', 'national_id', 'umid', 'other']),
@@ -33,24 +34,15 @@ export default function IDVerification() {
   const [error, setError] = useState<string | null>(null);
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [idImage, setIdImage] = useState<File | null>(null);
-  const [selfieImage, setSelfieImage] = useState<File | null>(null);
   const [idPreview, setIdPreview] = useState<string | null>(null);
+  const [selfieFile, setSelfieFile] = useState<File | null>(null); // NEW: Store File directly
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
   const [verificationResult, setVerificationResult] = useState<any>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+  const [showCamera, setShowCamera] = useState(false); // NEW: Control camera modal
   
   const idInputRef = useRef<HTMLInputElement>(null);
-  const selfieInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!tempId) {
-      navigate('/farmer-signup', { 
-        replace: true,
-        state: { error: 'Please complete the signup form first' }
-      });
-    }
-  }, [tempId, navigate]);
 
   const {
     register,
@@ -65,7 +57,58 @@ export default function IDVerification() {
     },
   });
 
-  // SOLUTION 1: Fuzzy name matching with Levenshtein distance
+  useEffect(() => {
+    if (!tempId) {
+      navigate('/farmer-signup', { 
+        replace: true,
+        state: { error: 'Please complete the signup form first' }
+      });
+    }
+  }, [tempId, navigate]);
+
+  // NEW: Handle camera capture
+  const handleCapture = (file: File) => {
+    setSelfieFile(file);
+    setSelfiePreview(URL.createObjectURL(file));
+    setShowCamera(false);
+  };
+
+  // NEW: Handle camera cancel
+  const handleCancelCamera = () => {
+    setShowCamera(false);
+  };
+
+  // NEW: Retake selfie
+  const handleRetake = () => {
+    setSelfieFile(null);
+    setSelfiePreview(null);
+    setShowCamera(true);
+  };
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file (JPG, PNG)');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image size must be less than 10MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setIdImage(file);
+      setIdPreview(result);
+      setError(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Fuzzy name matching (same as before)
   const checkNameMatch = (extractedName: string, formData: FarmerSignupData): boolean => {
     if (!extractedName) return false;
     
@@ -100,7 +143,6 @@ export default function IDVerification() {
     return matchedWords === registeredWords.length;
   };
 
-  // Helper: Calculate string similarity using Levenshtein distance
   const calculateSimilarity = (str1: string, str2: string): number => {
     const len1 = str1.length;
     const len2 = str2.length;
@@ -139,44 +181,9 @@ export default function IDVerification() {
     return 1 - distance / maxLen;
   };
 
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>, type: 'id' | 'selfie') => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file (JPG, PNG)');
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Image size must be less than 10MB');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      if (type === 'id') {
-        setIdImage(file);
-        setIdPreview(result);
-      } else {
-        setSelfieImage(file);
-        setSelfiePreview(result);
-      }
-      setError(null);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const triggerSelfie = () => {
-    if (selfieInputRef.current) {
-      selfieInputRef.current.setAttribute('capture', 'user');
-      selfieInputRef.current.click();
-    }
-  };
-
   const onSubmit = async (data: IDVerificationFormData) => {
-    if (!idImage || !selfieImage) {
-      setError('Please upload both ID and selfie images');
+    if (!idImage || !selfieFile) {
+      setError('Please upload your ID and capture a live selfie');
       return;
     }
 
@@ -191,7 +198,7 @@ export default function IDVerification() {
     try {
       const formData = new FormData();
       formData.append('idImage', idImage);
-      formData.append('selfieImage', selfieImage);
+      formData.append('selfieImage', selfieFile); // Now using File directly
       formData.append('tempId', tempId);
       formData.append('idType', data.idType);
       formData.append('idNumber', data.idNumber);
@@ -210,7 +217,6 @@ export default function IDVerification() {
       setVerificationResult(result);
       setAttemptsLeft(prev => prev - 1);
 
-      // Use fuzzy name matching
       const nameMatches = checkNameMatch(
         result.verification?.idData?.fullName, 
         farmerData
@@ -222,13 +228,13 @@ export default function IDVerification() {
         try {
           await completeFarmerSignup(tempId, {
             idType: data.idType,
-            faceMatchScore: result.verification?.faceMatch?.score,
-            faceMatchPassed: result.verification?.faceMatch?.passed,
-            idNumber: result.verification?.idData?.idNumber,
-            fullName: result.verification?.idData?.fullName,
-            address: result.verification?.idData?.address,
-            idCardUrl: result.idCardUrl,
-            selfieUrl: result.selfieUrl,
+            faceMatchScore: result.verification?.faceMatch?.score ?? null,
+            faceMatchPassed: result.verification?.faceMatch?.passed ?? null,
+            idNumber: result.verification?.idData?.idNumber ?? null,
+            fullName: result.verification?.idData?.fullName ?? null,
+            address: result.verification?.idData?.address ?? null,
+            idCardImageUrl: result.idCardUrl ?? null,
+            selfieImageUrl: result.selfieUrl ?? null,
           });
           
           setShowSuccessModal(true);
@@ -238,7 +244,6 @@ export default function IDVerification() {
           setIsCreatingAccount(false);
         }
       } else if (result.verified && !nameMatches) {
-        // Better error message with suggestions
         const extracted = result.verification?.idData?.fullName || 'Unknown';
         const registered = `${farmerData.firstName} ${farmerData.lastName}`;
         
@@ -284,8 +289,8 @@ export default function IDVerification() {
   const handleRetry = () => {
     setVerificationResult(null);
     setIdImage(null);
-    setSelfieImage(null);
     setIdPreview(null);
+    setSelfieFile(null);
     setSelfiePreview(null);
     setError(null);
   };
@@ -314,6 +319,14 @@ export default function IDVerification() {
 
   return (
     <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-10">
+      {/* Camera Modal */}
+      {showCamera && (
+        <CameraCapture 
+          onCapture={handleCapture}
+          onCancel={handleCancelCamera}
+        />
+      )}
+
       {/* Header */}
       <div className="text-center mb-8">
         <img src={logo} className="w-16 h-16 rounded-full object-cover mx-auto mb-4" alt="Logo" />
@@ -337,7 +350,7 @@ export default function IDVerification() {
         </p>
       </div>
 
-      {/* Error Display - Now with better formatting for multi-line errors */}
+      {/* Error Display */}
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-600 text-sm font-primary whitespace-pre-line">{error}</p>
@@ -352,7 +365,7 @@ export default function IDVerification() {
         </div>
       )}
 
-      {/* Verification Result (when failed/pending) */}
+      {/* Verification Result */}
       {verificationResult && !verificationResult.verified && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
@@ -360,9 +373,7 @@ export default function IDVerification() {
             <h3 className="font-semibold text-yellow-800">Verification Failed</h3>
           </div>
           <div className="text-sm text-gray-700 space-y-1">
-            <p>Face Match Score: {verificationResult.verification?.faceMatch?.score}% 
-              (Required: 80%)
-            </p>
+            <p>Face Match Score: {verificationResult.verification?.faceMatch?.score}% (Required: 80%)</p>
             <p>Attempts remaining: {attemptsLeft}</p>
           </div>
         </div>
@@ -374,19 +385,14 @@ export default function IDVerification() {
           <label className="block text-sm font-primary font-semibold text-gray-800 mb-2">
             ID Type <span className="text-red-500">*</span>
           </label>
-          <select
-            {...register('idType')}
-            className={getInputClass('idType')}
-          >
-            <option value="drivers_license">Driver's License (LTO)</option>
+          <select {...register('idType')} className={getInputClass('idType')}>
             <option value="national_id">Philsys National ID</option>
+            <option value="drivers_license">Driver's License (LTO)</option>
             <option value="umid">UMID (SSS/GSIS)</option>
             <option value="passport">Philippine Passport</option>
             <option value="other">Other Government ID</option>
           </select>
-          {errors.idType && (
-            <p className="mt-1 text-xs text-red-500 font-primary">{errors.idType.message}</p>
-          )}
+          {errors.idType && <p className="mt-1 text-xs text-red-500 font-primary">{errors.idType.message}</p>}
         </div>
 
         {/* ID Number */}
@@ -394,15 +400,8 @@ export default function IDVerification() {
           <label className="block text-sm font-primary font-semibold text-gray-800 mb-2">
             ID Number <span className="text-red-500">*</span>
           </label>
-          <input
-            {...register('idNumber')}
-            type="text"
-            placeholder="Enter ID number as shown on your card"
-            className={getInputClass('idNumber')}
-          />
-          {errors.idNumber && (
-            <p className="mt-1 text-xs text-red-500 font-primary">{errors.idNumber.message}</p>
-          )}
+          <input {...register('idNumber')} type="text" placeholder="Enter ID number as shown on your card" className={getInputClass('idNumber')} />
+          {errors.idNumber && <p className="mt-1 text-xs text-red-500 font-primary">{errors.idNumber.message}</p>}
         </div>
 
         {/* ID Image Upload */}
@@ -431,99 +430,74 @@ export default function IDVerification() {
                 <p className="text-xs text-gray-400 mt-1">Clear photo of front side</p>
               </div>
             )}
-            <input
-              ref={idInputRef}
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleImageSelect(e, 'id')}
-              className="hidden"
-            />
+            <input ref={idInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
           </div>
         </div>
 
-        {/* Selfie Upload */}
+        {/* LIVE SELFIE - Simplified with CameraCapture component */}
         <div>
           <label className="block text-sm font-primary font-semibold text-gray-800 mb-2">
-            Selfie Photo <span className="text-red-500">*</span>
+            Live Selfie <span className="text-red-500">*</span>
           </label>
-          <div 
-            onClick={triggerSelfie}
-            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-              selfiePreview ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-primary hover:bg-gray-50'
-            }`}
-          >
-            {selfiePreview ? (
-              <div className="relative">
-                <img src={selfiePreview} alt="Selfie Preview" className="max-h-48 mx-auto rounded-full shadow w-32 h-32 object-cover" />
-                <p className="text-green-600 text-sm mt-2 font-primary">✓ Selfie uploaded</p>
-                <p className="text-xs text-gray-500">Click to retake</p>
-              </div>
-            ) : (
-              <div className="text-gray-500">
+          
+          {!selfiePreview && (
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <div className="text-gray-500 mb-4">
                 <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <p className="font-primary text-sm">Click to take selfie</p>
-                <p className="text-xs text-gray-400 mt-1">Face must match your ID photo</p>
+                <p className="font-primary text-sm">Real-time camera capture required</p>
+                <p className="text-xs text-gray-400 mt-1">Photo uploads not allowed for security</p>
               </div>
-            )}
-            <input
-              ref={selfieInputRef}
-              type="file"
-              accept="image/*"
-              capture="user"
-              onChange={(e) => handleImageSelect(e, 'selfie')}
-              className="hidden"
-            />
-          </div>
+              <button
+                type="button"
+                onClick={() => setShowCamera(true)}
+                className="px-6 py-2 bg-primary text-white rounded-full font-primary font-medium hover:bg-green-700 transition-colors"
+              >
+                Open Camera
+              </button>
+            </div>
+          )}
+
+          {selfiePreview && (
+            <div className="relative">
+              <img src={selfiePreview} alt="Captured selfie" className="w-full h-64 object-cover rounded-lg" />
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleRetake}
+                  className="px-4 py-2 bg-white text-gray-800 rounded-full font-primary font-medium hover:bg-gray-100 transition-colors shadow-lg"
+                >
+                  Retake Selfie
+                </button>
+              </div>
+              <p className="absolute top-4 left-0 right-0 text-center text-white text-sm bg-green-600 bg-opacity-90 py-1">
+                ✓ Selfie captured
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Agreement */}
         <div className="flex items-start gap-3">
-          <input
-            {...register('agreeToVerification')}
-            type="checkbox"
-            className="w-4 h-4 mt-1 accent-primary cursor-pointer"
-          />
+          <input {...register('agreeToVerification')} type="checkbox" className="w-4 h-4 mt-1 accent-primary cursor-pointer" />
           <label className="text-sm font-primary text-gray-600">
             I consent to the ID verification process. I confirm that the information provided is accurate 
             and I am the person in the ID and selfie. I understand that false information will result in 
             account suspension and legal action.
           </label>
         </div>
-        {errors.agreeToVerification && (
-          <p className="text-xs text-red-500 font-primary">{errors.agreeToVerification.message}</p>
-        )}
+        {errors.agreeToVerification && <p className="text-xs text-red-500 font-primary">{errors.agreeToVerification.message}</p>}
 
-        {/* Submit Button */}
+        {/* Submit */}
         <button
           type="submit"
-          disabled={isLoading || isCreatingAccount || !idImage || !selfieImage}
+          disabled={isLoading || isCreatingAccount || !idImage || !selfieFile}
           className="w-full py-3 rounded-full bg-primary text-white font-primary font-bold cursor-pointer hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-lg transition-colors flex items-center justify-center gap-2"
         >
-          {isCreatingAccount ? (
-            <>
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Creating Account...
-            </>
-          ) : isLoading ? (
-            <>
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Verifying...
-            </>
-          ) : (
-            'Verify & Create Account'
-          )}
+          {isCreatingAccount ? 'Creating Account...' : isLoading ? 'Verifying...' : 'Verify & Create Account'}
         </button>
 
-        {/* Go Back Button */}
         <button
           type="button"
           onClick={handleGoBack}
@@ -533,16 +507,6 @@ export default function IDVerification() {
           Back to Registration
         </button>
       </form>
-
-      {/* Help */}
-      <div className="mt-6 text-center">
-        <p className="text-xs text-gray-400">
-          Your data is encrypted and securely processed. 
-          <button onClick={() => navigate('/')} className="text-primary hover:underline ml-1">
-            Cancel and return home
-          </button>
-        </p>
-      </div>
 
       {/* SUCCESS MODAL */}
       {showSuccessModal && (
