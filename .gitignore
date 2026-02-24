@@ -34,3 +34,7 @@ dist-ssr
 
 # server keys
 server/vision-key.json
+server/firebase-service-account.json
+
+# firebase
+firebase-service-account.json

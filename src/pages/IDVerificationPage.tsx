@@ -30,7 +30,7 @@ export default function IDVerificationPage() {
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
   const [verificationResult, setVerificationResult] = useState<any>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  
+
   const idInputRef = useRef<HTMLInputElement>(null);
   const selfieInputRef = useRef<HTMLInputElement>(null);
 
@@ -140,8 +140,8 @@ export default function IDVerificationPage() {
 
   const getInputClass = (fieldName: keyof IDVerificationFormData) => {
     const baseClass = "w-full border rounded-lg px-4 py-2.5 text-sm font-primary outline-none transition-colors";
-    return errors[fieldName] 
-      ? `${baseClass} border-red-500 focus:border-red-500 bg-red-50` 
+    return errors[fieldName]
+      ? `${baseClass} border-red-500 focus:border-red-500 bg-red-50`
       : `${baseClass} border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary`;
   };
 
@@ -172,7 +172,7 @@ export default function IDVerificationPage() {
               <h3 className="font-semibold text-yellow-800">Verification Needs Review</h3>
             </div>
             <div className="text-sm text-gray-700 space-y-1">
-              <p>Face Match: {verificationResult.verification?.faceMatch?.confidence} 
+              <p>Face Match: {verificationResult.verification?.faceMatch?.confidence}
                 ({verificationResult.verification?.faceMatch?.score}%)
               </p>
               <p>Our team will manually review your submission.</p>
@@ -222,11 +222,10 @@ export default function IDVerificationPage() {
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-2">
               ID Card Photo <span className="text-red-500">*</span>
             </label>
-            <div 
+            <div
               onClick={() => idInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-                idPreview ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-primary hover:bg-gray-50'
-              }`}
+              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${idPreview ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-primary hover:bg-gray-50'
+                }`}
             >
               {idPreview ? (
                 <div className="relative">
@@ -258,11 +257,10 @@ export default function IDVerificationPage() {
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-2">
               Selfie Photo <span className="text-red-500">*</span>
             </label>
-            <div 
+            <div
               onClick={triggerSelfie}
-              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-                selfiePreview ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-primary hover:bg-gray-50'
-              }`}
+              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${selfiePreview ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-primary hover:bg-gray-50'
+                }`}
             >
               {selfiePreview ? (
                 <div className="relative">
@@ -299,8 +297,8 @@ export default function IDVerificationPage() {
               className="w-4 h-4 mt-1 accent-primary cursor-pointer"
             />
             <label className="text-sm font-primary text-gray-600">
-              I consent to the ID verification process. I confirm that the information provided is accurate 
-              and I am the person in the ID and selfie. I understand that false information will result in 
+              I consent to the ID verification process. I confirm that the information provided is accurate
+              and I am the person in the ID and selfie. I understand that false information will result in
               account suspension and legal action.
             </label>
           </div>
@@ -331,7 +329,7 @@ export default function IDVerificationPage() {
         {/* Help */}
         <div className="mt-6 text-center">
           <p className="text-xs text-gray-400">
-            Your data is encrypted and securely processed. 
+            Your data is encrypted and securely processed.
             <button onClick={() => navigate('/')} className="text-primary hover:underline ml-1">
               Cancel and return home
             </button>
@@ -353,7 +351,7 @@ export default function IDVerificationPage() {
             <h2 className="font-primary font-bold text-2xl text-gray-800 mb-2">
               Verification Successful!
             </h2>
-            
+
             <p className="text-gray-600 mb-6">
               Your identity has been verified. You can now start selling your products on Iloilo Farmers Hub.
             </p>
@@ -385,7 +383,7 @@ export default function IDVerificationPage() {
               >
                 Start Selling
               </button>
-              
+
               <button
                 onClick={handleGoToProfile}
                 className="w-full py-3 rounded-full border-2 border-primary text-primary font-primary font-bold hover:bg-green-50 transition-colors"
