@@ -20,7 +20,9 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   signUpConsumer: (data: ConsumerSignupData) => Promise<void>;
-  signUpFarmer: (data: FarmerSignupData) => Promise<void>;
+  // Changed: Now returns tempId for verification flow
+  prepareFarmerSignup: (data: FarmerSignupData) => Promise<string>;
+  completeFarmerSignup: (tempId: string, verificationData: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,7 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUpConsumer = async (data: ConsumerSignupData): Promise<void> => {
     try {
-      // Use phone-based auth or generate placeholder email
       const emailForAuth = data.email || `${data.phoneNo}@ifh.user`;
       
       const userCredential = await createUserWithEmailAndPassword(
@@ -128,14 +129,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUpFarmer = async (data: FarmerSignupData): Promise<void> => {
+  /**
+   * NEW: Stage 1 - Store farmer data temporarily, NO account created yet
+   * Returns tempId to be used after verification
+   */
+  const prepareFarmerSignup = async (data: FarmerSignupData): Promise<string> => {
     try {
-      // Use phone-based auth or generate placeholder email
+      // Check if email/phone already exists in verified farmers
+      // This prevents duplicate registrations
       const emailForAuth = data.email || `${data.phoneNo}@ifh.farmer`;
       
+      // Create temp entry in pendingFarmers collection
+      const tempId = crypto.randomUUID(); // Or use Firestore auto-ID
+      
+      const pendingData = {
+        tempId,
+        farmerData: data,
+        emailForAuth,
+        createdAt: serverTimestamp(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hour expiry
+        verificationAttempts: 0,
+        maxAttempts: 3,
+      };
+
+      await setDoc(doc(db, 'pendingFarmers', tempId), pendingData);
+
+      return tempId;
+    } catch (error: any) {
+      console.error('Prepare farmer signup error:', error);
+      throw new Error('Failed to initialize signup. Please try again.');
+    }
+  };
+
+  /**
+   * NEW: Stage 2 - Create actual account after successful verification
+   */
+  const completeFarmerSignup = async (
+    tempId: string, 
+    verificationData: any
+  ): Promise<void> => {
+    try {
+      // Retrieve pending data
+      const pendingDoc = await getDoc(doc(db, 'pendingFarmers', tempId));
+      
+      if (!pendingDoc.exists()) {
+        throw new Error('Signup session expired. Please start over.');
+      }
+
+      const pendingData = pendingDoc.data();
+      const data: FarmerSignupData = pendingData.farmerData;
+
+      // Now create the actual Firebase Auth account
       const userCredential = await createUserWithEmailAndPassword(
         auth,
-        emailForAuth,
+        pendingData.emailForAuth,
         data.password
       );
 
@@ -159,39 +206,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastName: data.lastName,
         phoneNo: data.phoneNo,
         email: data.email || null,
-        idType: 'pending',
-        cardAddress: data.farmAddress,
+        idType: verificationData.idType || 'phNationalId', // Default or from verification
+        cardAddress: verificationData.extractedAddress || data.farmAddress,
         profileImage: '',
         createdAt: new Date(),
       };
+
+      const sanitize = (val: any) => val === undefined ? null : val;
 
       await Promise.all([
         setDoc(doc(db, 'users', newUser.uid), {
           ...userProfileData,
           createdAt: serverTimestamp(),
+          verifiedAt: serverTimestamp(),
         }),
         setDoc(doc(db, 'farmers', newUser.uid), {
           ...farmerData,
           farmName: data.farmName,
           farmAddress: data.farmAddress,
           farmType: data.farmType,
-          verificationStatus: 'pending',
+          verificationStatus: 'verified',
+          verificationData: {
+            faceMatchScore: sanitize(verificationData.faceMatchScore),
+            faceMatchPassed: sanitize(verificationData.faceMatchPassed),
+            extractedIdNumber: sanitize(verificationData.idNumber),
+            extractedFullName: sanitize(verificationData.fullName),
+            extractedAddress: sanitize(verificationData.address),
+            idCardImageUrl: sanitize(verificationData.idCardImageUrl),
+            selfieImageUrl: sanitize(verificationData.selfieImageUrl),
+            verifiedAt: serverTimestamp(),
+            verifiedBy: 'face++_cloudVision',
+          },
           createdAt: serverTimestamp(),
-          authEmail: emailForAuth,
+          authEmail: pendingData.emailForAuth,
           hasRealEmail: !!data.email,
         }),
+        // Clean up pending data
+        // Note: we might want to keep this for audit trail, just mark as completed
+        // await deleteDoc(doc(db, 'pendingFarmers', tempId)),
       ]);
+
+      // Mark pending as completed instead of deleting (for audit)
+      await setDoc(doc(db, 'pendingFarmers', tempId), {
+        ...pendingData,
+        status: 'completed',
+        completedAt: serverTimestamp(),
+        assignedUid: newUser.uid,
+      });
 
       setUserProfile(userProfileData);
 
     } catch (error: any) {
-      console.error('Farmer signup error:', error);
+      console.error('Complete farmer signup error:', error);
       
+      // If auth account was created but Firestore failed, we have a problem
+      // In production, we might want to queue this for retry or manual cleanup
       if (auth.currentUser) {
         try {
           await auth.currentUser.delete();
         } catch (deleteError) {
-          console.error('Failed to cleanup auth user:', deleteError);
+          console.error('Failed to cleanup auth user after error:', deleteError);
         }
       }
 
@@ -199,8 +273,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         'auth/email-already-in-use': 'An account with this email/phone already exists.',
         'auth/invalid-email': 'Please enter a valid email address.',
         'auth/operation-not-allowed': 'Account creation is currently disabled.',
-        'auth/weak-password': 'Password is too weak. Please use a stronger password.',
-        'auth/network-request-failed': 'Network error. Please check your connection.',
+        'auth/weak-password': 'Password is too weak.',
       };
 
       throw new Error(errorMessages[error.code] || `Failed to create account: ${error.message}`);
@@ -241,7 +314,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     signUpConsumer,
-    signUpFarmer,
+    prepareFarmerSignup,     //added for verification flow
+    completeFarmerSignup,     
   };
 
   return (

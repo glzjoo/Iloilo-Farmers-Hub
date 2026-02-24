@@ -8,6 +8,9 @@ const axios = require('axios');
 const vision = require('@google-cloud/vision');
 const sharp = require('sharp');
 const path = require('path');
+const { initializeApp, cert } = require('firebase-admin/app');
+const { getStorage } = require('firebase-admin/storage');
+const { getFirestore } = require('firebase-admin/firestore');
 
 const app = express();
 
@@ -22,6 +25,18 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
+
+// ==================== FIREBASE ADMIN SETUP ====================
+// Initialize Firebase Admin for storage access
+const serviceAccount = require(path.join(__dirname, process.env.FIREBASE_SERVICE_ACCOUNT || 'firebase-service-account.json'));
+
+initializeApp({
+  credential: cert(serviceAccount),
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'your-project.appspot.com'
+});
+
+const storage = getStorage();
+const db = getFirestore();
 
 // API credentials
 const FACEPP_API_KEY = process.env.FACEPP_API_KEY;
@@ -75,6 +90,36 @@ function incrementCounters() {
   rateLimits.monthly.count++;
 }
 
+// ==================== HELPER: Upload to Firebase Storage ====================
+async function uploadVerificationImage(buffer, filename, tempId) {
+  try {
+    const bucket = storage.bucket();
+    const path = `verifications/${tempId}/${filename}`;
+    const file = bucket.file(path);
+    
+    await file.save(buffer, {
+      metadata: {
+        contentType: 'image/jpeg',
+        metadata: {
+          tempId: tempId,
+          uploadedAt: new Date().toISOString()
+        }
+      }
+    });
+
+    await file.makePublic();
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${path}`;
+    
+    console.log(`✓ Uploaded: ${publicUrl}`);
+    return publicUrl;
+    
+  } catch (error) {
+    console.error('❌ Storage upload error:', error);
+    // Return null instead of undefined so client knows it failed
+    return null;
+  }
+}
+
 // ==================== MAIN VERIFICATION ENDPOINT ====================
 
 app.post('/api/verify-farmer-id', upload.fields([
@@ -91,8 +136,44 @@ app.post('/api/verify-farmer-id', upload.fields([
   }
 
   try {
-    const { userId, idType, idNumber } = req.body;
+    // CHANGED: Use tempId instead of userId
+    const { tempId, idType, idNumber } = req.body;
     
+    if (!tempId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tempId. Please complete registration form first.',
+        code: 'MISSING_TEMP_ID'
+      });
+    }
+
+    // Verify tempId exists in pendingFarmers
+    const pendingDoc = await db.collection('pendingFarmers').doc(tempId).get();
+    if (!pendingDoc.exists) {
+      return res.status(404).json({
+        success: false,
+        error: 'Registration session expired or not found. Please start over.',
+        code: 'SESSION_EXPIRED'
+      });
+    }
+
+    const pendingData = pendingDoc.data();
+    
+    // Check max attempts
+    if (pendingData.verificationAttempts >= pendingData.maxAttempts) {
+      return res.status(403).json({
+        success: false,
+        error: 'Maximum verification attempts reached. Please start registration again.',
+        code: 'MAX_ATTEMPTS'
+      });
+    }
+
+    // Increment attempt counter
+    await db.collection('pendingFarmers').doc(tempId).update({
+      verificationAttempts: (pendingData.verificationAttempts || 0) + 1,
+      lastAttemptAt: new Date()
+    });
+
     if (!req.files?.idImage || !req.files?.selfieImage) {
       return res.status(400).json({ 
         success: false,
@@ -101,7 +182,7 @@ app.post('/api/verify-farmer-id', upload.fields([
       });
     }
 
-    console.log(`🔍 Processing verification for farmer: ${userId}`);
+    console.log(`🔍 Processing verification for tempId: ${tempId}`);
 
     const idBuffer = req.files.idImage[0].buffer;
     const selfieBuffer = req.files.selfieImage[0].buffer;
@@ -112,7 +193,7 @@ app.post('/api/verify-farmer-id', upload.fields([
     // Run Face++ face comparison and Google Vision OCR in parallel
     const [faceResult, ocrResult] = await Promise.all([
       runFaceVerification(idBuffer, selfieBuffer),
-      runOCR(preprocessedBuffer, idBuffer) // Pass both preprocessed and original
+      runOCR(preprocessedBuffer, idBuffer)
     ]);
 
     incrementCounters();
@@ -134,10 +215,31 @@ app.post('/api/verify-farmer-id', upload.fields([
     // Require both face match AND valid ID data
     const isVerified = hasFaceMatch && hasIdData;
 
+    // Upload images to Firebase Storage
+    const [idCardUrl, selfieUrl] = await Promise.all([
+      uploadVerificationImage(idBuffer, `id-card-${Date.now()}.jpg`, tempId),
+      uploadVerificationImage(selfieBuffer, `selfie-${Date.now()}.jpg`, tempId)
+    ]);
+
+    // Debug log
+    console.log('Upload results:', { idCardUrl, selfieUrl });
+
+    // Update pending document with verification results
+    await db.collection('pendingFarmers').doc(tempId).update({
+      verificationResults: {
+        faceMatch: faceResult.faceMatch,
+        extractedData: extractedData,
+        verified: isVerified,
+        attemptedAt: new Date(),
+        idCardUrl: idCardUrl,
+        selfieUrl: selfieUrl
+      }
+    });
+
     const response = {
       success: true,
       verified: isVerified,
-      farmerId: userId,
+      tempId: tempId, // Return tempId for client to use
       verification: {
         faceMatch: faceResult.faceMatch,
         idData: extractedData,
@@ -150,6 +252,9 @@ app.post('/api/verify-farmer-id', upload.fields([
           threshold: faceThreshold
         }
       },
+      // Include image URLs for the client to pass to completeFarmerSignup
+      idCardUrl: idCardUrl || null,
+      selfieUrl: selfieUrl || null,
       rateLimit: {
         dailyRemaining: 300 - rateLimits.daily.count,
         monthlyRemaining: 900 - rateLimits.monthly.count
@@ -267,7 +372,7 @@ async function runFaceVerification(idBuffer, selfieBuffer) {
       rawConfidence: confidence,
       confidence: confidence > 80 ? 'High' : confidence > 60 ? 'Medium' : 'Low',
       threshold: 60,
-      matched: confidence > 60
+      passed: confidence > 60
     }
   };
 }
@@ -335,7 +440,7 @@ function delay(ms) {
 
 /*DONT CHANGE MY POSITION BASED ALGO, THIS IS THE BEST ALGO FOR PHILIPPINE ID EXTRACTION FOR NOW.
 I KNOW IT LOOKS MESSY BUT IT WORKS BETTER THAN ANYTHING ELSE OUT THERE. PLEASE DONT CHANGE IT. 
-USED POSITION BASED EXTRACTION FOR PHILIPPINE ID BECAUSE PHILIPPINE IDS HAVE VERY INCONSISTENT FORMATS AND LAYOUTS, 
+USED POSITION BASED EXTRACTION FOR PHILIPPINE IDS BECAUSE PHILIPPINE IDS HAVE VERY INCONSISTENT FORMATS AND LAYOUTS, 
 MAKING LABEL-BASED OR PATTERN-BASED EXTRACTION UNRELIABLE.
 
 I BEG YOU. I SWEAR ON MY LIFE. I SWEAR ON MY FAMILY. I SWEAR ON MY DOG. I SWEAR ON MY HONOR. I SWEAR ON MY GRAVE. 
@@ -813,6 +918,8 @@ app.get('/api/status', (req, res) => {
     services: {
       facepp: !!FACEPP_API_KEY,
       vision: !!visionClient,
+      firebase: !!db,
+      storage: !!storage,
       algorithm: 'position-based-extraction-v1'
     }
   });
@@ -822,7 +929,7 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    features: ['Face++ Face Match', 'Google Vision OCR', 'Image Preprocessing', 'Position-Based Philippine ID Extraction']
+    features: ['Face++ Face Match', 'Google Vision OCR', 'Image Preprocessing', 'Position-Based Philippine ID Extraction', 'Firebase Storage', 'Firestore Integration']
   });
 });
 
@@ -837,6 +944,7 @@ app.listen(PORT, () => {
 ╠════════════════════════════════════════════════╣
 ║   Face++ API: ${FACEPP_API_KEY ? '✓ Connected' : '✗ Missing'}              ║
 ║   Google Vision: ${process.env.GOOGLE_VISION_KEY_FILE ? '✓ Connected' : '✗ Missing'}           ║
+║   Firebase Admin: ${db ? '✓ Connected' : '✗ Missing'}          ║
 ║   Algorithm: Position-Based Philippine ID    ║
 ║   Threshold: 60% (face match)                ║
 ╚════════════════════════════════════════════════╝

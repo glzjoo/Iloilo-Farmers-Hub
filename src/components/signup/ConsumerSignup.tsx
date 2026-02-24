@@ -154,7 +154,7 @@ export default function ConsumerSignup() {
           {/* Email with Enhanced Validation */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Email <span className="text-red-500">*</span>
+              Email <span className="text-gray-400 text-xs italic">(Optional)</span>
             </label>
             <Controller
               name="email"
