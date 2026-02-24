@@ -1,6 +1,5 @@
 import logo from '../../assets/icons/logo.png';
-import cartIcon from '../../assets/icons/shopping-cart.svg';
-import accountIcon from '../../assets/icons/account-icon.svg';
+import savedItemsIcon from '../../assets/icons/saved-items.png';
 import languageIcon from '../../assets/icons/language-logo.svg';
 import { Link, useLocation } from 'react-router-dom';
 import SearchBar from '../Search/SearchBar';
@@ -21,7 +20,6 @@ export default function Navbar() {
                         <span className="text-xs">▾</span>
                     </button>
                 </div>
-
                 <div className="max-w-7xl mx-auto flex items-center justify-between px-6 pb-4 pt-1 gap-4">
                     <Link to="/" className="flex items-center gap-2 text-white no-underline shrink-0">
                         <img src={logo} className="w-11 h-11 rounded-full object-cover" />
@@ -32,12 +30,10 @@ export default function Navbar() {
 
                     <div className="flex items-center gap-2 shrink-0">
                         <button className="bg-transparent border-none cursor-pointer p-1">
-                            <Link to="/farmer-signup" className="flex items-center gap-2 p-1 no-underline">
-                                <img src={cartIcon} className="w-8 h-8 brightness-0 invert" />
+                            <Link to="/cart" className="flex items-center gap-2 p-1 no-underline">
+                                <img src={savedItemsIcon} className="w-6 h-6 brightness-0 invert" />
                             </Link>
                         </button>
-
-                        <img src={accountIcon} className="w-8 h-8 brightness-0 invert" />
                         <Link to="/farmer-signup" className="no-underline">
                             <span className="text-white text-base font-medium ml-1">Sign Up</span>
                         </Link>
