@@ -44,7 +44,7 @@ export default function FarmerSignup() {
     setFirebaseError(null);
     
     try {
-      // CHANGED: Store data temporarily, get tempId for verification flow
+      // Store data temporarily, get tempId for verification flow
       const tempId = await prepareFarmerSignup(data);
       
       // Navigate to ID verification with tempId and form data
@@ -94,10 +94,10 @@ export default function FarmerSignup() {
           </div>
         )}
 
-        {/* Info Banner */}
+        {/* Info Banner - UPDATED */}
         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-blue-700 text-sm font-primary">
-            <span className="font-bold">Next Step:</span> After submitting, you'll need to verify your identity using your ID card and a selfie. Your account will be created after successful verification.
+            <span className="font-bold">Next Step:</span> After submitting, you'll need to verify your identity using your ID card and a <span className="font-semibold">live camera selfie</span> (photo uploads not allowed). Your account will be created after successful verification.
           </p>
         </div>
 

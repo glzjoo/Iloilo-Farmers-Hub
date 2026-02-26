@@ -13,9 +13,34 @@ export default function NavbarLoggedIn() {
     const [showDropdown, setShowDropdown] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { user, userProfile, logout, loading } = useAuth();
+
     const linkClass = (path: string) =>
         `no-underline text-sm font-semibold transition-colors ${location.pathname === path ? 'text-primary' : 'text-gray-700 hover:text-green-700'}`;
+
+    // Get display data from userProfile
+    const displayName = userProfile 
+        ? `${userProfile.firstName} ${userProfile.lastName}`
+        : user?.displayName || 'Loading...';
+    
+    // Show real email if provided, otherwise show phone number (always available)
+    const contactInfo = userProfile?.email || userProfile?.phoneNo || '';
+    
+    const initial = userProfile?.firstName?.charAt(0).toUpperCase() 
+        || user?.displayName?.charAt(0).toUpperCase() 
+        || '?';
+    
+    const photoUrl = userProfile?.profileImage;
+
+    if (loading) {
+        return (
+            <header className="w-full sticky top-0 z-50">
+                <nav className="bg-primary w-full h-20 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                </nav>
+            </header>
+        );
+    }
 
     return (
         <header className="w-full sticky top-0 z-50">
@@ -49,12 +74,18 @@ export default function NavbarLoggedIn() {
                                 onClick={() => setShowDropdown(!showDropdown)}
                                 className="flex items-center gap-2 bg-transparent border-none cursor-pointer text-white"
                             >
-                                <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
-                                    <span className="text-primary font-bold text-sm">B</span>
+                                <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center overflow-hidden">
+                                    {photoUrl ? (
+                                        <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-primary font-bold text-sm">{initial}</span>
+                                    )}
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-sm font-semibold text-white leading-tight">Bea trice</p>
-                                    <p className="text-xs text-green-200 leading-tight">bea4@gmail.com</p>
+                                    <p className="text-sm font-semibold text-white leading-tight">
+                                        {displayName}
+                                    </p>
+                                    <p className="text-xs text-green-200 leading-tight">{contactInfo}</p>
                                 </div>
                                 <span className="text-white text-xs">▾</span>
                             </button>
@@ -64,12 +95,16 @@ export default function NavbarLoggedIn() {
                                 <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-lg overflow-hidden z-50">
 
                                     <div className="bg-primary p-4 flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0">
-                                            <span className="text-primary font-bold">B</span>
+                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                            {photoUrl ? (
+                                                <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="text-primary font-bold">{initial}</span>
+                                            )}
                                         </div>
                                         <div>
-                                            <p className="text-white font-semibold text-sm">Bea trice</p>
-                                            <p className="text-green-200 text-xs">bea4@gmail.com</p>
+                                            <p className="text-white font-semibold text-sm">{displayName}</p>
+                                            <p className="text-green-200 text-xs">{contactInfo}</p>
                                         </div>
                                     </div>
 

@@ -12,25 +12,79 @@ import { auth, db } from '../lib/firebase';
 import type { UserProfile, Consumer, Farmer } from '../types';
 import type { ConsumerSignupData, FarmerSignupData } from '../lib/validations';
 
+// Extended profile that combines auth + role-specific data
+interface ExtendedUserProfile extends UserProfile {
+  firstName?: string;
+  lastName?: string;
+  phoneNo?: string;
+  profileImage?: string;
+  
+  // For farmers
+  farmName?: string; 
+  farmAddress?: string; 
+  farmType?: string; 
+  verificationStatus?: string; 
+}
+
 interface AuthContextType {
   user: FirebaseUser | null;
-  userProfile: UserProfile | null;
+  userProfile: ExtendedUserProfile | null;
   loading: boolean;
   isLoggedIn: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   signUpConsumer: (data: ConsumerSignupData) => Promise<void>;
-  // Changed: Now returns tempId for verification flow
   prepareFarmerSignup: (data: FarmerSignupData) => Promise<string>;
   completeFarmerSignup: (tempId: string, verificationData: any) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userProfile, setUserProfile] = useState<ExtendedUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Function to fetch complete profile based on role
+  const fetchCompleteProfile = async (firebaseUser: FirebaseUser, baseProfile: UserProfile): Promise<ExtendedUserProfile> => {
+    try {
+      if (baseProfile.role === 'farmer') {
+        const farmerDoc = await getDoc(doc(db, 'farmers', firebaseUser.uid));
+        if (farmerDoc.exists()) {
+          const farmerData = farmerDoc.data() as Farmer;
+          return {
+            ...baseProfile,
+            firstName: farmerData.firstName,
+            lastName: farmerData.lastName,
+            profileImage: farmerData.profileImage,
+            phoneNo: farmerData.phoneNo,
+            farmName: farmerData.farmName,
+            farmAddress: farmerData.farmAddress,
+            farmType: farmerData.farmType,
+            verificationStatus: farmerData.verificationStatus,
+          };
+        }
+      } else if (baseProfile.role === 'consumer') {
+        const consumerDoc = await getDoc(doc(db, 'consumers', firebaseUser.uid));
+        if (consumerDoc.exists()) {
+          const consumerData = consumerDoc.data() as Consumer;
+          return {
+            ...baseProfile,
+            firstName: consumerData.firstName,
+            lastName: consumerData.lastName,
+            profileImage: consumerData.profileImage,
+            phoneNo: consumerData.phoneNo,
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching role-specific profile:', error);
+    }
+    
+    // Fallback to base profile if role-specific fetch fails
+    return baseProfile;
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -38,9 +92,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (firebaseUser) {
         try {
+          // First get base user profile to check role
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
-            setUserProfile(userDoc.data() as UserProfile);
+            const baseProfile = userDoc.data() as UserProfile;
+            // Then fetch complete profile with role-specific data
+            const completeProfile = await fetchCompleteProfile(firebaseUser, baseProfile);
+            setUserProfile(completeProfile);
           }
         } catch (error) {
           console.error('Error fetching user profile:', error);
@@ -55,13 +113,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
+  // Manual refresh function - call this after profile updates
+  const refreshProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const baseProfile = userDoc.data() as UserProfile;
+        const completeProfile = await fetchCompleteProfile(user, baseProfile);
+        setUserProfile(completeProfile);
+      }
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+    }
+  };
+
   const signUpConsumer = async (data: ConsumerSignupData): Promise<void> => {
     try {
-      const emailForAuth = data.email || `${data.phoneNo}@ifh.user`;
+      // Generate internal auth email from phone number (Firebase Auth requires email format)
+      // This is only for Firebase Auth internal use, not stored in Firestore
+      const authEmail = `${data.phoneNo.replace(/\D/g, '')}@ifh.user`;
       
       const userCredential = await createUserWithEmailAndPassword(
         auth,
-        emailForAuth,
+        authEmail,
         data.password
       );
 
@@ -73,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const userProfileData: UserProfile = {
         uid: newUser.uid,
-        email: data.email || null,
+        email: data.email || null, // Only real email if provided
         displayName: `${data.firstName} ${data.lastName}`,
         role: 'consumer',
         createdAt: new Date(),
@@ -99,12 +175,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ...consumerData,
           interest: data.interest,
           createdAt: serverTimestamp(),
-          authEmail: emailForAuth,
-          hasRealEmail: !!data.email,
+          // REMOVED: authEmail and hasRealEmail fields
         }),
       ]);
 
-      setUserProfile(userProfileData);
+      // Set complete profile immediately after signup
+      setUserProfile({
+        ...userProfileData,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        profileImage: '',
+      });
 
     } catch (error: any) {
       console.error('Consumer signup error:', error);
@@ -118,8 +199,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const errorMessages: Record<string, string> = {
-        'auth/email-already-in-use': 'An account with this email/phone already exists.',
-        'auth/invalid-email': 'Please enter a valid email address.',
+        'auth/email-already-in-use': 'An account with this phone number already exists.',
+        'auth/invalid-email': 'Invalid phone number format.',
         'auth/operation-not-allowed': 'Account creation is currently disabled.',
         'auth/weak-password': 'Password is too weak. Please use a stronger password.',
         'auth/network-request-failed': 'Network error. Please check your connection.',
@@ -129,25 +210,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  /**
-   * NEW: Stage 1 - Store farmer data temporarily, NO account created yet
-   * Returns tempId to be used after verification
-   */
   const prepareFarmerSignup = async (data: FarmerSignupData): Promise<string> => {
     try {
-      // Check if email/phone already exists in verified farmers
-      // This prevents duplicate registrations
-      const emailForAuth = data.email || `${data.phoneNo}@ifh.farmer`;
+      // Generate internal auth email from phone number (Firebase Auth requires email format)
+      // This is only for Firebase Auth internal use, not stored in Firestore
+      const authEmail = `${data.phoneNo.replace(/\D/g, '')}@ifh.farmer`;
       
-      // Create temp entry in pendingFarmers collection
-      const tempId = crypto.randomUUID(); // Or use Firestore auto-ID
+      const tempId = crypto.randomUUID();
       
       const pendingData = {
         tempId,
         farmerData: data,
-        emailForAuth,
+        authEmail, // Keep temporarily for account creation after verification
         createdAt: serverTimestamp(),
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hour expiry
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         verificationAttempts: 0,
         maxAttempts: 3,
       };
@@ -161,15 +237,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  /**
-   * NEW: Stage 2 - Create actual account after successful verification
-   */
   const completeFarmerSignup = async (
     tempId: string, 
     verificationData: any
   ): Promise<void> => {
     try {
-      // Retrieve pending data
       const pendingDoc = await getDoc(doc(db, 'pendingFarmers', tempId));
       
       if (!pendingDoc.exists()) {
@@ -179,10 +251,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const pendingData = pendingDoc.data();
       const data: FarmerSignupData = pendingData.farmerData;
 
-      // Now create the actual Firebase Auth account
+      // Use the temporary authEmail for Firebase Auth account creation
       const userCredential = await createUserWithEmailAndPassword(
         auth,
-        pendingData.emailForAuth,
+        pendingData.authEmail,
         data.password
       );
 
@@ -194,7 +266,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const userProfileData: UserProfile = {
         uid: newUser.uid,
-        email: data.email || null,
+        email: data.email || null, // Only real email if provided
         displayName: `${data.firstName} ${data.lastName}`,
         role: 'farmer',
         createdAt: new Date(),
@@ -206,7 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastName: data.lastName,
         phoneNo: data.phoneNo,
         email: data.email || null,
-        idType: verificationData.idType || 'phNationalId', // Default or from verification
+        idType: verificationData.idType || 'phNationalId',
         cardAddress: verificationData.extractedAddress || data.farmAddress,
         profileImage: '',
         createdAt: new Date(),
@@ -238,15 +310,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             verifiedBy: 'face++_cloudVision',
           },
           createdAt: serverTimestamp(),
-          authEmail: pendingData.emailForAuth,
-          hasRealEmail: !!data.email,
+          // REMOVED: authEmail and hasRealEmail fields
         }),
-        // Clean up pending data
-        // Note: we might want to keep this for audit trail, just mark as completed
-        // await deleteDoc(doc(db, 'pendingFarmers', tempId)),
       ]);
 
-      // Mark pending as completed instead of deleting (for audit)
       await setDoc(doc(db, 'pendingFarmers', tempId), {
         ...pendingData,
         status: 'completed',
@@ -254,13 +321,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         assignedUid: newUser.uid,
       });
 
-      setUserProfile(userProfileData);
+      // Set complete profile immediately after signup
+      setUserProfile({
+        ...userProfileData,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        profileImage: '',
+        farmName: data.farmName,
+        farmAddress: data.farmAddress,
+        farmType: data.farmType,
+        verificationStatus: 'verified',
+      });
 
     } catch (error: any) {
       console.error('Complete farmer signup error:', error);
       
-      // If auth account was created but Firestore failed, we have a problem
-      // In production, we might want to queue this for retry or manual cleanup
       if (auth.currentUser) {
         try {
           await auth.currentUser.delete();
@@ -270,8 +345,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const errorMessages: Record<string, string> = {
-        'auth/email-already-in-use': 'An account with this email/phone already exists.',
-        'auth/invalid-email': 'Please enter a valid email address.',
+        'auth/email-already-in-use': 'An account with this phone number already exists.',
+        'auth/invalid-email': 'Invalid phone number format.',
         'auth/operation-not-allowed': 'Account creation is currently disabled.',
         'auth/weak-password': 'Password is too weak.',
       };
@@ -280,13 +355,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = async (identifier: string, password: string): Promise<void> => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      let authEmail = identifier;
+      
+      // If identifier looks like a phone number, convert to auth email format
+      const phoneRegex = /^(\+63|0)\d{10}$/;
+      if (phoneRegex.test(identifier.replace(/\s/g, ''))) {
+        const normalizedPhone = identifier.replace(/\s/g, '').replace(/^0/, '+63');
+        authEmail = `${normalizedPhone.replace('+', '')}@ifh.user`;
+      }
+
+      await signInWithEmailAndPassword(auth, authEmail, password);
     } catch (error: any) {
       const errorMessages: Record<string, string> = {
-        'auth/invalid-credential': 'Invalid email or password.',
-        'auth/user-not-found': 'No account found with this email.',
+        'auth/invalid-credential': 'Invalid phone number or password.',
+        'auth/user-not-found': 'No account found with this phone number.',
         'auth/wrong-password': 'Incorrect password.',
         'auth/too-many-requests': 'Too many failed attempts. Please try again later.',
         'auth/network-request-failed': 'Network error. Please check your connection.',
@@ -314,8 +398,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     signUpConsumer,
-    prepareFarmerSignup,     //added for verification flow
-    completeFarmerSignup,     
+    prepareFarmerSignup,
+    completeFarmerSignup,
+    refreshProfile,
   };
 
   return (

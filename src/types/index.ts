@@ -6,6 +6,23 @@ export interface UserProfile {
     createdAt: Date;
 }
 
+// Extended profile that combines auth + role-specific data
+// This is what's actually returned by useAuth() after the context fetches complete data
+export interface ExtendedUserProfile extends UserProfile {
+    firstName?: string;
+    lastName?: string;
+    profileImage?: string;
+    phoneNo?: string;
+    // Farmer-specific fields
+    farmName?: string;
+    farmAddress?: string;
+    farmType?: string;
+    verificationStatus?: 'pending' | 'verified' | 'rejected';
+    // Consumer-specific fields
+    interest?: string;
+    address?: string; // Consumer's address (different from cardAddress)
+}
+
 export interface Farmer {
     uid: string;
     firstName: string;
@@ -16,12 +33,14 @@ export interface Farmer {
     cardAddress: string;
     profileImage?: string;
     createdAt: Date;
-    // New verification fields
+    // verification fields
     verificationStatus?: 'pending' | 'verified' | 'rejected';
     verificationData?: VerificationData;
     farmName?: string;
     farmAddress?: string;
     farmType?: string;
+    // lastPhotoChange for the 1-week cooldown feature
+    lastPhotoChange?: Date | { toDate(): Date } | any; // Firestore timestamp
 }
 
 export interface Consumer {
@@ -34,7 +53,10 @@ export interface Consumer {
     profileImage?: string;
     createdAt: Date;
     interest?: string;
+    // lastPhotoChange for consistency (if consumers also get photo upload)
+    lastPhotoChange?: Date | { toDate(): Date } | any;
 }
+
 
 export interface Product {
     id: string;
@@ -48,11 +70,22 @@ export interface Product {
     reviewCount?: number;
 }
 
-// NEW: Pending farmer data for verification-first flow
+
 export interface PendingFarmer {
     tempId: string;
-    farmerData: FarmerSignupData; // From validations.ts
-    emailForAuth: string;
+    farmerData: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        farmName: string;
+        farmAddress: string;
+        phoneNo: string;
+        farmType: string;
+        password: string;
+        confirmPassword: string;
+        agreeToTerms: boolean;
+    };
+    authEmail: string;
     createdAt: Date;
     expiresAt: Date;
     verificationAttempts: number;
@@ -62,7 +95,7 @@ export interface PendingFarmer {
     assignedUid?: string;
 }
 
-// NEW: Verification data stored after Face++/Cloud Vision
+// Verification data stored after Face++/Cloud Vision
 export interface VerificationData {
     faceMatchScore: number;
     faceMatchPassed: boolean;
@@ -76,7 +109,7 @@ export interface VerificationData {
     idType: string;
 }
 
-// NEW: Face++ API response types
+// Face++ API response types
 export interface FacePlusPlusResult {
     confidence?: number;
     thresholds?: {
@@ -89,7 +122,7 @@ export interface FacePlusPlusResult {
     error_message?: string;
 }
 
-// NEW: Cloud Vision OCR result
+// Cloud Vision OCR result
 export interface CloudVisionResult {
     fullTextAnnotation?: {
         text: string;
@@ -103,6 +136,3 @@ export interface CloudVisionResult {
         code: number;
     };
 }
-
-// Import from validations to avoid circular dependency
-import type { FarmerSignupData } from '../lib/validations';
