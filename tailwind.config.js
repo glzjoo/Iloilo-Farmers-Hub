@@ -9,6 +9,7 @@ export default {
       colors: {
         primary: '#2E7D32',  // use text-primary
         dark: '#1E1E1E',  // use text-dark
+        secondary: '#56BB5B',
       },
       fontFamily: {
         heading: ['"Merriweather Sans"', 'sans-serif'], // use font-heading

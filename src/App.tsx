@@ -18,6 +18,8 @@ import NavbarLoggedIn from './components/layout/NavbarLoggedIn';
 import ConsumerSignupPage from './pages/ConsumerSignupPage';
 import ProfileInfoModal from './pages/ProfileInfoModal';
 import IDVerificationPage from './pages/IDVerificationPage';
+import NavbarLoggedInFarmer from './components/layout/NavbarLoggedInFarmer';
+import SellModalPage from './pages/SellModalPage';
 
 function AppLayout() {
     const location = useLocation();
@@ -25,7 +27,8 @@ function AppLayout() {
     const isShopPage = location.pathname === '/shop';
 
     const getNavbar = () => {
-        if (isLoggedIn) return <NavbarLoggedIn />;
+        //write condition here next time for navbarloggedin if user or famer
+        if (isLoggedIn) return <NavbarLoggedInFarmer />;
         if (isShopPage) return <NavbarWithFilter />;
         return <Navbar />;
     };
@@ -48,6 +51,7 @@ function AppLayout() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/otp" element={<OtpPage />} />
                 <Route path="/profile" element={<ProfileInfoModal />} />
+                <Route path="/sell" element={<SellModalPage />} />
             </Routes>
             <Footer />
         </div>
