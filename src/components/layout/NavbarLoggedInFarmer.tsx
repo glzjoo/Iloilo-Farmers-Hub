@@ -7,6 +7,8 @@ import accountSettingsIcon from '../../assets/icons/account-settings.svg';
 import logOutIcon from '../../assets/icons/log-out.svg';
 import { useAuth } from '../../context/AuthContext';
 import SearchBar from '../Search/SearchBar';
+import mylisting from '../../assets/icons/mylisting.svg';
+import settingIcon from '../../assets/icons/settings.svg';
 
 export default function NavbarLoggedInFarmer() {
     const [showDropdown, setShowDropdown] = useState(false);
@@ -109,27 +111,44 @@ export default function NavbarLoggedInFarmer() {
 
                                     {/* Dropdown items */}
                                     <div className="py-2">
-                                        <button className="flex items-center gap-3 w-full px-4 py-3 bg-transparent border-none cursor-pointer hover:bg-gray-50 text-left">
-                                            <img src={messagesIcon} className="w-5 h-5" />
-                                            <Link to="/messages">
-                                                <p className="text-sm font-semibold text-black">Messages</p>
-                                                <p className="text-xs text-gray-400">4 unread messages</p>
-                                            </Link>
-                                        </button>
-                                        <Link to="/profile" className="flex items-center gap-3 w-full px-4 py-3 no-underline hover:bg-gray-50 text-left">
-                                            <img src={accountSettingsIcon} className="w-5 h-5" />
+                                        <Link to="/profile" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
+                                            <img src={accountSettingsIcon} className="w-7 h-7" />
                                             <div>
-                                                <p className="text-sm font-semibold text-black">Account Setting</p>
-                                                <p className="text-xs text-gray-400">Manage your profile</p>
+                                                <p className="text-base font-bold text-black">My Account</p>
+
+                                                {/* show email here */}
+                                                <p className="text-xs text-gray-400">bea4@gmail.com</p>
                                             </div>
                                         </Link>
+                                        <Link to="/my-listings" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
+                                            <img src={mylisting} className="w-7 h-7" />
+                                            <div>
+                                                <p className="text-base font-bold text-black">My Listing</p>
+                                                <p className="text-xs text-gray-400">View/Edit your listings</p>
+                                            </div>
+                                        </Link>
+                                        <Link to="/messages" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
+                                            <img src={messagesIcon} className="w-7 h-7" />
+                                            <div>
+                                                <p className="text-base font-bold text-black">Messages</p>
+                                                {/* show number of unread messages here */}
+                                                <p className="text-xs text-gray-400">No unread messages</p>
+                                            </div>
+                                        </Link>
+                                        <Link to="/settings" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
+                                            <img src={settingIcon} className="w-7 h-7" />
+                                            <div>
+                                                <p className="text-base font-bold text-black">Settings</p>
+                                            </div>
+                                        </Link>
+
                                         <button
                                             onClick={() => { logout(); navigate('/'); setShowDropdown(false); }}
-                                            className="flex items-center gap-3 w-full px-4 py-3 bg-transparent border-none cursor-pointer hover:bg-gray-50 text-left"
+                                            className="flex items-center gap-4 w-full px-5 py-3.5 bg-transparent border-none cursor-pointer hover:bg-gray-50 text-left"
                                         >
-                                            <img src={logOutIcon} className="w-5 h-5" />
+                                            <img src={logOutIcon} className="w-7 h-7" />
                                             <div>
-                                                <p className="text-sm font-semibold text-red-500">Log Out</p>
+                                                <p className="text-base font-bold text-red-500">Log out</p>
                                                 <p className="text-xs text-red-400">Sign out of your account</p>
                                             </div>
                                         </button>

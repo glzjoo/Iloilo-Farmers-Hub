@@ -65,9 +65,12 @@ export interface Product {
     image: string;
     category: string;
     farmerId: string;
-    description?: string;
-    rating?: number;
-    reviewCount?: number;
+    description: string;
+    rating: number;
+    reviewCount: number;
+    stock: string;
+    unit: string;
+    status: 'active' | 'inactive';
 }
 
 
