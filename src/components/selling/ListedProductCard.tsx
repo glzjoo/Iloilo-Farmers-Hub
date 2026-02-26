@@ -43,8 +43,10 @@ export default function ListedProductCard({ product, onEdit, onDelete }: ListedP
                     Stock: <span className="text-primary font-semibold">{product.stock}</span>
                 </p>
 
+                {/* Actions row */}
                 <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center gap-2">
+                        {/* Delete button */}
                         <button
                             onClick={() => onDelete?.(product)}
                             className="w-9 h-9 flex items-center justify-center border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-red-50 transition-colors"
@@ -56,7 +58,7 @@ export default function ListedProductCard({ product, onEdit, onDelete }: ListedP
                         {/* Edit button */}
                         <button
                             onClick={() => onEdit?.(product)}
-                            className="flex items-center gap-2 px-6 py-1.5 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-50 transition-colors text-sm"
+                            className="flex items-center gap-2 px-14 py-1.5 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-50 transition-colors text-sm"
                         >
                             <img src={edit} alt="" className="w-4 h-4" />
                             Edit
@@ -69,6 +71,6 @@ export default function ListedProductCard({ product, onEdit, onDelete }: ListedP
                     </span>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

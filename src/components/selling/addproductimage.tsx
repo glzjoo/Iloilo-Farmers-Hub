@@ -23,9 +23,9 @@ export default function AddProductImage() {
                 {/* Image preview */}
                 <div className="w-full border border-gray-300 rounded-lg bg-gray-300 flex items-center justify-center min-h-[300px] w-[300px] overflow-hidden">
                     {preview ? (
-                        <img src={preview} alt="Product preview" className="w-full h-full object-cover rounded-lg" />
+                        <img src={preview} className="w-full h-full object-cover rounded-lg" />
                     ) : (
-                        <img src={addImage} alt="Add Image" className="w-12 h-12 opacity-40" />
+                        <img src={addImage} className="w-12 h-12 opacity-40" />
                     )}
                 </div>
 
