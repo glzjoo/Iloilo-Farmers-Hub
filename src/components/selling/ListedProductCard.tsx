@@ -55,7 +55,7 @@ export default function ListedProductCard({ product, onEdit, onDelete }: ListedP
                             <img src={deleteIcon} alt="Delete" className="w-4 h-4" />
                         </button>
 
-                        {/* Edit button */}
+                        {/* Edit */}
                         <button
                             onClick={() => onEdit?.(product)}
                             className="flex items-center gap-2 px-14 py-1.5 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-50 transition-colors text-sm"

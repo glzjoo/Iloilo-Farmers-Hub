@@ -2,9 +2,13 @@ import { useRef, useState } from "react";
 import addImage from "../../assets/icons/add-image.svg";
 import selectImageUpload from "../../assets/icons/select-image-upload.svg";
 
-export default function AddProductImage() {
+interface AddProductImageProps {
+    initialImage?: string;
+}
+
+export default function AddProductImage({ initialImage }: AddProductImageProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [preview, setPreview] = useState<string | null>(null);
+    const [preview, setPreview] = useState<string | null>(initialImage || null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -18,10 +22,8 @@ export default function AddProductImage() {
     return (
         <div className="flex flex-col items-center">
             <div className="w-full">
-                <label className="block text-sm font-semibold text-gray-800 mb-1">Add Image</label>
-
                 {/* Image preview */}
-                <div className="w-full border border-gray-300 rounded-lg bg-gray-300 flex items-center justify-center min-h-[300px] w-[300px] overflow-hidden">
+                <div className="w-full border border-gray-300 rounded-lg bg-gray-300 flex items-center justify-center h-[250px] overflow-hidden">
                     {preview ? (
                         <img src={preview} className="w-full h-full object-cover rounded-lg" />
                     ) : (
@@ -29,7 +31,7 @@ export default function AddProductImage() {
                     )}
                 </div>
 
-                {/* Select image button */}
+                {/* Select/Change image button */}
                 <div className="flex items-center gap-2 mt-3">
                     <button
                         type="button"
@@ -37,7 +39,7 @@ export default function AddProductImage() {
                         className="flex-1 flex items-center justify-center gap-2 py-2 border border-gray-300 rounded-md text-sm cursor-pointer hover:bg-gray-50 transition-colors"
                     >
                         <img src={selectImageUpload} alt="" className="w-4 h-4" />
-                        Select Image
+                        {preview ? "Change Image" : "Select Image"}
                     </button>
                     <span className="text-xs text-gray-400 whitespace-nowrap">Max Size: 5 MB</span>
                     <input

@@ -1,7 +1,9 @@
 import mylisting from '../../assets/icons/mylisting.svg';
 import searchIcon from '../../assets/icons/search.svg';
 import ListedProductCard from './ListedproductCard';
+import EditProductModal from './EditProductModal';
 import type { Product } from '../../types';
+import { useState } from 'react';
 import okra from '../../assets/images/item-pictures/okra.png';
 import kiwi from '../../assets/images/kiwi.png';
 import carrots from '../../assets/images/carrots.png';
@@ -95,9 +97,10 @@ const mockProducts: Product[] = [
 ];
 
 export default function ListingProducts() {
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
     const handleEdit = (product: Product) => {
-        // TODO: Navigate to edit page or open edit modal
-        console.log('Edit product:', product.id);
+        setEditingProduct(product);
     };
 
     const handleDelete = (product: Product) => {
@@ -122,7 +125,7 @@ export default function ListingProducts() {
 
             <h2 className="text-xl font-semibold mt-4 mb-6">Your listed products</h2>
 
-            {/* Products*/}
+            {/* Products */}
             <div className="grid grid-cols-3 gap-6">
                 {mockProducts.map((product) => (
                     <ListedProductCard
@@ -133,6 +136,14 @@ export default function ListingProducts() {
                     />
                 ))}
             </div>
+
+            {/* Edit Product Modal */}
+            {editingProduct && (
+                <EditProductModal
+                    product={editingProduct}
+                    onClose={() => setEditingProduct(null)}
+                />
+            )}
         </section>
     );
 }

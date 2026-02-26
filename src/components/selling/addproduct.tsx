@@ -1,4 +1,4 @@
-import AddProductImage from "./addproductimage";
+import AddProductImage from "./AddProductImage";
 
 export default function AddProduct() {
     const inputClass = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary";
