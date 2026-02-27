@@ -1,19 +1,10 @@
 import { z } from 'zod';
 
-// Name validation - letters, spaces, and common name characters only
 const nameRegex = /^[a-zA-Z\s'-]+$/;
-
-// Farm name validation - allow letters, numbers, spaces, and common business characters
 const farmNameRegex = /^[a-zA-Z0-9\s&'-]+$/;
+const phoneRegex = /^(09\d{9}|\+63\d{10})$/;
 
-const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-// Optional email - validates format only if not empty
-const optionalEmail = z.union([
-  z.string().regex(emailRegex, 'e.g. sample@gmail.com').optional(),
-  z.literal(''),
-  z.undefined()
-]).optional();
-
+// Consumer signup schema
 export const consumerSignupSchema = z.object({
   firstName: z
     .string()
@@ -29,7 +20,10 @@ export const consumerSignupSchema = z.object({
     .regex(nameRegex, 'Last name can only contain letters, spaces, hyphens, and apostrophes')
     .transform((val) => val.trim()),
   
-  email: optionalEmail,
+  email: z.string()
+    .email('e.g. sample@gmail.com')
+    .optional()
+    .or(z.literal('')),
  
   address: z
     .string()
@@ -39,31 +33,19 @@ export const consumerSignupSchema = z.object({
   
   phoneNo: z
     .string()
-    .regex(/^09\d{9}$/, 'e.g., 09123456789'),
+    .regex(phoneRegex, 'e.g., 09123456789 or +639123456789'),
   
   interest: z.enum(['Rice', 'Corn', 'Vegetables', 'Fruits', 'Livestock', 'Poultry', 'Fishery', 'Other']),
-  
-  password: z
-    .string()
-    .min(8, 'must be at least 8 characters')
-    .regex(/[A-Z]/, 'must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'must contain at least one special character'),
-  
-  confirmPassword: z.string(),
-  
-  agreeToTerms: z.boolean().refine((val) => val === true, {
-    message: 'You must agree to the Terms & Conditions',
+
+  agreeToTerms: z.boolean().refine(Boolean, {
+    message: 'You must agree to the terms and conditions',
   }),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-});
+  
+}).strict();
 
 export type ConsumerSignupData = z.infer<typeof consumerSignupSchema>;
 
-// Farmer signup schema
+// Farmer signup schema - WITH agreeToTerms
 export const farmerSignupSchema = z.object({
   firstName: z
     .string()
@@ -79,7 +61,10 @@ export const farmerSignupSchema = z.object({
     .regex(nameRegex, 'Last name can only contain letters, spaces, hyphens, and apostrophes')
     .transform((val) => val.trim()),
   
-  email: optionalEmail,
+  email: z.string()
+    .email('e.g. sample@gmail.com')
+    .optional()
+    .or(z.literal('')),
   
   farmName: z
     .string()
@@ -96,26 +81,26 @@ export const farmerSignupSchema = z.object({
   
   phoneNo: z
     .string()
-    .regex(/^09\d{9}$/, 'e.g., 09123456789'),
+    .regex(phoneRegex, 'e.g., 09123456789 or +639123456789'),
   
   farmType: z.enum(['Rice', 'Corn', 'Vegetables', 'Fruits', 'Livestock', 'Poultry', 'Fishery', 'Other']),
   
-  password: z
-    .string()
-    .min(8, 'must be at least 8 characters')
-    .regex(/[A-Z]/, 'must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'must contain at least one special character'),
-  
-  confirmPassword: z.string(),
-  
-  agreeToTerms: z.boolean().refine((val) => val === true, {
-    message: 'You must agree to the Terms & Conditions',
+  agreeToTerms: z.boolean().refine(Boolean, {
+    message: 'You must agree to the terms and conditions',
   }),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-});
+  
+}).strict();
 
 export type FarmerSignupData = z.infer<typeof farmerSignupSchema>;
+
+// OTP validation schemas
+export const phoneSchema = z.object({
+  phoneNo: z.string().regex(phoneRegex, 'e.g., 09123456789 or +639123456789'),
+});
+
+export const otpSchema = z.object({
+  otp: z.string().regex(/^\d{6}$/, 'OTP must be 6 digits'),
+});
+
+export type PhoneData = z.infer<typeof phoneSchema>;
+export type OTPData = z.infer<typeof otpSchema>;

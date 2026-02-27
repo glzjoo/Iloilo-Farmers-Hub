@@ -1,16 +1,16 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
 import { 
   onAuthStateChanged, 
   signOut,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
+  signInWithPhoneNumber,
   updateProfile,
-  type User as FirebaseUser 
+  type User as FirebaseUser,
+  type ConfirmationResult,
+  type ApplicationVerifier 
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import type { UserProfile, Consumer, Farmer } from '../types';
-import type { ConsumerSignupData, FarmerSignupData } from '../lib/validations';
 
 // Extended profile that combines auth + role-specific data
 interface ExtendedUserProfile extends UserProfile {
@@ -31,22 +31,52 @@ interface AuthContextType {
   userProfile: ExtendedUserProfile | null;
   loading: boolean;
   isLoggedIn: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  
+  // OTP Flow
+  sendOTP: (phoneNo: string) => Promise<ConfirmationResult>;
+  verifyOTP: (confirmation: ConfirmationResult, otp: string) => Promise<void>;
+  
   logout: () => Promise<void>;
-  signUpConsumer: (data: ConsumerSignupData) => Promise<void>;
+  
+  // Signup (now uses same OTP flow)
+  signUpConsumer: (data: ConsumerSignupData, confirmation: ConfirmationResult, otp: string) => Promise<void>;
   prepareFarmerSignup: (data: FarmerSignupData) => Promise<string>;
-  completeFarmerSignup: (tempId: string, verificationData: any) => Promise<void>;
+  completeFarmerSignup: (tempId: string, verificationData: any, confirmation: ConfirmationResult, otp: string) => Promise<void>;
+  
   refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Consumer signup data without password
+interface ConsumerSignupData {
+  firstName: string;
+  lastName: string;
+  phoneNo: string;
+  email?: string | null;
+  address: string;
+  interest?: string;
+}
+
+// Farmer signup data without password
+interface FarmerSignupData {
+  firstName: string;
+  lastName: string;
+  phoneNo: string;
+  email?: string | null;
+  farmName: string;
+  farmAddress: string;
+  farmType: string;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<ExtendedUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Store reCAPTCHA verifier
+  const recaptchaVerifierRef = useRef<ApplicationVerifier | null>(null);
 
-  // Function to fetch complete profile based on role
   const fetchCompleteProfile = async (firebaseUser: FirebaseUser, baseProfile: UserProfile): Promise<ExtendedUserProfile> => {
     try {
       if (baseProfile.role === 'farmer') {
@@ -82,7 +112,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Error fetching role-specific profile:', error);
     }
     
-    // Fallback to base profile if role-specific fetch fails
     return baseProfile;
   };
 
@@ -92,11 +121,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (firebaseUser) {
         try {
-          // First get base user profile to check role
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
             const baseProfile = userDoc.data() as UserProfile;
-            // Then fetch complete profile with role-specific data
             const completeProfile = await fetchCompleteProfile(firebaseUser, baseProfile);
             setUserProfile(completeProfile);
           }
@@ -113,7 +140,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  // Manual refresh function - call this after profile updates
   const refreshProfile = async () => {
     if (!user) return;
     
@@ -129,34 +155,103 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUpConsumer = async (data: ConsumerSignupData): Promise<void> => {
+  // Send OTP to phone number
+  const sendOTP = async (phoneNo: string): Promise<ConfirmationResult> => {
     try {
-      // Generate internal auth email from phone number (Firebase Auth requires email format)
-      // This is only for Firebase Auth internal use, not stored in Firestore
-      const authEmail = `${data.phoneNo.replace(/\D/g, '')}@ifh.user`;
+      // Normalize to E.164 format (+639123456789)
+      let normalizedPhone = phoneNo.replace(/\s/g, '');
+      if (normalizedPhone.startsWith('0')) {
+        normalizedPhone = '+63' + normalizedPhone.substring(1);
+      }
+      if (!normalizedPhone.startsWith('+')) {
+        normalizedPhone = '+' + normalizedPhone;
+      }
+
+      // Create invisible reCAPTCHA
+      const { RecaptchaVerifier } = await import('firebase/auth');
       
-      const userCredential = await createUserWithEmailAndPassword(
+      if (!recaptchaVerifierRef.current) {
+        recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+          callback: () => console.log('reCAPTCHA verified'),
+          'expired-callback': () => {
+            recaptchaVerifierRef.current = null;
+          }
+        });
+      }
+
+      const confirmationResult = await signInWithPhoneNumber(
         auth,
-        authEmail,
-        data.password
+        normalizedPhone,
+        recaptchaVerifierRef.current
       );
 
-      const { user: newUser } = userCredential;
+      return confirmationResult;
+      
+    } catch (error: any) {
+      console.error('Send OTP error:', error);
+      recaptchaVerifierRef.current = null;
+      
+      const errorMessages: Record<string, string> = {
+        'auth/invalid-phone-number': 'Invalid phone number format.',
+        'auth/too-many-requests': 'Too many requests. Please try again later.',
+        'auth/captcha-check-failed': 'Security check failed. Please try again.',
+        'auth/phone-number-already-exists': 'An account with this phone number already exists.',
+      };
+      
+      throw new Error(errorMessages[error.code] || `Failed to send OTP: ${error.message}`);
+    }
+  };
 
-      await updateProfile(newUser, {
+  // Verify OTP and sign in
+  const verifyOTP = async (confirmation: ConfirmationResult, otp: string): Promise<void> => {
+    try {
+      await confirmation.confirm(otp);
+      // onAuthStateChanged will handle the rest (fetching profile)
+    } catch (error: any) {
+      console.error('Verify OTP error:', error);
+      
+      const errorMessages: Record<string, string> = {
+        'auth/invalid-verification-code': 'Invalid OTP. Please check and try again.',
+        'auth/code-expired': 'OTP has expired. Please request a new one.',
+      };
+      
+      throw new Error(errorMessages[error.code] || 'Failed to verify OTP. Please try again.');
+    }
+  };
+
+  // Consumer signup with OTP verification
+  const signUpConsumer = async (
+    data: ConsumerSignupData,
+    confirmation: ConfirmationResult,
+    otp: string
+  ): Promise<void> => {
+    try {
+      // Step 1: Verify OTP (this creates the Firebase Auth user)
+      await confirmation.confirm(otp);
+      
+      // Get the newly created user
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('Failed to create account. Please try again.');
+      }
+
+      // Step 2: Update profile
+      await updateProfile(currentUser, {
         displayName: `${data.firstName} ${data.lastName}`,
       });
 
+      // Step 3: Create Firestore records
       const userProfileData: UserProfile = {
-        uid: newUser.uid,
-        email: data.email || null, // Only real email if provided
+        uid: currentUser.uid,
+        email: data.email || null,
         displayName: `${data.firstName} ${data.lastName}`,
         role: 'consumer',
         createdAt: new Date(),
       };
 
       const consumerData: Consumer = {
-        uid: newUser.uid,
+        uid: currentUser.uid,
         firstName: data.firstName,
         lastName: data.lastName,
         phoneNo: data.phoneNo,
@@ -164,32 +259,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         address: data.address,
         profileImage: '',
         createdAt: new Date(),
+        interest: data.interest,
       };
 
       await Promise.all([
-        setDoc(doc(db, 'users', newUser.uid), {
+        setDoc(doc(db, 'users', currentUser.uid), {
           ...userProfileData,
           createdAt: serverTimestamp(),
         }),
-        setDoc(doc(db, 'consumers', newUser.uid), {
+        setDoc(doc(db, 'consumers', currentUser.uid), {
           ...consumerData,
-          interest: data.interest,
           createdAt: serverTimestamp(),
-          // REMOVED: authEmail and hasRealEmail fields
         }),
       ]);
 
-      // Set complete profile immediately after signup
+      // Set local state
       setUserProfile({
         ...userProfileData,
         firstName: data.firstName,
         lastName: data.lastName,
+        phoneNo: data.phoneNo,
         profileImage: '',
       });
 
     } catch (error: any) {
       console.error('Consumer signup error:', error);
       
+      // Cleanup if needed
       if (auth.currentUser) {
         try {
           await auth.currentUser.delete();
@@ -198,32 +294,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const errorMessages: Record<string, string> = {
-        'auth/email-already-in-use': 'An account with this phone number already exists.',
-        'auth/invalid-email': 'Invalid phone number format.',
-        'auth/operation-not-allowed': 'Account creation is currently disabled.',
-        'auth/weak-password': 'Password is too weak. Please use a stronger password.',
-        'auth/network-request-failed': 'Network error. Please check your connection.',
-      };
-
-      throw new Error(errorMessages[error.code] || `Failed to create account: ${error.message}`);
+      throw error;
     }
   };
 
+  // Prepare farmer signup (no auth account yet)
   const prepareFarmerSignup = async (data: FarmerSignupData): Promise<string> => {
     try {
-      // Generate internal auth email from phone number (Firebase Auth requires email format)
-      // This is only for Firebase Auth internal use, not stored in Firestore
-      const authEmail = `${data.phoneNo.replace(/\D/g, '')}@ifh.farmer`;
-      
       const tempId = crypto.randomUUID();
       
       const pendingData = {
         tempId,
         farmerData: data,
-        authEmail, // Keep temporarily for account creation after verification
         createdAt: serverTimestamp(),
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
         verificationAttempts: 0,
         maxAttempts: 3,
       };
@@ -237,9 +321,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Complete farmer signup with OTP
   const completeFarmerSignup = async (
-    tempId: string, 
-    verificationData: any
+    tempId: string,
+    verificationData: any,
+    confirmation: ConfirmationResult,
+    otp: string
   ): Promise<void> => {
     try {
       const pendingDoc = await getDoc(doc(db, 'pendingFarmers', tempId));
@@ -251,29 +338,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const pendingData = pendingDoc.data();
       const data: FarmerSignupData = pendingData.farmerData;
 
-      // Use the temporary authEmail for Firebase Auth account creation
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        pendingData.authEmail,
-        data.password
-      );
+      // Step 1: Verify OTP (creates Firebase Auth account)
+      await confirmation.confirm(otp);
+      
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('Failed to create account. Please try again.');
+      }
 
-      const { user: newUser } = userCredential;
-
-      await updateProfile(newUser, {
+      // Step 2: Update profile
+      await updateProfile(currentUser, {
         displayName: `${data.firstName} ${data.lastName}`,
       });
 
+      // Step 3: Create Firestore records
       const userProfileData: UserProfile = {
-        uid: newUser.uid,
-        email: data.email || null, // Only real email if provided
+        uid: currentUser.uid,
+        email: data.email || null,
         displayName: `${data.firstName} ${data.lastName}`,
         role: 'farmer',
         createdAt: new Date(),
       };
 
       const farmerData: Farmer = {
-        uid: newUser.uid,
+        uid: currentUser.uid,
         firstName: data.firstName,
         lastName: data.lastName,
         phoneNo: data.phoneNo,
@@ -287,12 +375,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const sanitize = (val: any) => val === undefined ? null : val;
 
       await Promise.all([
-        setDoc(doc(db, 'users', newUser.uid), {
+        setDoc(doc(db, 'users', currentUser.uid), {
           ...userProfileData,
           createdAt: serverTimestamp(),
           verifiedAt: serverTimestamp(),
         }),
-        setDoc(doc(db, 'farmers', newUser.uid), {
+        setDoc(doc(db, 'farmers', currentUser.uid), {
           ...farmerData,
           farmName: data.farmName,
           farmAddress: data.farmAddress,
@@ -310,22 +398,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             verifiedBy: 'face++_cloudVision',
           },
           createdAt: serverTimestamp(),
-          // REMOVED: authEmail and hasRealEmail fields
         }),
       ]);
 
-      await setDoc(doc(db, 'pendingFarmers', tempId), {
-        ...pendingData,
-        status: 'completed',
-        completedAt: serverTimestamp(),
-        assignedUid: newUser.uid,
-      });
+      // Clean up pending data
+      await deleteDoc(doc(db, 'pendingFarmers', tempId));
 
-      // Set complete profile immediately after signup
+      // Set local state
       setUserProfile({
         ...userProfileData,
         firstName: data.firstName,
         lastName: data.lastName,
+        phoneNo: data.phoneNo,
         profileImage: '',
         farmName: data.farmName,
         farmAddress: data.farmAddress,
@@ -344,39 +428,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const errorMessages: Record<string, string> = {
-        'auth/email-already-in-use': 'An account with this phone number already exists.',
-        'auth/invalid-email': 'Invalid phone number format.',
-        'auth/operation-not-allowed': 'Account creation is currently disabled.',
-        'auth/weak-password': 'Password is too weak.',
-      };
-
-      throw new Error(errorMessages[error.code] || `Failed to create account: ${error.message}`);
-    }
-  };
-
-  const login = async (identifier: string, password: string): Promise<void> => {
-    try {
-      let authEmail = identifier;
-      
-      // If identifier looks like a phone number, convert to auth email format
-      const phoneRegex = /^(\+63|0)\d{10}$/;
-      if (phoneRegex.test(identifier.replace(/\s/g, ''))) {
-        const normalizedPhone = identifier.replace(/\s/g, '').replace(/^0/, '+63');
-        authEmail = `${normalizedPhone.replace('+', '')}@ifh.user`;
-      }
-
-      await signInWithEmailAndPassword(auth, authEmail, password);
-    } catch (error: any) {
-      const errorMessages: Record<string, string> = {
-        'auth/invalid-credential': 'Invalid phone number or password.',
-        'auth/user-not-found': 'No account found with this phone number.',
-        'auth/wrong-password': 'Incorrect password.',
-        'auth/too-many-requests': 'Too many failed attempts. Please try again later.',
-        'auth/network-request-failed': 'Network error. Please check your connection.',
-      };
-      
-      throw new Error(errorMessages[error.code] || 'Failed to sign in. Please try again.');
+      throw error;
     }
   };
 
@@ -384,6 +436,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await signOut(auth);
       setUserProfile(null);
+      recaptchaVerifierRef.current = null;
     } catch (error) {
       console.error('Logout error:', error);
       throw new Error('Failed to sign out. Please try again.');
@@ -395,7 +448,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userProfile,
     loading,
     isLoggedIn: !!user,
-    login,
+    sendOTP,
+    verifyOTP,
     logout,
     signUpConsumer,
     prepareFarmerSignup,

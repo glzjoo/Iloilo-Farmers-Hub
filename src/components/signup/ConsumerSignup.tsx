@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; //link not used??
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import logo from '../../assets/icons/logo.png';
@@ -10,7 +10,7 @@ import { useSanitizedInput } from '../../hooks/useSanitizedInput';
 
 export default function ConsumerSignup() {
   const navigate = useNavigate();
-  const { signUpConsumer } = useAuth();
+  const { sendOTP } = useAuth(); // NEW: Use sendOTP instead of signUpConsumer
   const { sanitizeName, sanitizeEmail, sanitizePhone } = useSanitizedInput();
   const [isLoading, setIsLoading] = useState(false);
   const [firebaseError, setFirebaseError] = useState<string | null>(null);
@@ -21,36 +21,44 @@ export default function ConsumerSignup() {
     control,
     formState: { errors },
     reset,
-    setValue, // setvalue not used rn but may be useful for future features like auto-filling or editing
     trigger,
+    watch, // NEW: To get phone number for OTP
   } = useForm<ConsumerSignupData>({
     resolver: zodResolver(consumerSignupSchema),
-    mode: 'onChange', // Validate on every change for real-time feedback
+    mode: 'onChange',
     defaultValues: {
       firstName: '',
       lastName: '',
       email: '',
       address: '',
       phoneNo: '',
-      interest: 'Vegetables',
-      password: '',
-      confirmPassword: '',
-      agreeToTerms: false,
+      interest: 'Vegetables' as const,
+      // REMOVED: password, confirmPassword, agreeToTerms
     },
   });
+
+  // Watch phone number for OTP step
+  const phoneNo = watch('phoneNo');
 
   const onSubmit = async (data: ConsumerSignupData) => {
     setIsLoading(true);
     setFirebaseError(null);
     
     try {
-      await signUpConsumer(data);
+      // NEW: Send OTP first, don't create account yet
+      const confirmation = await sendOTP(data.phoneNo);
+      
+      // Navigate to OTP page with confirmation and form data
       navigate('/otp', { 
-        state: { email: data.email, phoneNo: data.phoneNo } 
+        state: { 
+          confirmation,           // Pass confirmation result
+          formData: data,        // Pass all form data
+          flow: 'signup'         // Indicate this is signup, not login
+        } 
       });
     } catch (error: any) {
-      console.error('Signup error:', error);
-      setFirebaseError(error.message || 'Failed to create account. Please try again.');
+      console.error('OTP error:', error);
+      setFirebaseError(error.message || 'Failed to send OTP. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +69,6 @@ export default function ConsumerSignup() {
     setFirebaseError(null);
   };
 
-  // Helper to get input class based on error state
   const getInputClass = (fieldName: keyof ConsumerSignupData) => {
     const baseClass = "w-full border rounded-lg px-4 py-2.5 text-sm font-primary outline-none transition-colors";
     return errors[fieldName] 
@@ -81,6 +88,13 @@ export default function ConsumerSignup() {
           <SignupToggle />
         </div>
 
+        {/* Info Banner */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-blue-700 text-sm font-primary">
+            📱 We'll send a 6-digit OTP to your phone number to verify your account. No password needed!
+          </p>
+        </div>
+
         {/* Firebase Error Display */}
         {firebaseError && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -90,7 +104,7 @@ export default function ConsumerSignup() {
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-2 gap-x-8 gap-y-5">
-          {/* First Name with Sanitization */}
+          {/* First Name */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
               First name <span className="text-red-500">*</span>
@@ -107,7 +121,6 @@ export default function ConsumerSignup() {
                   onChange={(e) => {
                     const sanitized = sanitizeName(e.target.value);
                     field.onChange(sanitized);
-                    // Trigger validation after sanitization
                     if (sanitized.length >= 2) trigger('firstName');
                   }}
                   onBlur={() => trigger('firstName')}
@@ -121,7 +134,7 @@ export default function ConsumerSignup() {
             )}
           </div>
 
-          {/* Last Name with Sanitization */}
+          {/* Last Name */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
               Last name <span className="text-red-500">*</span>
@@ -151,7 +164,7 @@ export default function ConsumerSignup() {
             )}
           </div>
 
-          {/* Email with Enhanced Validation */}
+          {/* Email */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
               Email <span className="text-gray-400 text-xs italic">(Optional)</span>
@@ -168,7 +181,6 @@ export default function ConsumerSignup() {
                   onChange={(e) => {
                     const sanitized = sanitizeEmail(e.target.value);
                     field.onChange(sanitized);
-                    // Only validate if there's an @ symbol (user likely finished typing)
                     if (sanitized.includes('@') && sanitized.includes('.')) {
                       trigger('email');
                     }
@@ -200,10 +212,10 @@ export default function ConsumerSignup() {
             )}
           </div>
 
-          {/* Contact Number with Sanitization */}
+          {/* Contact Number - NOW PRIMARY IDENTIFIER */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Contact Number <span className="text-red-500">*</span>
+              Contact Number <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(for OTP verification)</span>
             </label>
             <Controller
               name="phoneNo"
@@ -251,58 +263,26 @@ export default function ConsumerSignup() {
             )}
           </div>
 
-          {/* Password */}
-          <div>
-            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Password <span className="text-red-500">*</span>
-            </label>
+          {/* REMOVED: Password fields */}
+          {/* REMOVED: Confirm Password */}
+          {/* REMOVED: Terms checkbox (handle on OTP page or make implicit) */}
+
+          {/* Terms - Simplified */}
+          <div className="col-span-2 flex items-start gap-2 mt-2 p-3 bg-gray-50 rounded-lg">
             <input
-              {...register('password')}
-              type="password"
-              placeholder="Create a strong password"
-              className={getInputClass('password')}
+              type="checkbox"
+              required
+              className="w-4 h-4 accent-primary cursor-pointer mt-0.5"
             />
-            {errors.password && (
-              <p className="mt-1 text-xs text-red-500 font-primary">{errors.password.message}</p>
-            )}
+            <span className="text-sm font-primary text-gray-600">
+              By continuing, you agree to our{' '}
+              <Link to="/terms" className="text-primary underline hover:text-green-700">Terms & Conditions</Link>
+              {' '}and{' '}
+              <Link to="/privacy" className="text-primary underline hover:text-green-700">Privacy Policy</Link>
+            </span>
           </div>
 
-          {/* Confirm Password */}
-          <div>
-            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Confirm Password <span className="text-red-500">*</span>
-            </label>
-            <input
-              {...register('confirmPassword')}
-              type="password"
-              placeholder="Confirm your password"
-              className={getInputClass('confirmPassword')}
-            />
-            {errors.confirmPassword && (
-              <p className="mt-1 text-xs text-red-500 font-primary">{errors.confirmPassword.message}</p>
-            )}
-          </div>
-
-          {/* Terms & Conditions - Full Width */}
-          <div className="col-span-2 flex justify-end mt-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                {...register('agreeToTerms')}
-                type="checkbox"
-                className={`w-4 h-4 accent-primary cursor-pointer ${errors.agreeToTerms ? 'border-red-500' : ''}`}
-              />
-              <span className={`text-sm font-primary font-medium underline ${errors.agreeToTerms ? 'text-red-500' : 'text-primary'}`}>
-                I agree to Terms & Conditions
-              </span>
-            </label>
-          </div>
-          {errors.agreeToTerms && (
-            <div className="col-span-2 flex justify-end">
-              <p className="text-xs text-red-500 font-primary">{errors.agreeToTerms.message}</p>
-            </div>
-          )}
-
-          {/* Buttons - Full Width */}
+          {/* Buttons */}
           <div className="col-span-2 flex items-center justify-between mt-6">
             <button
               type="button"
@@ -315,7 +295,7 @@ export default function ConsumerSignup() {
             
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || phoneNo?.length !== 11}
               className="px-10 py-2.5 rounded-full border-none bg-primary text-white font-primary font-bold cursor-pointer hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-lg transition-colors flex items-center gap-2"
             >
               {isLoading ? (
@@ -324,10 +304,10 @@ export default function ConsumerSignup() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Creating...
+                  Sending OTP...
                 </>
               ) : (
-                'Create Account'
+                'Continue to OTP'
               )}
             </button>
           </div>
