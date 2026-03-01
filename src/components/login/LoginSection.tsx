@@ -1,30 +1,18 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
-import type { ConfirmationResult } from "firebase/auth";
-import { auth } from "../../lib/firebase";
+import { useAuth } from '../../context/AuthContext';
 import logo from '../../assets/icons/logo.png';
 
 export default function LoginSection() {
     const navigate = useNavigate();
+    const { sendOTP } = useAuth();
     const [phone, setPhone] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
-
-    useEffect(() => {
-        if (!recaptchaRef.current) {
-            recaptchaRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                size: 'invisible',
-            });
-            recaptchaRef.current.render();
-        }
-    }, []);
 
     const handleLogin = async () => {
         setError('');
 
-        // Strip non-digit characters, then format for PH
         const digits = phone.replace(/\D/g, '');
         let formattedPhone = '';
 
@@ -41,21 +29,19 @@ export default function LoginSection() {
 
         try {
             setLoading(true);
-            const confirmationResult: ConfirmationResult = await signInWithPhoneNumber(
-                auth,
-                formattedPhone,
-                recaptchaRef.current!
-            );
-            
-            // Navigate to OTP page with confirmation and phone
-            navigate('/otp', {
+
+            await sendOTP(formattedPhone);
+
+            sessionStorage.setItem('loginConfirmation', 'true');
+            sessionStorage.setItem('loginPhone', formattedPhone);
+
+            navigate('/login/otp-verification', {
                 state: {
-                    confirmation: confirmationResult,
                     phoneNo: formattedPhone,
-                    flow: 'login' // Distinguish from signup
+                    flow: 'login'
                 }
             });
-            
+
         } catch (err: any) {
             setError(err.message || 'Failed to send OTP. Please try again.');
         } finally {
@@ -64,14 +50,13 @@ export default function LoginSection() {
     };
 
     return (
-        <section className="flex items-center justify-center py-16">
+        <section className="flex items-center justify-center py-16 px-4">
             <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
                 <div className="flex items-center justify-center gap-2 mb-4">
-                    <img src={logo} className="w-11 h-11 rounded-full object-cover" />
+                    <img src={logo} className="w-11 h-11 rounded-full object-cover" alt="Logo" />
                     <span className="font-primary font-bold text-lg tracking-wide whitespace-nowrap">ILOILO FARMERS HUB</span>
                 </div>
-                
-                {/* Info banner for OTP */}
+
                 <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-blue-700 text-xs font-primary text-center">
                         📱 Enter your phone number. We'll send a 6-digit OTP to verify your identity.
@@ -79,7 +64,6 @@ export default function LoginSection() {
                 </div>
 
                 <div className="flex flex-col gap-4">
-                    {/* Phone Number */}
                     <div>
                         <label className="block text-sm font-primary font-medium text-gray-700 mb-1">
                             Mobile Number <span className="text-red-500">*</span>
@@ -87,34 +71,57 @@ export default function LoginSection() {
                         <input
                             type="tel"
                             value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
+                            onChange={(e) => {
+                                const digitsOnly = e.target.value.replace(/\D/g, '');
+                                setPhone(digitsOnly);
+                            }}
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            maxLength={12}
                             placeholder="e.g. 09123456789"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none focus:border-primary"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                         />
                     </div>
 
                     {error && (
-                        <p className="text-red-500 text-xs font-primary text-center">{error}</p>
+                        <p className="text-red-500 text-xs font-primary text-center bg-red-50 p-2 rounded-lg">
+                            {error}
+                        </p>
                     )}
 
                     <button
-                        id="login-button"
                         onClick={handleLogin}
                         disabled={loading || phone.replace(/\D/g, '').length < 10}
-                        className="w-full bg-primary text-white font-primary font-semibold py-2.5 rounded-full border-none cursor-pointer hover:bg-green-700 mt-2 disabled:opacity-50"
+                        className="w-full bg-primary text-white font-primary font-semibold py-3 rounded-full border-none cursor-pointer hover:bg-green-700 mt-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                        {loading ? 'Sending OTP...' : 'Send OTP'}
+                        {loading ? (
+                            <>
+                                <svg className="animate-spin h-5 w-5 text-white inline mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Sending OTP...
+                            </>
+                        ) : (
+                            'Send OTP'
+                        )}
                     </button>
 
-                    <p className="text-sm font-primary text-center text-gray-600 mt-2">
-                        Don't have an account?{" "}
-                        <Link to="/consumer-signup" className="text-primary font-semibold no-underline hover:underline">
-                            Sign Up
-                        </Link>
-                    </p>
+                    <div className="text-center space-y-2 mt-4">
+                        <p className="text-sm font-primary text-gray-600">
+                            Don't have an account?{" "}
+                            <Link to="/consumer-signup" className="text-primary font-semibold hover:underline">
+                                Sign Up as Consumer
+                            </Link>
+                        </p>
+                        <p className="text-sm font-primary text-gray-600">
+                            <Link to="/farmer-signup" className="text-primary font-semibold hover:underline">
+                                Sign Up as Farmer
+                            </Link>
+                        </p>
+                    </div>
                 </div>
             </div>
-            <div id="recaptcha-container"></div>
         </section>
     );
 }

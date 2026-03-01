@@ -13,7 +13,7 @@ import ItemsDetailsPage from './pages/ItemsDetailsPage';
 import MessagesPage from './pages/MessagesPage';
 import FarmerSignupPage from './pages/FarmerSignupPage';
 import LoginPage from './pages/LoginPage';
-import OtpPage from './pages/OtpPage';
+import OtpPage from './pages/LoginOtpPage';
 import NavbarLoggedIn from './components/layout/NavbarLoggedIn';
 import ConsumerSignupPage from './pages/ConsumerSignupPage';
 import ProfileInfoModal from './pages/ProfileInfoModal';
@@ -23,6 +23,7 @@ import SellModalPage from './pages/SellModalPage';
 import MyListingPage from './pages/MyListingPage';
 import FarmerOtpPage from './pages/FarmerOtpPage';
 import ConsumerOtpPage from './pages/ConsumerOtpPage';
+import LoginOtpPage from './pages/LoginOtpPage';
 
 function AppLayout() {
     const location = useLocation();
@@ -54,7 +55,7 @@ function AppLayout() {
                 <Route path="/consumer-signup" element={<ConsumerSignupPage />} />
                 <Route path="/consumer/otp-verification" element={<ConsumerOtpPage />} />
                 <Route path="/login" element={<LoginPage />} />
-                <Route path="/otp" element={<OtpPage />} />
+                <Route path="/login/otp-verification" element={<LoginOtpPage />} />
                 <Route path="/profile" element={<ProfileInfoModal />} />
                 <Route path="/sell" element={<SellModalPage />} />
                 <Route path="/my-listings" element={<MyListingPage />} />
