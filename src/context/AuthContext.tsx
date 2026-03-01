@@ -8,22 +8,25 @@ import {
   type ConfirmationResult,
   type ApplicationVerifier 
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, deleteDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import type { UserProfile, Consumer, Farmer } from '../types';
+import type { ConsumerSignupData, FarmerSignupData } from '../lib/validations';
 
 // Extended profile that combines auth + role-specific data
 interface ExtendedUserProfile extends UserProfile {
   firstName?: string;
   lastName?: string;
-  phoneNo?: string;
   profileImage?: string;
-  
-  // For farmers
+  phoneNo?: string;
+  // Farmer-specific fields
   farmName?: string; 
   farmAddress?: string; 
   farmType?: string; 
   verificationStatus?: string; 
+  // Consumer-specific fields
+  interest?: string;
+  address?: string;
 }
 
 interface AuthContextType {
@@ -34,40 +37,36 @@ interface AuthContextType {
   
   // OTP Flow
   sendOTP: (phoneNo: string) => Promise<ConfirmationResult>;
-  verifyOTP: (confirmation: ConfirmationResult, otp: string) => Promise<void>;
+  verifyOTP: (confirmation: ConfirmationResult, otp: string) => Promise<FirebaseUser>;
   
   logout: () => Promise<void>;
   
-  // Signup (now uses same OTP flow)
+  // Signup (passwordless OTP flow)
   signUpConsumer: (data: ConsumerSignupData, confirmation: ConfirmationResult, otp: string) => Promise<void>;
+  
+  // Farmer signup flow (3-step: form -> ID verification -> OTP)
   prepareFarmerSignup: (data: FarmerSignupData) => Promise<string>;
-  completeFarmerSignup: (tempId: string, verificationData: any, confirmation: ConfirmationResult, otp: string) => Promise<void>;
+  storeVerificationData: (tempId: string, verificationData: VerificationData) => Promise<void>;
+  completeFarmerSignup: (tempId: string, confirmation: ConfirmationResult, otp: string) => Promise<void>;
+  getPendingFarmerData: (tempId: string) => Promise<FarmerSignupData | null>;
   
   refreshProfile: () => Promise<void>;
 }
 
+// ID Verification data structure (from your existing ID verification)
+interface VerificationData {
+  idType?: string;
+  idNumber?: string;
+  extractedAddress?: string;
+  fullName?: string;
+  faceMatchScore?: number;
+  faceMatchPassed?: boolean;
+  idCardImageUrl?: string;
+  selfieImageUrl?: string;
+  [key: string]: any; // For additional fields from your existing verification
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Consumer signup data without password
-interface ConsumerSignupData {
-  firstName: string;
-  lastName: string;
-  phoneNo: string;
-  email?: string | null;
-  address: string;
-  interest?: string;
-}
-
-// Farmer signup data without password
-interface FarmerSignupData {
-  firstName: string;
-  lastName: string;
-  phoneNo: string;
-  email?: string | null;
-  farmName: string;
-  farmAddress: string;
-  farmType: string;
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -137,7 +136,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      // Cleanup reCAPTCHA on unmount
+      if (recaptchaVerifierRef.current) {
+        recaptchaVerifierRef.current = null;
+      }
+    };
   }, []);
 
   const refreshProfile = async () => {
@@ -155,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+
   // Send OTP to phone number
   const sendOTP = async (phoneNo: string): Promise<ConfirmationResult> => {
     try {
@@ -167,18 +173,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         normalizedPhone = '+' + normalizedPhone;
       }
 
-      // Create invisible reCAPTCHA
+      console.log('Sending OTP to:', normalizedPhone);
+
+      // Remove existing reCAPTCHA container content
+      const existingContainer = document.getElementById('recaptcha-container');
+      if (existingContainer) {
+        existingContainer.innerHTML = '';
+      }
+
+      // Reset the ref
+      recaptchaVerifierRef.current = null;
+
+      // Create new invisible reCAPTCHA
       const { RecaptchaVerifier } = await import('firebase/auth');
       
-      if (!recaptchaVerifierRef.current) {
-        recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          size: 'invisible',
-          callback: () => console.log('reCAPTCHA verified'),
-          'expired-callback': () => {
-            recaptchaVerifierRef.current = null;
-          }
-        });
-      }
+      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+        callback: (response: any) => {
+          console.log('reCAPTCHA verified, response:', response);
+        },
+        'expired-callback': () => {
+          console.log('reCAPTCHA expired');
+          recaptchaVerifierRef.current = null;
+        }
+      });
+
+      console.log('reCAPTCHA created, sending OTP...');
 
       const confirmationResult = await signInWithPhoneNumber(
         auth,
@@ -186,28 +206,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         recaptchaVerifierRef.current
       );
 
+      console.log('OTP sent successfully');
       return confirmationResult;
       
     } catch (error: any) {
-      console.error('Send OTP error:', error);
+      console.error('=== SEND OTP ERROR ===', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      
+      // Reset reCAPTCHA ref on error
       recaptchaVerifierRef.current = null;
       
       const errorMessages: Record<string, string> = {
-        'auth/invalid-phone-number': 'Invalid phone number format.',
+        'auth/invalid-phone-number': 'Invalid phone number format. Use format: 09123456789',
         'auth/too-many-requests': 'Too many requests. Please try again later.',
         'auth/captcha-check-failed': 'Security check failed. Please try again.',
         'auth/phone-number-already-exists': 'An account with this phone number already exists.',
+        'auth/invalid-app-credential': 'Firebase configuration error. Check your API key.',
+        'auth/recaptcha-error': 'reCAPTCHA verification failed. Please refresh and try again.',
       };
       
       throw new Error(errorMessages[error.code] || `Failed to send OTP: ${error.message}`);
     }
   };
 
-  // Verify OTP and sign in
-  const verifyOTP = async (confirmation: ConfirmationResult, otp: string): Promise<void> => {
+  // Verify OTP and return the user (for chaining with account creation)
+  const verifyOTP = async (confirmation: ConfirmationResult, otp: string): Promise<FirebaseUser> => {
     try {
-      await confirmation.confirm(otp);
-      // onAuthStateChanged will handle the rest (fetching profile)
+      const result = await confirmation.confirm(otp);
+      return result.user;
     } catch (error: any) {
       console.error('Verify OTP error:', error);
       
@@ -220,7 +247,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Consumer signup with OTP verification
+  // Consumer signup with OTP verification (passwordless)
   const signUpConsumer = async (
     data: ConsumerSignupData,
     confirmation: ConfirmationResult,
@@ -228,22 +255,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ): Promise<void> => {
     try {
       // Step 1: Verify OTP (this creates the Firebase Auth user)
-      await confirmation.confirm(otp);
+      const firebaseUser = await verifyOTP(confirmation, otp);
       
-      // Get the newly created user
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
+      if (!firebaseUser) {
         throw new Error('Failed to create account. Please try again.');
       }
 
       // Step 2: Update profile
-      await updateProfile(currentUser, {
+      await updateProfile(firebaseUser, {
         displayName: `${data.firstName} ${data.lastName}`,
       });
 
       // Step 3: Create Firestore records
       const userProfileData: UserProfile = {
-        uid: currentUser.uid,
+        uid: firebaseUser.uid,
         email: data.email || null,
         displayName: `${data.firstName} ${data.lastName}`,
         role: 'consumer',
@@ -251,7 +276,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       const consumerData: Consumer = {
-        uid: currentUser.uid,
+        uid: firebaseUser.uid,
         firstName: data.firstName,
         lastName: data.lastName,
         phoneNo: data.phoneNo,
@@ -263,11 +288,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       await Promise.all([
-        setDoc(doc(db, 'users', currentUser.uid), {
+        setDoc(doc(db, 'users', firebaseUser.uid), {
           ...userProfileData,
           createdAt: serverTimestamp(),
         }),
-        setDoc(doc(db, 'consumers', currentUser.uid), {
+        setDoc(doc(db, 'consumers', firebaseUser.uid), {
           ...consumerData,
           createdAt: serverTimestamp(),
         }),
@@ -298,33 +323,120 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Prepare farmer signup (no auth account yet)
+// Prepare farmer signup - Store data temporarily before ID verification
   const prepareFarmerSignup = async (data: FarmerSignupData): Promise<string> => {
     try {
-      const tempId = crypto.randomUUID();
+      // Simple timestamp + random ID (works in all browsers)
+      const tempId = `farmer_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
       
+      console.log('Generated tempId:', tempId);
+
       const pendingData = {
         tempId,
-        farmerData: data,
+        farmerData: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email || null,
+          farmName: data.farmName,
+          farmAddress: data.farmAddress,
+          phoneNo: data.phoneNo,
+          farmType: data.farmType,
+          agreeToTerms: data.agreeToTerms,
+        },
+        idVerified: false,
+        verificationData: null,
         createdAt: serverTimestamp(),
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-        verificationAttempts: 0,
-        maxAttempts: 3,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       };
 
-      await setDoc(doc(db, 'pendingFarmers', tempId), pendingData);
+      console.log('Saving to Firestore...', pendingData);
+      
+      // Store in Firestore
+      const docRef = doc(db, 'pendingFarmers', tempId);
+      await setDoc(docRef, pendingData);
+      
+      console.log('Firestore save successful');
+
+      // Also store in sessionStorage as backup
+      try {
+        sessionStorage.setItem('farmerSignupTempId', tempId);
+        sessionStorage.setItem(`farmerSignup_${tempId}`, JSON.stringify({
+          farmerData: data,
+          idVerified: false,
+          timestamp: Date.now(),
+        }));
+        console.log('sessionStorage backup saved');
+      } catch (e) {
+        console.warn('sessionStorage failed (might be disabled):', e);
+      }
 
       return tempId;
+      
     } catch (error: any) {
-      console.error('Prepare farmer signup error:', error);
-      throw new Error('Failed to initialize signup. Please try again.');
+      console.error('=== prepareFarmerSignup FAILED ===', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      throw new Error(`Failed to initialize signup: ${error.message}`);
     }
   };
 
-  // Complete farmer signup with OTP
+  // Store ID verification data after ID verification step
+  const storeVerificationData = async (tempId: string, verificationData: VerificationData): Promise<void> => {
+    try {
+      const pendingRef = doc(db, 'pendingFarmers', tempId);
+      const pendingDoc = await getDoc(pendingRef);
+      
+      if (!pendingDoc.exists()) {
+        throw new Error('Signup session not found. Please start over.');
+      }
+
+      await updateDoc(pendingRef, {
+        idVerified: true,
+        verificationData: verificationData,
+        verifiedAt: serverTimestamp(),
+      });
+
+      // Update sessionStorage too
+      const sessionData = sessionStorage.getItem(`farmerSignup_${tempId}`);
+      if (sessionData) {
+        const parsed = JSON.parse(sessionData);
+        parsed.idVerified = true;
+        parsed.verificationData = verificationData;
+        sessionStorage.setItem(`farmerSignup_${tempId}`, JSON.stringify(parsed));
+      }
+    } catch (error: any) {
+      console.error('Store verification data error:', error);
+      throw new Error('Failed to save verification data. Please try again.');
+    }
+  };
+
+  // Get pending farmer data (useful for checking session status)
+  const getPendingFarmerData = async (tempId: string): Promise<FarmerSignupData | null> => {
+    try {
+      // Try Firestore first
+      const pendingDoc = await getDoc(doc(db, 'pendingFarmers', tempId));
+      if (pendingDoc.exists()) {
+        return pendingDoc.data().farmerData as FarmerSignupData;
+      }
+
+      // Fallback to sessionStorage
+      const sessionData = sessionStorage.getItem(`farmerSignup_${tempId}`);
+      if (sessionData) {
+        const parsed = JSON.parse(sessionData);
+        return parsed.farmerData as FarmerSignupData;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Get pending farmer data error:', error);
+      return null;
+    }
+  };
+
+  // Complete farmer signup after OTP verification
+  // Complete farmer signup after OTP verification
   const completeFarmerSignup = async (
     tempId: string,
-    verificationData: any,
     confirmation: ConfirmationResult,
     otp: string
   ): Promise<void> => {
@@ -337,23 +449,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const pendingData = pendingDoc.data();
       const data: FarmerSignupData = pendingData.farmerData;
+      const verificationData: VerificationData = pendingData.verificationData || {};
 
       // Step 1: Verify OTP (creates Firebase Auth account)
-      await confirmation.confirm(otp);
+      const result = await confirmation.confirm(otp);
+      const firebaseUser = result.user;
       
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
+      if (!firebaseUser) {
         throw new Error('Failed to create account. Please try again.');
       }
 
+      console.log('Firebase user created:', firebaseUser.uid);
+
       // Step 2: Update profile
-      await updateProfile(currentUser, {
+      await updateProfile(firebaseUser, {
         displayName: `${data.firstName} ${data.lastName}`,
       });
 
-      // Step 3: Create Firestore records
+      // Step 3: Create Firestore records with explicit auth context
       const userProfileData: UserProfile = {
-        uid: currentUser.uid,
+        uid: firebaseUser.uid,
         email: data.email || null,
         displayName: `${data.firstName} ${data.lastName}`,
         role: 'farmer',
@@ -361,7 +476,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       const farmerData: Farmer = {
-        uid: currentUser.uid,
+        uid: firebaseUser.uid,
         firstName: data.firstName,
         lastName: data.lastName,
         phoneNo: data.phoneNo,
@@ -374,13 +489,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const sanitize = (val: any) => val === undefined ? null : val;
 
-      await Promise.all([
-        setDoc(doc(db, 'users', currentUser.uid), {
+      // Use Promise.all with individual error handling
+      try {
+        await setDoc(doc(db, 'users', firebaseUser.uid), {
           ...userProfileData,
           createdAt: serverTimestamp(),
           verifiedAt: serverTimestamp(),
-        }),
-        setDoc(doc(db, 'farmers', currentUser.uid), {
+        });
+        console.log('Users document created');
+      } catch (userError: any) {
+        console.error('Failed to create users doc:', userError);
+        throw new Error(`Failed to create user profile: ${userError.message}`);
+      }
+
+      try {
+        await setDoc(doc(db, 'farmers', firebaseUser.uid), {
           ...farmerData,
           farmName: data.farmName,
           farmAddress: data.farmAddress,
@@ -391,18 +514,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             faceMatchPassed: sanitize(verificationData.faceMatchPassed),
             extractedIdNumber: sanitize(verificationData.idNumber),
             extractedFullName: sanitize(verificationData.fullName),
-            extractedAddress: sanitize(verificationData.address),
+            extractedAddress: sanitize(verificationData.extractedAddress),
             idCardImageUrl: sanitize(verificationData.idCardImageUrl),
             selfieImageUrl: sanitize(verificationData.selfieImageUrl),
             verifiedAt: serverTimestamp(),
             verifiedBy: 'face++_cloudVision',
           },
           createdAt: serverTimestamp(),
-        }),
-      ]);
+        });
+        console.log('Farmers document created');
+      } catch (farmerError: any) {
+        console.error('Failed to create farmers doc:', farmerError);
+        throw new Error(`Failed to create farmer profile: ${farmerError.message}`);
+      }
 
       // Clean up pending data
       await deleteDoc(doc(db, 'pendingFarmers', tempId));
+      sessionStorage.removeItem(`farmerSignup_${tempId}`);
+      sessionStorage.removeItem('farmerSignupTempId');
 
       // Set local state
       setUserProfile({
@@ -418,16 +547,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
     } catch (error: any) {
-      console.error('Complete farmer signup error:', error);
+      console.error('=== Complete farmer signup error ===', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
       
-      if (auth.currentUser) {
-        try {
-          await auth.currentUser.delete();
-        } catch (deleteError) {
-          console.error('Failed to cleanup auth user after error:', deleteError);
-        }
-      }
-
+      // Don't delete auth user here - let the user retry or contact support
       throw error;
     }
   };
@@ -453,7 +577,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     signUpConsumer,
     prepareFarmerSignup,
+    storeVerificationData,
     completeFarmerSignup,
+    getPendingFarmerData,
     refreshProfile,
   };
 

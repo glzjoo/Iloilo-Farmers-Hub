@@ -4,7 +4,7 @@ const nameRegex = /^[a-zA-Z\s'-]+$/;
 const farmNameRegex = /^[a-zA-Z0-9\s&'-]+$/;
 const phoneRegex = /^(09\d{9}|\+63\d{10})$/;
 
-// Consumer signup schema
+// Consumer signup schema - PASSWORDLESS
 export const consumerSignupSchema = z.object({
   firstName: z
     .string()
@@ -33,7 +33,7 @@ export const consumerSignupSchema = z.object({
   
   phoneNo: z
     .string()
-    .regex(phoneRegex, 'e.g., 09123456789 or +639123456789'),
+    .regex(phoneRegex, 'e.g., 09123456789'),
   
   interest: z.enum(['Rice', 'Corn', 'Vegetables', 'Fruits', 'Livestock', 'Poultry', 'Fishery', 'Other']),
 
@@ -45,7 +45,7 @@ export const consumerSignupSchema = z.object({
 
 export type ConsumerSignupData = z.infer<typeof consumerSignupSchema>;
 
-// Farmer signup schema - WITH agreeToTerms
+// Farmer signup schema - PASSWORDLESS
 export const farmerSignupSchema = z.object({
   firstName: z
     .string()
@@ -81,7 +81,7 @@ export const farmerSignupSchema = z.object({
   
   phoneNo: z
     .string()
-    .regex(phoneRegex, 'e.g., 09123456789 or +639123456789'),
+    .regex(phoneRegex, 'e.g., 09123456789'),
   
   farmType: z.enum(['Rice', 'Corn', 'Vegetables', 'Fruits', 'Livestock', 'Poultry', 'Fishery', 'Other']),
   
@@ -95,7 +95,7 @@ export type FarmerSignupData = z.infer<typeof farmerSignupSchema>;
 
 // OTP validation schemas
 export const phoneSchema = z.object({
-  phoneNo: z.string().regex(phoneRegex, 'e.g., 09123456789 or +639123456789'),
+  phoneNo: z.string().regex(phoneRegex, 'e.g., 09123456789'),
 });
 
 export const otpSchema = z.object({

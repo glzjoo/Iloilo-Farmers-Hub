@@ -38,11 +38,14 @@ export default function FarmerSignup() {
   });
 
   const onSubmit = async (data: FarmerSignupData) => {
+    console.log('=== BUTTON CLICKED / FORM SUBMITTED ===');
     setIsLoading(true);
     setFirebaseError(null);
     
     try {
+      console.log('Calling prepareFarmerSignup with data:', data);
       const tempId = await prepareFarmerSignup(data);
+      console.log('Got tempId, navigating...', tempId);
       
       navigate('/id-verification', { 
         state: { 
@@ -51,8 +54,10 @@ export default function FarmerSignup() {
           userType: 'farmer' 
         } 
       });
+      console.log('Navigate called!');
     } catch (error: any) {
-      console.error('Signup preparation error:', error);
+      console.error('=== FULL ERROR ===', error);
+      console.error('Error stack:', error.stack);
       setFirebaseError(error.message || 'Failed to initialize signup. Please try again.');
     } finally {
       setIsLoading(false);
@@ -70,6 +75,14 @@ export default function FarmerSignup() {
       ? `${baseClass} border-red-500 focus:border-red-500 bg-red-50` 
       : `${baseClass} border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary`;
   };
+
+  // Debug log on every render
+  console.log('=== RENDER ===', { 
+    isLoading, 
+    formErrors: errors, 
+    errorCount: Object.keys(errors).length,
+    isValid: Object.keys(errors).length === 0 
+  });
 
   return (
     <section className="flex items-center justify-center py-16 px-4">
@@ -98,7 +111,13 @@ export default function FarmerSignup() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-2 gap-x-8 gap-y-5">
+        <form 
+          onSubmit={(e) => {
+            console.log('Form submit event triggered');
+            handleSubmit(onSubmit)(e);
+          }} 
+          className="grid grid-cols-2 gap-x-8 gap-y-5"
+        >
           {/* First Name */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
@@ -288,12 +307,11 @@ export default function FarmerSignup() {
             )}
           </div>
 
-
-          {/* Terms */}
+          {/* Terms - FIXED: Added register */}
           <div className="col-span-2 flex items-start gap-2 mt-2 p-3 bg-gray-50 rounded-lg">
             <input
+              {...register('agreeToTerms')}
               type="checkbox"
-              required
               className="w-4 h-4 accent-primary cursor-pointer mt-0.5"
             />
             <span className="text-sm font-primary text-gray-600">
@@ -303,6 +321,9 @@ export default function FarmerSignup() {
               <Link to="/privacy" className="text-primary underline hover:text-green-700">Privacy Policy</Link>
             </span>
           </div>
+          {errors.agreeToTerms && (
+            <p className="col-span-2 text-xs text-red-500 font-primary">{errors.agreeToTerms.message}</p>
+          )}
 
           {/* Buttons - Full Width */}
           <div className="col-span-2 flex items-center justify-between mt-6">
@@ -318,6 +339,7 @@ export default function FarmerSignup() {
             <button
               type="submit"
               disabled={isLoading}
+              onClick={() => console.log('Button onClick fired')}
               className="px-10 py-2.5 rounded-full border-none bg-primary text-white font-primary font-bold cursor-pointer hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-lg transition-colors flex items-center gap-2"
             >
               {isLoading ? (
