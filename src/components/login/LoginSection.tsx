@@ -111,12 +111,7 @@ export default function LoginSection() {
                         <p className="text-sm font-primary text-gray-600">
                             Don't have an account?{" "}
                             <Link to="/consumer-signup" className="text-primary font-semibold hover:underline">
-                                Sign Up as Consumer
-                            </Link>
-                        </p>
-                        <p className="text-sm font-primary text-gray-600">
-                            <Link to="/farmer-signup" className="text-primary font-semibold hover:underline">
-                                Sign Up as Farmer
+                                Sign Up
                             </Link>
                         </p>
                     </div>
