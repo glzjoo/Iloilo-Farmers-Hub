@@ -162,73 +162,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   // Send OTP to phone number
-  const sendOTP = async (phoneNo: string): Promise<ConfirmationResult> => {
-    try {
-      // Normalize to E.164 format (+639123456789)
-      let normalizedPhone = phoneNo.replace(/\s/g, '');
-      if (normalizedPhone.startsWith('0')) {
-        normalizedPhone = '+63' + normalizedPhone.substring(1);
-      }
-      if (!normalizedPhone.startsWith('+')) {
-        normalizedPhone = '+' + normalizedPhone;
-      }
-
-      console.log('Sending OTP to:', normalizedPhone);
-
-      // Remove existing reCAPTCHA container content
-      const existingContainer = document.getElementById('recaptcha-container');
-      if (existingContainer) {
-        existingContainer.innerHTML = '';
-      }
-
-      // Reset the ref
-      recaptchaVerifierRef.current = null;
-
-      // Create new invisible reCAPTCHA
-      const { RecaptchaVerifier } = await import('firebase/auth');
-      
-      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-        callback: (response: any) => {
-          console.log('reCAPTCHA verified, response:', response);
-        },
-        'expired-callback': () => {
-          console.log('reCAPTCHA expired');
-          recaptchaVerifierRef.current = null;
-        }
-      });
-
-      console.log('reCAPTCHA created, sending OTP...');
-
-      const confirmationResult = await signInWithPhoneNumber(
-        auth,
-        normalizedPhone,
-        recaptchaVerifierRef.current
-      );
-
-      console.log('OTP sent successfully');
-      return confirmationResult;
-      
-    } catch (error: any) {
-      console.error('=== SEND OTP ERROR ===', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
-      
-      // Reset reCAPTCHA ref on error
-      recaptchaVerifierRef.current = null;
-      
-      const errorMessages: Record<string, string> = {
-        'auth/invalid-phone-number': 'Invalid phone number format. Use format: 09123456789',
-        'auth/too-many-requests': 'Too many requests. Please try again later.',
-        'auth/captcha-check-failed': 'Security check failed. Please try again.',
-        'auth/phone-number-already-exists': 'An account with this phone number already exists.',
-        'auth/invalid-app-credential': 'Firebase configuration error. Check your API key.',
-        'auth/recaptcha-error': 'reCAPTCHA verification failed. Please refresh and try again.',
-      };
-      
-      throw new Error(errorMessages[error.code] || `Failed to send OTP: ${error.message}`);
+ const sendOTP = async (phoneNo: string): Promise<ConfirmationResult> => {
+  let normalizedPhone = '';
+  
+  try {
+    // Normalize phone first
+    normalizedPhone = phoneNo.replace(/\s/g, '');
+    if (normalizedPhone.startsWith('0')) {
+      normalizedPhone = '+63' + normalizedPhone.substring(1);
     }
-  };
+    if (!normalizedPhone.startsWith('+')) {
+      normalizedPhone = '+' + normalizedPhone;
+    }
+
+    console.log('=== SEND OTP DEBUG ===');
+    console.log('1. Phone normalized:', normalizedPhone);
+    console.log('2. Auth exists:', !!auth);
+
+    // Check if reCAPTCHA container exists
+    let container = document.getElementById('recaptcha-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'recaptcha-container';
+      document.body.appendChild(container);
+      console.log('3. Created reCAPTCHA container');
+    }
+
+    // Reset the ref (don't try to clear, just create new)
+    recaptchaVerifierRef.current = null;
+
+    // Import and create reCAPTCHA
+    console.log('4. Importing RecaptchaVerifier...');
+    const { RecaptchaVerifier } = await import('firebase/auth');
+    
+    console.log('5. Creating RecaptchaVerifier with auth:', auth);
+    console.log('6. Auth app name:', auth?.app?.name);
+    
+    recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: 'invisible',
+      callback: (response: any) => {
+        console.log('reCAPTCHA verified:', response);
+      },
+      'expired-callback': () => {
+        console.log('reCAPTCHA expired');
+      }
+    });
+
+    console.log('7. RecaptchaVerifier created:', !!recaptchaVerifierRef.current);
+
+    console.log('8. Calling signInWithPhoneNumber...');
+    console.log('   - auth:', auth);
+    console.log('   - phone:', normalizedPhone);
+    console.log('   - verifier:', recaptchaVerifierRef.current);
+
+    const confirmationResult = await signInWithPhoneNumber(
+      auth,
+      normalizedPhone,
+      recaptchaVerifierRef.current
+    );
+
+    console.log('9. OTP sent successfully!');
+    return confirmationResult;
+    
+  } catch (error: any) {
+    console.error('=== SEND OTP FAILED ===');
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+    console.error('Stack:', error.stack);
+    
+    recaptchaVerifierRef.current = null;
+    
+    throw new Error(`Failed to send OTP: ${error.message}`);
+  }
+};
 
   // Verify OTP and return the user (for chaining with account creation)
   const verifyOTP = async (confirmation: ConfirmationResult, otp: string): Promise<FirebaseUser> => {

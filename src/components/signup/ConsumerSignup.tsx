@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react'; // Added useRef
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { ConfirmationResult } from 'firebase/auth'; // Added type
 import logo from '../../assets/icons/logo.png';
 import SignupToggle from './SignupToggle';
 import { consumerSignupSchema, type ConsumerSignupData } from '../../lib/validations';
@@ -10,8 +11,12 @@ import { useSanitizedInput } from '../../hooks/useSanitizedInput';
 
 export default function ConsumerSignup() {
   const navigate = useNavigate();
-  const { sendOTP } = useAuth(); // NEW: Use sendOTP instead of signUpConsumer
+  const { sendOTP } = useAuth();
   const { sanitizeName, sanitizeEmail, sanitizePhone } = useSanitizedInput();
+  
+  // Store confirmation result in ref (not state) to persist across renders
+  const confirmationRef = useRef<ConfirmationResult | null>(null);
+  
   const [isLoading, setIsLoading] = useState(false);
   const [firebaseError, setFirebaseError] = useState<string | null>(null);
 
@@ -22,7 +27,7 @@ export default function ConsumerSignup() {
     formState: { errors },
     reset,
     trigger,
-    watch, // NEW: To get phone number for OTP
+    watch,
   } = useForm<ConsumerSignupData>({
     resolver: zodResolver(consumerSignupSchema),
     mode: 'onChange',
@@ -32,12 +37,11 @@ export default function ConsumerSignup() {
       email: '',
       address: '',
       phoneNo: '',
-      interest: 'Vegetables' as const,
-      // REMOVED: password, confirmPassword, agreeToTerms
+      interest: 'Vegetables',
+      agreeToTerms: false,
     },
   });
 
-  // Watch phone number for OTP step
   const phoneNo = watch('phoneNo');
 
   const onSubmit = async (data: ConsumerSignupData) => {
@@ -45,15 +49,19 @@ export default function ConsumerSignup() {
     setFirebaseError(null);
     
     try {
-      // NEW: Send OTP first, don't create account yet
+      // Send OTP and store confirmation in ref
       const confirmation = await sendOTP(data.phoneNo);
+      confirmationRef.current = confirmation;
       
-      // Navigate to OTP page with confirmation and form data
-      navigate('/otp', { 
+      // Store in sessionStorage for OTP page to access
+      sessionStorage.setItem('consumerSignupData', JSON.stringify(data));
+      sessionStorage.setItem('consumerConfirmation', 'true'); // Flag that confirmation exists
+      
+      // Navigate to OTP page - don't pass confirmation in state (not serializable)
+      navigate('/consumer/otp-verification', { 
         state: { 
-          confirmation,           // Pass confirmation result
-          formData: data,        // Pass all form data
-          flow: 'signup'         // Indicate this is signup, not login
+          phoneNumber: data.phoneNo,
+          flow: 'signup'
         } 
       });
     } catch (error: any) {
@@ -212,7 +220,7 @@ export default function ConsumerSignup() {
             )}
           </div>
 
-          {/* Contact Number - NOW PRIMARY IDENTIFIER */}
+          {/* Contact Number */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
               Contact Number <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(for OTP verification)</span>
@@ -263,15 +271,11 @@ export default function ConsumerSignup() {
             )}
           </div>
 
-          {/* REMOVED: Password fields */}
-          {/* REMOVED: Confirm Password */}
-          {/* REMOVED: Terms checkbox (handle on OTP page or make implicit) */}
-
-          {/* Terms - Simplified */}
+          {/* Terms - FIXED: Added register */}
           <div className="col-span-2 flex items-start gap-2 mt-2 p-3 bg-gray-50 rounded-lg">
             <input
+              {...register('agreeToTerms')}
               type="checkbox"
-              required
               className="w-4 h-4 accent-primary cursor-pointer mt-0.5"
             />
             <span className="text-sm font-primary text-gray-600">
@@ -281,6 +285,9 @@ export default function ConsumerSignup() {
               <Link to="/privacy" className="text-primary underline hover:text-green-700">Privacy Policy</Link>
             </span>
           </div>
+          {errors.agreeToTerms && (
+            <p className="col-span-2 text-xs text-red-500 font-primary">{errors.agreeToTerms.message}</p>
+          )}
 
           {/* Buttons */}
           <div className="col-span-2 flex items-center justify-between mt-6">
