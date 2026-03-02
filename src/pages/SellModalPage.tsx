@@ -1,4 +1,4 @@
-import AddProduct from "../components/selling/AddProduct";
+import AddProduct from "../components/selling/addproduct";
 
 export default function SellModalPage() {
     return (
