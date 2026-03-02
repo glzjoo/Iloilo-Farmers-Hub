@@ -111,7 +111,7 @@ export default function NavbarLoggedInFarmer() {
 
                                     {/* Dropdown items */}
                                     <div className="py-2">
-                                        <Link to="/profile" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
+                                        <Link to="/farmer-account" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
                                             <img src={accountSettingsIcon} className="w-7 h-7" />
                                             <div>
                                                 <p className="text-base font-bold text-black">My Account</p>

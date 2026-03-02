@@ -16,11 +16,11 @@ import LoginPage from './pages/LoginPage';
 import OtpPage from './pages/OtpPage';
 import NavbarLoggedIn from './components/layout/NavbarLoggedIn';
 import ConsumerSignupPage from './pages/ConsumerSignupPage';
-import ProfileInfoModal from './pages/ProfileInfoModal';
 import IDVerificationPage from './pages/IDVerificationPage';
 import NavbarLoggedInFarmer from './components/layout/NavbarLoggedInFarmer';
 import SellModalPage from './pages/SellModalPage';
 import MyListingPage from './pages/MyListingPage';
+import FarmerAccountPage from './pages/FarmerAccountPage';
 
 function AppLayout() {
     const location = useLocation();
@@ -51,9 +51,9 @@ function AppLayout() {
                 <Route path="/consumer-signup" element={<ConsumerSignupPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/otp" element={<OtpPage />} />
-                <Route path="/profile" element={<ProfileInfoModal />} />
                 <Route path="/sell" element={<SellModalPage />} />
                 <Route path="/my-listings" element={<MyListingPage />} />
+                <Route path="/farmer-account" element={<FarmerAccountPage />} />
             </Routes>
             <Footer />
         </div>
