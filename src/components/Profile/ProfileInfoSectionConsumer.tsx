@@ -36,7 +36,7 @@ export default function ProfileInfoSection() {
   const [photoUploadLoading, setPhotoUploadLoading] = useState(false);
   const [canChangePhoto, setCanChangePhoto] = useState(true);
   const [timeUntilNextChange, setTimeUntilNextChange] = useState<string>('');
-  
+
   const { user, refreshProfile } = useAuth();
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export default function ProfileInfoSection() {
         if (data.profileImage) {
           setPhotoUrl(data.profileImage);
         }
-        
+
         checkPhotoChangeCooldown(data.lastPhotoChange);
       } else {
         setError('Profile not found');
@@ -141,10 +141,10 @@ export default function ProfileInfoSection() {
       setPhotoUrl(downloadUrl);
       setPendingPhotoFile(null);
       setPendingPhotoPreview(null);
-      
+
       checkPhotoChangeCooldown(new Date());
       await refreshProfile();
-      
+
     } catch (err) {
       console.error('Error uploading photo:', err);
       setError('Failed to upload photo. Please try again.');
@@ -161,7 +161,7 @@ export default function ProfileInfoSection() {
 
   const handleSave = async () => {
     if (!user || !editedProfile) return;
-    
+
     setSaveLoading(true);
     setError(null);
 
@@ -181,9 +181,9 @@ export default function ProfileInfoSection() {
       // Update local state
       setProfile(editedProfile);
       setIsEditing(false);
-      
+
       await refreshProfile();
-      
+
     } catch (err) {
       console.error('Error saving profile:', err);
       setError('Failed to save changes. Please try again.');
@@ -243,16 +243,16 @@ export default function ProfileInfoSection() {
             <h3 className="font-primary font-bold text-xl text-gray-800 mb-2">
               Confirm Profile Photo
             </h3>
-            
+
             <p className="text-gray-600 mb-4">
               Are you sure you want to use this photo?
             </p>
 
             {pendingPhotoPreview && (
               <div className="mb-6">
-                <img 
-                  src={pendingPhotoPreview} 
-                  alt="Preview" 
+                <img
+                  src={pendingPhotoPreview}
+                  alt="Preview"
                   className="w-32 h-32 mx-auto rounded-xl object-cover border-4 border-gray-200"
                 />
               </div>
@@ -277,7 +277,7 @@ export default function ProfileInfoSection() {
               >
                 Yes, Use This Photo
               </button>
-              
+
               <button
                 onClick={cancelPhotoChange}
                 className="w-full py-3 rounded-full border-2 border-gray-300 text-gray-600 font-primary font-bold hover:bg-gray-50 transition-colors"
@@ -294,11 +294,10 @@ export default function ProfileInfoSection() {
         <div className="flex items-center justify-between mb-8">
           <h2 className="font-primary font-bold text-2xl text-gray-800">Profile Information</h2>
           <div className="flex items-center gap-2">
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              profile.verificationStatus === 'verified' 
-                ? 'bg-green-100 text-green-700' 
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${profile.verificationStatus === 'verified'
+                ? 'bg-green-100 text-green-700'
                 : 'bg-yellow-100 text-yellow-700'
-            }`}>
+              }`}>
               {profile.verificationStatus === 'verified' ? '✓ Verified' : 'Pending Verification'}
             </span>
           </div>
@@ -342,7 +341,7 @@ export default function ProfileInfoSection() {
             <p className="text-xs font-primary text-gray-400 mb-3">
               Member since {profile.verificationData?.verifiedAt?.toDate?.().toLocaleDateString() || 'N/A'}
             </p>
-            
+
             {canChangePhoto ? (
               <button
                 onClick={() => fileInputRef.current?.click()}
@@ -360,7 +359,7 @@ export default function ProfileInfoSection() {
                 Photo change available in {timeUntilNextChange}
               </p>
             )}
-            
+
             <input
               ref={fileInputRef}
               type="file"
@@ -412,9 +411,8 @@ export default function ProfileInfoSection() {
               value={editedProfile.farmName}
               readOnly={!isEditing}
               onChange={(e) => handleInputChange('farmName', e.target.value)}
-              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none ${
-                isEditing ? 'focus:border-primary bg-white' : 'bg-gray-50'
-              }`}
+              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none ${isEditing ? 'focus:border-primary bg-white' : 'bg-gray-50'
+                }`}
             />
           </div>
 
@@ -426,9 +424,8 @@ export default function ProfileInfoSection() {
               value={editedProfile.farmAddress}
               readOnly={!isEditing}
               onChange={(e) => handleInputChange('farmAddress', e.target.value)}
-              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none ${
-                isEditing ? 'focus:border-primary bg-white' : 'bg-gray-50'
-              }`}
+              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none ${isEditing ? 'focus:border-primary bg-white' : 'bg-gray-50'
+                }`}
             />
           </div>
 
@@ -440,9 +437,8 @@ export default function ProfileInfoSection() {
               value={editedProfile.phoneNo}
               readOnly={!isEditing}
               onChange={(e) => handleInputChange('phoneNo', e.target.value)}
-              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none ${
-                isEditing ? 'focus:border-primary bg-white' : 'bg-gray-50'
-              }`}
+              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none ${isEditing ? 'focus:border-primary bg-white' : 'bg-gray-50'
+                }`}
             />
           </div>
 
@@ -453,9 +449,8 @@ export default function ProfileInfoSection() {
               value={editedProfile.farmType}
               disabled={!isEditing}
               onChange={(e) => handleInputChange('farmType', e.target.value)}
-              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none bg-white cursor-pointer ${
-                isEditing ? 'focus:border-primary' : 'bg-gray-50'
-              }`}
+              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none bg-white cursor-pointer ${isEditing ? 'focus:border-primary' : 'bg-gray-50'
+                }`}
             >
               <option value="Rice">Rice</option>
               <option value="Corn">Corn</option>
@@ -477,9 +472,8 @@ export default function ProfileInfoSection() {
               readOnly={!isEditing}
               onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder="No email provided"
-              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none ${
-                isEditing ? 'focus:border-primary bg-white' : 'bg-gray-50'
-              }`}
+              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none ${isEditing ? 'focus:border-primary bg-white' : 'bg-gray-50'
+                }`}
             />
           </div>
 
@@ -500,13 +494,13 @@ export default function ProfileInfoSection() {
         <div className="flex justify-end gap-4 mt-8">
           {isEditing ? (
             <>
-              <button 
+              <button
                 onClick={handleCancel}
                 className="px-6 py-2.5 rounded-full border-2 border-gray-300 text-gray-600 font-primary font-bold hover:bg-gray-50"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSave}
                 disabled={saveLoading}
                 className="px-10 py-2.5 rounded-full border-none bg-primary text-white font-primary font-bold cursor-pointer hover:bg-green-700 disabled:opacity-50"
@@ -515,7 +509,7 @@ export default function ProfileInfoSection() {
               </button>
             </>
           ) : (
-            <button 
+            <button
               onClick={() => setIsEditing(true)}
               className="px-10 py-2.5 rounded-full border-none bg-primary text-white font-primary font-bold cursor-pointer hover:bg-green-700"
             >
