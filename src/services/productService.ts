@@ -270,3 +270,19 @@ export const deleteProductImage = async (imageUrl: string): Promise<void> => {
         // Don't throw - allow product deletion to continue
     }
 };
+
+export const getAllActiveProducts = async (): Promise<Product[]> => {
+    try {
+        const q = query(
+            collection(db, PRODUCTS_COLLECTION),
+            where('status', '==', 'active'),
+            orderBy('createdAt', 'desc')
+        );
+        
+        const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
+        return querySnapshot.docs.map(convertDocToProduct);
+    } catch (error) {
+        console.error('Error fetching active products:', error);
+        throw new Error('Failed to fetch products.');
+    }
+};

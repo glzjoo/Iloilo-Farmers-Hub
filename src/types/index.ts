@@ -135,3 +135,21 @@ export interface CloudVisionResult {
         code: number;
     };
 }
+
+export interface CartItem {
+    productId: string;
+    name: string;
+    price: number;
+    quantity: number;
+    unit: string;
+    image: string;
+    farmerId: string;
+    farmerName: string;
+    addedAt: Date | any;
+}
+
+export interface Cart {
+    userId: string;
+    items: CartItem[];
+    updatedAt: Date | any;
+}

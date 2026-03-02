@@ -14,7 +14,7 @@ interface LocationState {
 export default function ConsumerOtpVerification() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { sendOTP, verifyOTP, signUpConsumer } = useAuth();
+  const { sendOTP, signUpConsumer } = useAuth();
   
   const { phoneNumber } = (location.state as LocationState) || {};
   
