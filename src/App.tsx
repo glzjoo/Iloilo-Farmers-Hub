@@ -13,8 +13,7 @@ import ItemsDetailsPage from './pages/ItemsDetailsPage';
 import MessagesPage from './pages/MessagesPage';
 import FarmerSignupPage from './pages/FarmerSignupPage';
 import LoginPage from './pages/LoginPage';
-import OtpPage from './pages/LoginOtpPage';
-import NavbarLoggedIn from './components/layout/NavbarLoggedIn';
+// import NavbarLoggedIn from './components/layout/NavbarLoggedIn';
 import ConsumerSignupPage from './pages/ConsumerSignupPage';
 import IDVerificationPage from './pages/IDVerificationPage';
 import NavbarLoggedInFarmer from './components/layout/NavbarLoggedInFarmer';
@@ -56,7 +55,6 @@ function AppLayout() {
                 <Route path="/consumer/otp-verification" element={<ConsumerOtpPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/login/otp-verification" element={<LoginOtpPage />} />
-                <Route path="/otp" element={<OtpPage />} />
                 <Route path="/sell" element={<SellModalPage />} />
                 <Route path="/my-listings" element={<MyListingPage />} />
                 <Route path="/farmer-account" element={<FarmerAccountPage />} />
