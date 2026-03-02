@@ -60,12 +60,15 @@ export interface Product {
     image: string;
     category: string;
     farmerId: string;
+    farmerName?: string; // for display purposes
     description: string;
     rating: number;
     reviewCount: number;
     stock: string;
     unit: string;
     status: 'active' | 'inactive';
+    createdAt?: Date | any; // for timestamp
+    updatedAt?: Date | any; // for timestamp
 }
 
 // Updated for passwordless OTP flow - REMOVED password fields

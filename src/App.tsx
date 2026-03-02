@@ -24,6 +24,7 @@ import ConsumerOtpPage from './pages/ConsumerOtpPage';
 import LoginOtpPage from './pages/LoginOtpPage';
 import FarmerAccountPage from './pages/FarmerAccountPage';
 
+
 function AppLayout() {
     const location = useLocation();
     const { isLoggedIn } = useAuth();
@@ -56,6 +57,7 @@ function AppLayout() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/login/otp-verification" element={<LoginOtpPage />} />
                 <Route path="/sell" element={<SellModalPage />} />
+                <Route path="/AddProduct" element={<SellModalPage />} />
                 <Route path="/my-listings" element={<MyListingPage />} />
                 <Route path="/farmer-account" element={<FarmerAccountPage />} />
             </Routes>
