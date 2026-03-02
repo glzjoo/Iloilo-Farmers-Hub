@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import searchIcon from '../../assets/icons/search.svg';
 import filterIcon from '../../assets/icons/Filter.svg';
-import ListedProductCard from '../selling/ListedproductCard';
+import ListedProductCard from '../selling/ListedProductCard';
 import EditProductModal from '../selling/EditProductModal';
 import type { Product } from '../../types';
 import okra from '../../assets/images/item-pictures/okra.png';

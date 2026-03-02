@@ -24,6 +24,7 @@ import FarmerOtpPage from './pages/FarmerOtpPage';
 import ConsumerOtpPage from './pages/ConsumerOtpPage';
 import LoginOtpPage from './pages/LoginOtpPage';
 import FarmerAccountPage from './pages/FarmerAccountPage';
+import FarmerAccountSetting from './pages/FarmerAccountSetting';
 
 function AppLayout() {
     const location = useLocation();
@@ -60,6 +61,7 @@ function AppLayout() {
                 <Route path="/sell" element={<SellModalPage />} />
                 <Route path="/my-listings" element={<MyListingPage />} />
                 <Route path="/farmer-account" element={<FarmerAccountPage />} />
+                <Route path="/farmer-account-setting" element={<FarmerAccountSetting />} />
             </Routes>
             <Footer />
         </div>
