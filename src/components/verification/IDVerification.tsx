@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import logo from '../../assets/icons/logo.png';
 import type { FarmerSignupData } from '../../lib/validations';
 import CameraCapture from './CameraCapture';
-import SuccessModal from './SuccessModal';
+import IDVerificationSuccessModal from './IDVerificationSuccessModal'; // Changed from SuccessModal
 import IDUploadSection from './IDUploadSection';
 import SelfieCaptureSection from './SelfieCaptureSection';
 import VerificationInfoCard from './VerificationInfoCard';
@@ -27,7 +27,7 @@ const API_URL = import.meta.env.VITE_VERIFICATION_API_URL || 'http://localhost:3
 export default function IDVerification() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { completeFarmerSignup } = useAuth();
+  const { storeVerificationData } = useAuth();
   
   const { tempId, farmerData } = location.state as { 
     tempId: string; 
@@ -43,7 +43,6 @@ export default function IDVerification() {
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
   const [verificationResult, setVerificationResult] = useState<any>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
 
   const {
@@ -170,6 +169,33 @@ export default function IDVerification() {
     return 1 - distance / maxLen;
   };
 
+  const handleContinueToOTP = async () => {
+    try {
+      await storeVerificationData(tempId, {
+        idType: verificationResult?.verification?.idData?.idType || 'national_id',
+        faceMatchScore: verificationResult?.verification?.faceMatch?.score ?? null,
+        faceMatchPassed: verificationResult?.verification?.faceMatch?.passed ?? null,
+        idNumber: verificationResult?.verification?.idData?.idNumber ?? null,
+        fullName: verificationResult?.verification?.idData?.fullName ?? null,
+        extractedAddress: verificationResult?.verification?.idData?.address ?? null,
+        idCardImageUrl: verificationResult?.idCardUrl ?? null,
+        selfieImageUrl: verificationResult?.selfieUrl ?? null,
+      });
+
+      navigate('/otp-verification', {
+        state: {
+          tempId,
+          phoneNumber: farmerData.phoneNo,
+          userType: 'farmer',
+          purpose: 'signup'
+        }
+      });
+    } catch (error: any) {
+      setError(`Failed to save verification: ${error.message}. Please try again.`);
+      setShowSuccessModal(false);
+    }
+  };
+
   const onSubmit = async (data: IDVerificationFormData) => {
     if (!idImage || !selfieFile) {
       setError('Please upload your ID and capture a live selfie');
@@ -212,26 +238,8 @@ export default function IDVerification() {
       );
 
       if (result.verified && nameMatches) {
-        setIsCreatingAccount(true);
+        setShowSuccessModal(true);
         
-        try {
-          await completeFarmerSignup(tempId, {
-            idType: data.idType,
-            faceMatchScore: result.verification?.faceMatch?.score ?? null,
-            faceMatchPassed: result.verification?.faceMatch?.passed ?? null,
-            idNumber: result.verification?.idData?.idNumber ?? null,
-            fullName: result.verification?.idData?.fullName ?? null,
-            address: result.verification?.idData?.address ?? null,
-            idCardImageUrl: result.idCardUrl ?? null,
-            selfieImageUrl: result.selfieUrl ?? null,
-          });
-          
-          setShowSuccessModal(true);
-        } catch (accountError: any) {
-          setError(`Verification passed but account creation failed: ${accountError.message}. Please try again.`);
-        } finally {
-          setIsCreatingAccount(false);
-        }
       } else if (result.verified && !nameMatches) {
         const extracted = result.verification?.idData?.fullName || 'Unknown';
         const registered = `${farmerData.firstName} ${farmerData.lastName}`;
@@ -260,19 +268,6 @@ export default function IDVerification() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleSuccessClose = () => {
-    setShowSuccessModal(false);
-    navigate('/login', { 
-      replace: true,
-      state: { message: 'Account created successfully! Please log in with your credentials.' }
-    });
-  };
-
-  const handleGoToProfile = () => {
-    setShowSuccessModal(false);
-    navigate('/profile', { replace: true });
   };
 
   const handleRetry = () => {
@@ -316,11 +311,10 @@ export default function IDVerification() {
       )}
 
       {showSuccessModal && (
-        <SuccessModal
+        <IDVerificationSuccessModal
           verificationResult={verificationResult}
           farmerData={farmerData}
-          onLogin={handleSuccessClose}
-          onProfile={handleGoToProfile}
+          onContinue={handleContinueToOTP}
         />
       )}
 
@@ -328,7 +322,10 @@ export default function IDVerification() {
         <img src={logo} className="w-16 h-16 rounded-full object-cover mx-auto mb-4" alt="Logo" />
         <h1 className="font-primary font-bold text-2xl text-gray-800">Farmer ID Verification</h1>
         <p className="text-gray-600 mt-2">
-          Please verify your identity to complete your registration
+          Please verify your identity to continue registration
+        </p>
+        <p className="text-sm text-blue-600 mt-2 font-medium">
+          Step 2 of 3: ID Verification → OTP Verification
         </p>
       </div>
 
@@ -407,16 +404,26 @@ export default function IDVerification() {
 
         <button
           type="submit"
-          disabled={isLoading || isCreatingAccount || !idImage || !selfieFile}
+          disabled={isLoading || !idImage || !selfieFile}
           className="w-full py-3 rounded-full bg-primary text-white font-primary font-bold cursor-pointer hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-lg transition-colors flex items-center justify-center gap-2"
         >
-          {isCreatingAccount ? 'Creating Account...' : isLoading ? 'Verifying...' : 'Verify & Create Account'}
+          {isLoading ? (
+            <>
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Verifying...
+            </>
+          ) : (
+            'Verify Identity'
+          )}
         </button>
 
         <button
           type="button"
           onClick={handleGoBack}
-          disabled={isLoading || isCreatingAccount}
+          disabled={isLoading}
           className="w-full py-3 rounded-full border-2 border-gray-300 text-gray-600 font-primary font-bold hover:bg-gray-50 transition-colors"
         >
           Back to Registration

@@ -13,13 +13,16 @@ import ItemsDetailsPage from './pages/ItemsDetailsPage';
 import MessagesPage from './pages/MessagesPage';
 import FarmerSignupPage from './pages/FarmerSignupPage';
 import LoginPage from './pages/LoginPage';
-import OtpPage from './pages/OtpPage';
+import OtpPage from './pages/LoginOtpPage';
 import NavbarLoggedIn from './components/layout/NavbarLoggedIn';
 import ConsumerSignupPage from './pages/ConsumerSignupPage';
 import IDVerificationPage from './pages/IDVerificationPage';
 import NavbarLoggedInFarmer from './components/layout/NavbarLoggedInFarmer';
 import SellModalPage from './pages/SellModalPage';
 import MyListingPage from './pages/MyListingPage';
+import FarmerOtpPage from './pages/FarmerOtpPage';
+import ConsumerOtpPage from './pages/ConsumerOtpPage';
+import LoginOtpPage from './pages/LoginOtpPage';
 import FarmerAccountPage from './pages/FarmerAccountPage';
 
 function AppLayout() {
@@ -48,8 +51,12 @@ function AppLayout() {
                 <Route path="/messages" element={<MessagesPage />} />
                 <Route path="/farmer-signup" element={<FarmerSignupPage />} />
                 <Route path="/id-verification" element={<IDVerificationPage />} />
+                <Route path="/otp-verification" element={<FarmerOtpPage />} />
                 <Route path="/consumer-signup" element={<ConsumerSignupPage />} />
+                <Route path="/consumer/otp-verification" element={<ConsumerOtpPage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/login/otp-verification" element={<LoginOtpPage />} />
+                <Route path="/profile" element={<ProfileInfoModal />} />
                 <Route path="/otp" element={<OtpPage />} />
                 <Route path="/sell" element={<SellModalPage />} />
                 <Route path="/my-listings" element={<MyListingPage />} />

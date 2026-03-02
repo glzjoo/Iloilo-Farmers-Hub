@@ -7,7 +7,6 @@ export interface UserProfile {
 }
 
 // Extended profile that combines auth + role-specific data
-// This is what's actually returned by useAuth() after the context fetches complete data
 export interface ExtendedUserProfile extends UserProfile {
     firstName?: string;
     lastName?: string;
@@ -20,7 +19,7 @@ export interface ExtendedUserProfile extends UserProfile {
     verificationStatus?: 'pending' | 'verified' | 'rejected';
     // Consumer-specific fields
     interest?: string;
-    address?: string; // Consumer's address (different from cardAddress)
+    address?: string;
 }
 
 export interface Farmer {
@@ -29,18 +28,16 @@ export interface Farmer {
     lastName: string;
     phoneNo: string;
     email: string | null;
-    idType: string;
-    cardAddress: string;
+    idType?: string; // Made optional - comes from ID verification
+    cardAddress?: string; // Made optional - comes from ID verification
     profileImage?: string;
     createdAt: Date;
-    // verification fields
     verificationStatus?: 'pending' | 'verified' | 'rejected';
     verificationData?: VerificationData;
     farmName?: string;
     farmAddress?: string;
     farmType?: string;
-    // lastPhotoChange for the 1-week cooldown feature
-    lastPhotoChange?: Date | { toDate(): Date } | any; // Firestore timestamp
+    lastPhotoChange?: Date | { toDate(): Date } | any;
 }
 
 export interface Consumer {
@@ -53,10 +50,8 @@ export interface Consumer {
     profileImage?: string;
     createdAt: Date;
     interest?: string;
-    // lastPhotoChange for consistency (if consumers also get photo upload)
     lastPhotoChange?: Date | { toDate(): Date } | any;
 }
-
 
 export interface Product {
     id: string;
@@ -73,43 +68,41 @@ export interface Product {
     status: 'active' | 'inactive';
 }
 
-
+// Updated for passwordless OTP flow - REMOVED password fields
 export interface PendingFarmer {
     tempId: string;
     farmerData: {
         firstName: string;
         lastName: string;
-        email: string;
+        email?: string; // Optional
         farmName: string;
         farmAddress: string;
         phoneNo: string;
         farmType: string;
-        password: string;
-        confirmPassword: string;
         agreeToTerms: boolean;
     };
-    authEmail: string;
-    createdAt: Date;
-    expiresAt: Date;
-    verificationAttempts: number;
-    maxAttempts: number;
-    status?: 'pending' | 'completed' | 'expired';
-    completedAt?: Date;
+    idVerified: boolean; // Track if ID verification is complete
+    verificationData?: VerificationData; // Store ID verification results
+    createdAt: Date | any; // Firestore timestamp
+    expiresAt: Date | any; // Firestore timestamp
+    verificationAttempts?: number;
+    maxAttempts?: number;
+    status?: 'pending' | 'id_verified' | 'completed' | 'expired';
+    completedAt?: Date | any;
     assignedUid?: string;
 }
 
-// Verification data stored after Face++/Cloud Vision
 export interface VerificationData {
-    faceMatchScore: number;
-    faceMatchPassed: boolean;
+    faceMatchScore?: number;
+    faceMatchPassed?: boolean;
     extractedIdNumber?: string;
     extractedFullName?: string;
     extractedAddress?: string;
     idCardImageUrl?: string;
     selfieImageUrl?: string;
-    verifiedAt: Date;
-    verifiedBy: string; // 'face++_cloudVision'
-    idType: string;
+    verifiedAt?: Date | any;
+    verifiedBy?: string;
+    idType?: string;
 }
 
 // Face++ API response types

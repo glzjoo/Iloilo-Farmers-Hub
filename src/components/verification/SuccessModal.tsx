@@ -1,5 +1,4 @@
 interface SuccessModalProps {
-  verificationResult: any;
   farmerData: {
     firstName: string;
     lastName: string;
@@ -10,7 +9,7 @@ interface SuccessModalProps {
   onProfile: () => void;
 }
 
-export default function SuccessModal({ verificationResult, farmerData, onLogin, onProfile }: SuccessModalProps) {
+export default function SuccessModal({ farmerData, onLogin, onProfile }: SuccessModalProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
@@ -26,25 +25,20 @@ export default function SuccessModal({ verificationResult, farmerData, onLogin, 
         </h2>
         
         <p className="text-gray-600 mb-6">
-          Your identity has been verified and your farmer account is now active. 
-          Welcome to Iloilo Farmers Hub!
+          Welcome to Iloilo Farmers Hub, {farmerData.firstName}! Your farmer account is now active and ready to use.
         </p>
 
-        {/* Verification Details */}
+        {/* Account Details */}
         <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
           <p className="text-sm text-gray-600">
-            <span className="font-semibold">Face Match:</span>{' '}
-            {verificationResult?.verification?.faceMatch?.confidence} (
-            {verificationResult?.verification?.faceMatch?.score}%)
+            <span className="font-semibold">Name:</span> {farmerData.firstName} {farmerData.lastName}
           </p>
           <p className="text-sm text-gray-600">
-            <span className="font-semibold">ID Type:</span>{' '}
-            {verificationResult?.verification?.idData?.idType}
+            <span className="font-semibold">Phone:</span> {farmerData.phoneNo}
           </p>
-          {verificationResult?.verification?.idData?.fullName && (
+          {farmerData.email && (
             <p className="text-sm text-gray-600">
-              <span className="font-semibold">Verified Name:</span>{' '}
-              {verificationResult.verification.idData.fullName}
+              <span className="font-semibold">Email:</span> {farmerData.email}
             </p>
           )}
         </div>
@@ -55,19 +49,19 @@ export default function SuccessModal({ verificationResult, farmerData, onLogin, 
             onClick={onLogin}
             className="w-full py-3 rounded-full bg-primary text-white font-primary font-bold hover:bg-green-700 transition-colors"
           >
-            Log In Now
+            Go to Dashboard
           </button>
           
           <button
             onClick={onProfile}
             className="w-full py-3 rounded-full border-2 border-primary text-primary font-primary font-bold hover:bg-green-50 transition-colors"
           >
-            View My Profile
+            Complete Your Profile
           </button>
         </div>
 
         <p className="mt-4 text-xs text-gray-400">
-          A confirmation has been sent to {farmerData?.email || farmerData?.phoneNo}
+          You can now start selling your products!
         </p>
       </div>
     </div>
