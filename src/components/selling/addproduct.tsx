@@ -1,18 +1,22 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import AddProductImage from "./AddProductImage";
+import AddProductImage from "./addproductimage";
 import { useAuth } from "../../context/AuthContext";
 import { addProduct } from "../../services/productService";
 import type { Product } from "../../types";
+import addtocart from '../../assets/icons/add-to-cart.svg';
+import minus from '../../assets/icons/minus.svg';
 
 export default function AddProduct() {
     const navigate = useNavigate();
     const { user, userProfile } = useAuth();
-    
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
-    
+    const [stockValue, setStockValue] = useState(0);
+    const [customCategory, setCustomCategory] = useState('');
+    const [customUnit, setCustomUnit] = useState('');
+
     // Form state
     const [formData, setFormData] = useState({
         name: '',
@@ -57,7 +61,7 @@ export default function AddProduct() {
             return;
         }
 
-        if (!formData.stock.trim()) {
+        if (stockValue <= 0) {
             setError('Stock quantity is required');
             return;
         }
@@ -78,9 +82,9 @@ export default function AddProduct() {
             const productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'> = {
                 name: formData.name.trim(),
                 price: Number(formData.price),
-                category: formData.category,
-                unit: formData.unit,
-                stock: formData.stock.trim(),
+                category: formData.category === 'Other' ? customCategory.trim() : formData.category,
+                unit: formData.unit === 'Other' ? customUnit.trim() : formData.unit,
+                stock: String(stockValue),
                 status: formData.status,
                 description: formData.description.trim(),
                 farmerId: user.uid,
@@ -131,12 +135,12 @@ export default function AddProduct() {
                                 <label className={labelClass}>
                                     Product Name <span className="text-red-500">*</span>
                                 </label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     name="name"
                                     value={formData.name}
                                     onChange={handleInputChange}
-                                    placeholder="e.g., Okra" 
+                                    placeholder="e.g., Okra"
                                     className={inputClass}
                                     required
                                 />
@@ -147,22 +151,44 @@ export default function AddProduct() {
                                 <label className={labelClass}>
                                     Category <span className="text-red-500">*</span>
                                 </label>
-                                <select 
-                                    name="category"
-                                    value={formData.category}
-                                    onChange={handleInputChange}
-                                    className={inputClass}
-                                    required
-                                >
-                                    <option value="Vegetables">Vegetables</option>
-                                    <option value="Rice">Rice</option>
-                                    <option value="Corn">Corn</option>
-                                    <option value="Fruits">Fruits</option>
-                                    <option value="Livestock">Livestock</option>
-                                    <option value="Poultry">Poultry</option>
-                                    <option value="Fishery">Fishery</option>
-                                    <option value="Other">Other</option>
-                                </select>
+                                {formData.category === 'Other' ? (
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={customCategory}
+                                            onChange={(e) => setCustomCategory(e.target.value)}
+                                            placeholder="Type your category"
+                                            className={inputClass}
+                                            autoFocus
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => { setFormData(prev => ({ ...prev, category: 'Vegetables' })); setCustomCategory(''); }}
+                                            className="text-gray-400 hover:text-gray-600 text-lg cursor-pointer bg-transparent border-none"
+                                            title="Back to list"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <select
+                                        name="category"
+                                        value={formData.category}
+                                        onChange={handleInputChange}
+                                        className={inputClass}
+                                        required
+                                    >
+                                        <option value="Vegetables">Vegetables</option>
+                                        <option value="Rice">Rice</option>
+                                        <option value="Corn">Corn</option>
+                                        <option value="Fruits">Fruits</option>
+                                        <option value="Livestock">Livestock</option>
+                                        <option value="Poultry">Poultry</option>
+                                        <option value="Fishery">Fishery</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                )}
                             </div>
 
                             {/* Price */}
@@ -170,13 +196,13 @@ export default function AddProduct() {
                                 <label className={labelClass}>
                                     Price (₱) <span className="text-red-500">*</span>
                                 </label>
-                                <input 
-                                    type="number" 
+                                <input
+                                    type="number"
                                     name="price"
                                     value={formData.price}
                                     onChange={handleInputChange}
-                                    placeholder="0" 
-                                    min="0.01" 
+                                    placeholder="0"
+                                    min="0.01"
                                     step="0.01"
                                     className={inputClass}
                                     required
@@ -188,35 +214,70 @@ export default function AddProduct() {
                                 <label className={labelClass}>
                                     Unit <span className="text-red-500">*</span>
                                 </label>
-                                <select 
-                                    name="unit"
-                                    value={formData.unit}
-                                    onChange={handleInputChange}
-                                    className={inputClass}
-                                    required
-                                >
-                                    <option value="kg">Kilogram (kg)</option>
-                                    <option value="pcs">Pieces (pcs)</option>
-                                    <option value="ltr">Liters (ltr)</option>
-                                    <option value="gallon">Gallons (gallon)</option>
-                                    <option value="Other">Other</option>
-                                </select>
+                                {formData.unit === 'Other' ? (
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={customUnit}
+                                            onChange={(e) => setCustomUnit(e.target.value)}
+                                            placeholder="Type your unit"
+                                            className={inputClass}
+                                            autoFocus
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => { setFormData(prev => ({ ...prev, unit: 'kg' })); setCustomUnit(''); }}
+                                            className="text-gray-400 hover:text-gray-600 text-lg cursor-pointer bg-transparent border-none"
+                                            title="Back to list"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <select
+                                        name="unit"
+                                        value={formData.unit}
+                                        onChange={handleInputChange}
+                                        className={inputClass}
+                                        required
+                                    >
+                                        <option value="kg">Kilogram (kg)</option>
+                                        <option value="pcs">Pieces (pcs)</option>
+                                        <option value="ltr">Liters (ltr)</option>
+                                        <option value="gallon">Gallons (gallon)</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                )}
                             </div>
 
                             {/* Stock Quantity */}
                             <div>
-                                <label className={labelClass}>
-                                    Stock Quantity <span className="text-red-500">*</span>
-                                </label>
-                                <input 
-                                    type="text" 
-                                    name="stock"
-                                    value={formData.stock}
-                                    onChange={handleInputChange}
-                                    placeholder="e.g., 50kg or 100pcs" 
-                                    className={inputClass}
-                                    required
-                                />
+                                <label className={labelClass}>Stock Quantity</label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="number"
+                                        value={stockValue}
+                                        onChange={(e) => setStockValue(Number(e.target.value))}
+                                        placeholder="0"
+                                        min="0"
+                                        className={`${inputClass} w-20`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setStockValue(Math.max(0, stockValue - 1))}
+                                        className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 hover:bg-gray-200 cursor-pointer"
+                                    >
+                                        <img src={minus} alt="" className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setStockValue(stockValue + 1)}
+                                        className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 hover:bg-gray-200 cursor-pointer"
+                                    >
+                                        <img src={addtocart} alt="" className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Status */}
@@ -224,7 +285,7 @@ export default function AddProduct() {
                                 <label className={labelClass}>
                                     Status <span className="text-red-500">*</span>
                                 </label>
-                                <select 
+                                <select
                                     name="status"
                                     value={formData.status}
                                     onChange={handleInputChange}
@@ -257,7 +318,7 @@ export default function AddProduct() {
                     {/* Image upload */}
                     <div className="w-[35%]">
                         <AddProductImage onImageSelect={setSelectedImage} />
-                        
+
                         {!selectedImage && (
                             <p className="text-red-500 text-sm mt-2">
                                 * Product image is required
