@@ -5,7 +5,7 @@ import { useState } from 'react';
 import messagesIcon from '../../assets/icons/messages.svg';
 import accountSettingsIcon from '../../assets/icons/account-settings.svg';
 import logOutIcon from '../../assets/icons/log-out.svg';
-import savedItemsIcon from '../../assets/icons/saved-items.png';
+import cartIcon from '../../assets/icons/saved-items.png';
 import { useAuth } from '../../context/AuthContext';
 import SearchBar from '../Search/SearchBar';
 
@@ -18,7 +18,6 @@ export default function NavbarLoggedInConsumer() {
     const linkClass = (path: string) =>
         `no-underline text-sm font-semibold transition-colors ${location.pathname === path ? 'text-primary' : 'text-gray-700 hover:text-green-700'}`;
 
-    // Same as farmer - uses ExtendedUserProfile
     const displayName = userProfile
         ? `${userProfile.firstName} ${userProfile.lastName}`
         : user?.displayName || 'Loading...';
@@ -61,12 +60,14 @@ export default function NavbarLoggedInConsumer() {
                     <SearchBar />
 
                     <div className="flex items-center gap-3 shrink-0">
-                        {/* Cart */}
-                        <Link to="/cart" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline text-left">
-                            <img src={savedItemsIcon} className="w-7 h-7" />
+                        {/* Cart Icon */}
+                        <Link to="/cart">
+                            <button className="bg-transparent border-none cursor-pointer p-1">
+                                <img src={cartIcon} className="w-7 h-7 brightness-0 invert" />
+                            </button>
                         </Link>
 
-                        {/* Profile button*/}
+                        {/* Profile button */}
                         <div className="relative">
                             <button
                                 onClick={() => setShowDropdown(!showDropdown)}
@@ -88,10 +89,9 @@ export default function NavbarLoggedInConsumer() {
                                 <span className="text-white text-xs">▾</span>
                             </button>
 
-                            {/* Dropdown menu - CONSUMER SPECIFIC */}
+                            {/* Dropdown menu */}
                             {showDropdown && (
                                 <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-lg overflow-hidden z-50">
-
                                     <div className="bg-primary p-4 flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden">
                                             {photoUrl ? (
@@ -106,25 +106,26 @@ export default function NavbarLoggedInConsumer() {
                                         </div>
                                     </div>
 
-                                    {/* Consumer dropdown items */}
                                     <div className="py-2">
-                                        <Link to="/profile" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
+                                        {/* My Account - goes to consumer account page */}
+                                        <Link to="/consumer-account" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
                                             <img src={accountSettingsIcon} className="w-7 h-7" />
                                             <div>
                                                 <p className="text-base font-bold text-black">My Account</p>
-                                                <p className="text-xs text-gray-400">{userProfile?.email || 'No email'}</p>
-                                            </div>
-                                        </Link>
-                                        
-                                        {/* Saved items - consumers save products */}
-                                        <Link to="/saved-items" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
-                                            <img src={savedItemsIcon} className="w-7 h-7" />
-                                            <div>
-                                                <p className="text-base font-bold text-black">Saved Items</p>
-                                                <p className="text-xs text-gray-400">View your saved products</p>
+                                                <p className="text-xs text-gray-400">Manage your profile</p>
                                             </div>
                                         </Link>
 
+                                        {/* Cart/Saved Items */}
+                                        <Link to="/cart" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
+                                            <img src={cartIcon} className="w-7 h-7" />
+                                            <div>
+                                                <p className="text-base font-bold text-black">Favorites</p>
+                                                <p className="text-xs text-gray-400">View your list</p>
+                                            </div>
+                                        </Link>
+
+                                        {/* Messages */}
                                         <Link to="/messages" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
                                             <img src={messagesIcon} className="w-7 h-7" />
                                             <div>
@@ -151,7 +152,7 @@ export default function NavbarLoggedInConsumer() {
                 </div>
             </nav>
 
-            {/* Consumer navigation - same as public but highlights active */}
+            {/* Consumer navigation */}
             <div className="bg-white border-b border-gray-200 shadow-sm">
                 <div className="max-w-7xl mx-auto flex items-center justify-center gap-10 px-6 py-3">
                     <Link to="/" className={linkClass('/')}>HOME</Link>

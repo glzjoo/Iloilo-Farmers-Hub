@@ -79,8 +79,8 @@ export default function ItemsCheckout() {
         return (
             <section className="w-full py-12">
                 <div className="max-w-5xl mx-auto px-10 text-center">
-                    <h2 className="text-3xl font-primary font-semibold text-primary mb-8">Your Cart</h2>
-                    <p className="text-gray-500 mb-4">Please login to view your cart</p>
+                    <h2 className="text-3xl font-primary font-semibold text-primary mb-8">Your Favorites</h2>
+                    <p className="text-gray-500 mb-4">Please login to view your list</p>
                     <button 
                         onClick={() => navigate('/login')}
                         className="px-6 py-2 bg-primary text-white rounded-lg"
@@ -108,7 +108,7 @@ export default function ItemsCheckout() {
         <section className="w-full py-12">
             <div className="max-w-5xl mx-auto px-10">
                 <h2 className="text-3xl font-primary font-semibold text-primary mb-8">
-                    Your Cart ({cartItems.length} items)
+                    Your Favorites ({cartItems.length} items)
                 </h2>
 
                 {error && (
@@ -119,7 +119,7 @@ export default function ItemsCheckout() {
 
                 {cartItems.length === 0 ? (
                     <div className="text-center py-16">
-                        <p className="text-xl text-gray-500 mb-4">Your cart is empty</p>
+                        <p className="text-xl text-gray-500 mb-4">Your list is empty</p>
                         <button 
                             onClick={() => navigate('/shop')}
                             className="px-6 py-2 bg-primary text-white rounded-lg"
@@ -161,12 +161,6 @@ export default function ItemsCheckout() {
                                     className="px-10 py-3 bg-gray-200 text-gray-700 font-primary font-semibold rounded-full cursor-pointer hover:bg-gray-300"
                                 >
                                     Continue Shopping
-                                </button>
-                                <button 
-                                    onClick={() => alert('Checkout coming soon!')}
-                                    className="px-10 py-3 bg-primary text-white font-primary font-semibold rounded-full cursor-pointer hover:bg-green-700"
-                                >
-                                    Checkout
                                 </button>
                             </div>
                         </div>
