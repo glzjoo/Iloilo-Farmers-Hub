@@ -71,8 +71,6 @@ export default function FarmerAccountPage() {
         ? `${profile.firstName} ${profile.lastName}`
         : 'Farmer';
 
-    const isVerified = profile?.verificationStatus === 'verified';
-
     if (loading) {
         return (
             <section className="max-w-6xl mx-auto px-10 py-8">
@@ -108,19 +106,7 @@ export default function FarmerAccountPage() {
                     <div className="flex-1">
                         <div className="flex items-center gap-2 mb-0.5">
                             <h2 className="text-lg font-bold font-primary">{displayName}</h2>
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${isVerified
-                                ? 'bg-green-600 text-white'
-                                : 'bg-green-600 text-white'
-                                }`}>
-                                {isVerified ? 'Verified' : 'Not Verified'}
-                            </span>
                         </div>
-                        <button
-                            onClick={() => setActiveTab('profile')}
-                            className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer"
-                        >
-                            Profile details &gt;
-                        </button>
                     </div>
 
                     {/* Reviews */}
