@@ -9,6 +9,7 @@ import cartIcon from '../../assets/icons/saved-items.png';
 import { useAuth } from '../../context/AuthContext';
 import SearchBar from '../Search/SearchBar';
 import HamburgerFilter from './HamburgerFilter';
+import settingIcon from '../../assets/icons/settings.svg';
 
 export default function NavbarLoggedInConsumer() {
     const [showDropdown, setShowDropdown] = useState(false);
@@ -108,30 +109,20 @@ export default function NavbarLoggedInConsumer() {
                                     </div>
 
                                     <div className="py-2">
-                                        {/* My Account - goes to consumer account page */}
-                                        <Link to="/consumer-account" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
-                                            <img src={accountSettingsIcon} className="w-7 h-7" />
-                                            <div>
-                                                <p className="text-base font-bold text-black">My Account</p>
-                                                <p className="text-xs text-gray-400">Manage your profile</p>
-                                            </div>
-                                        </Link>
-
-                                        {/* Cart/Saved Items */}
-                                        <Link to="/cart" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
-                                            <img src={cartIcon} className="w-7 h-7" />
-                                            <div>
-                                                <p className="text-base font-bold text-black">Favorites</p>
-                                                <p className="text-xs text-gray-400">View your list</p>
-                                            </div>
-                                        </Link>
-
                                         {/* Messages */}
                                         <Link to="/messages" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
                                             <img src={messagesIcon} className="w-7 h-7" />
                                             <div>
                                                 <p className="text-base font-bold text-black">Messages</p>
                                                 <p className="text-xs text-gray-400">No unread messages</p>
+                                            </div>
+                                        </Link>
+
+                                        {/* Settings for consumer. to implementpa */}
+                                        <Link to="/consumer-account-setting" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
+                                            <img src={settingIcon} className="w-7 h-7" />
+                                            <div>
+                                                <p className="text-base font-bold text-black">Settings</p>
                                             </div>
                                         </Link>
 

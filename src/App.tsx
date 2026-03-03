@@ -24,6 +24,7 @@ import LoginOtpPage from './pages/LoginOtpPage';
 import FarmerAccountPage from './pages/FarmerAccountPage';
 import ConsumerAccountPage from './pages/ConsumerAccountPage';
 import FarmerAccountSettingPage from './pages/FarmerAccountSetting';
+import ConsumerAccountSettingPage from './pages/ConsumerAccountSetting';
 
 
 function AppLayout() {
@@ -71,6 +72,7 @@ function AppLayout() {
                 <Route path="/farmer-account" element={<FarmerAccountPage />} />
                 <Route path="/consumer-account" element={<ConsumerAccountPage />} />
                 <Route path="/farmer-account-setting" element={<FarmerAccountSettingPage />} />
+                <Route path="/consumer-account-setting" element={<ConsumerAccountSettingPage />} />
             </Routes>
             <Footer />
         </div>
