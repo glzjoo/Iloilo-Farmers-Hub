@@ -60,12 +60,15 @@ export interface Product {
     image: string;
     category: string;
     farmerId: string;
+    farmerName?: string; // for display purposes
     description: string;
     rating: number;
     reviewCount: number;
     stock: string;
     unit: string;
     status: 'active' | 'inactive';
+    createdAt?: Date | any; // for timestamp
+    updatedAt?: Date | any; // for timestamp
 }
 
 // Updated for passwordless OTP flow - REMOVED password fields
@@ -131,4 +134,22 @@ export interface CloudVisionResult {
         message: string;
         code: number;
     };
+}
+
+export interface CartItem {
+    productId: string;
+    name: string;
+    price: number;
+    quantity: number;
+    unit: string;
+    image: string;
+    farmerId: string;
+    farmerName: string;
+    addedAt: Date | any;
+}
+
+export interface Cart {
+    userId: string;
+    items: CartItem[];
+    updatedAt: Date | any;
 }

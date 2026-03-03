@@ -4,25 +4,30 @@ import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../lib/firebase';
 
-interface ConsumerProfile {
+interface FarmerProfile {
   firstName: string;
   lastName: string;
-  address: string;
+  farmName: string;
+  farmAddress: string;
   phoneNo: string;
+  farmType: string;
   email: string | null;
-  interest?: string;
   profileImage?: string;
   lastPhotoChange?: any;
-  createdAt?: any;
+  verificationStatus?: string;
+  verificationData?: {
+    extractedFullName?: string;
+    verifiedAt?: any;
+  };
 }
 
-export default function ProfileInfoSectionConsumer() {
+export default function ProfileInfoSectionFarmer() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
   const [pendingPhotoPreview, setPendingPhotoPreview] = useState<string | null>(null);
-  const [profile, setProfile] = useState<ConsumerProfile | null>(null);
-  const [editedProfile, setEditedProfile] = useState<ConsumerProfile | null>(null);
+  const [profile, setProfile] = useState<FarmerProfile | null>(null);
+  const [editedProfile, setEditedProfile] = useState<FarmerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -45,9 +50,9 @@ export default function ProfileInfoSectionConsumer() {
     }
 
     try {
-      const consumerDoc = await getDoc(doc(db, 'consumers', user.uid));
-      if (consumerDoc.exists()) {
-        const data = consumerDoc.data() as ConsumerProfile;
+      const farmerDoc = await getDoc(doc(db, 'farmers', user.uid));
+      if (farmerDoc.exists()) {
+        const data = farmerDoc.data() as FarmerProfile;
         setProfile(data);
         setEditedProfile(data);
         if (data.profileImage) {
@@ -87,7 +92,7 @@ export default function ProfileInfoSectionConsumer() {
     }
   };
 
-  const handleInputChange = (field: keyof ConsumerProfile, value: string) => {
+  const handleInputChange = (field: keyof FarmerProfile, value: string) => {
     if (!editedProfile) return;
     setEditedProfile({ ...editedProfile, [field]: value });
   };
@@ -128,7 +133,7 @@ export default function ProfileInfoSectionConsumer() {
       await uploadBytes(storageRef, pendingPhotoFile);
       const downloadUrl = await getDownloadURL(storageRef);
 
-      await updateDoc(doc(db, 'consumers', user.uid), {
+      await updateDoc(doc(db, 'farmers', user.uid), {
         profileImage: downloadUrl,
         lastPhotoChange: serverTimestamp(),
       });
@@ -161,16 +166,19 @@ export default function ProfileInfoSectionConsumer() {
     setError(null);
 
     try {
+      // REMOVED: firstName and lastName from update - they are locked
       const updateData = {
-        address: editedProfile.address,
+        farmName: editedProfile.farmName,
+        farmAddress: editedProfile.farmAddress,
         phoneNo: editedProfile.phoneNo,
-        interest: editedProfile.interest,
+        farmType: editedProfile.farmType,
         email: editedProfile.email,
         updatedAt: serverTimestamp(),
       };
 
-      await updateDoc(doc(db, 'consumers', user.uid), updateData);
+      await updateDoc(doc(db, 'farmers', user.uid), updateData);
 
+      // Update local state
       setProfile(editedProfile);
       setIsEditing(false);
 
@@ -222,7 +230,7 @@ export default function ProfileInfoSectionConsumer() {
 
   return (
     <section className="py-10 px-4">
-      {/* Photo Confirmation Modal */}
+      {/* Photo Confirmation Modal - unchanged */}
       {showPhotoConfirmModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
@@ -282,11 +290,20 @@ export default function ProfileInfoSectionConsumer() {
       )}
 
       <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-10">
+
         <div className="flex items-center justify-between mb-8">
           <h2 className="font-primary font-bold text-2xl text-gray-800">Profile Information</h2>
+          <div className="flex items-center gap-2">
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${profile.verificationStatus === 'verified'
+                ? 'bg-green-100 text-green-700'
+                : 'bg-yellow-100 text-yellow-700'
+              }`}>
+              {profile.verificationStatus === 'verified' ? '✓ Verified' : 'Pending Verification'}
+            </span>
+          </div>
         </div>
 
-        {/* Profile Photo */}
+        {/* Profile Photo - unchanged */}
         <div className="flex items-center gap-6 mb-10 pb-8 border-b border-gray-200">
           <div className="relative w-28 h-28 rounded-xl bg-gray-200 overflow-hidden flex items-center justify-center shrink-0">
             {photoUrl ? (
@@ -320,9 +337,9 @@ export default function ProfileInfoSectionConsumer() {
             <h3 className="font-primary font-bold text-lg text-gray-800 mb-1">
               {profile.firstName} {profile.lastName}
             </h3>
-            <p className="text-sm font-primary text-gray-500 mb-1">{profile.address}</p>
+            <p className="text-sm font-primary text-gray-500 mb-1">{profile.farmName}</p>
             <p className="text-xs font-primary text-gray-400 mb-3">
-              Member since {profile.createdAt?.toDate?.().toLocaleDateString() || 'N/A'}
+              Member since {profile.verificationData?.verifiedAt?.toDate?.().toLocaleDateString() || 'N/A'}
             </p>
 
             {canChangePhoto ? (
@@ -360,9 +377,9 @@ export default function ProfileInfoSectionConsumer() {
           </div>
         )}
 
-        {/* Info Grid */}
+        {/* Info Grid - NAMES LOCKED (read-only), OTHERS EDITABLE */}
         <div className="grid grid-cols-2 gap-x-8 gap-y-5">
-          {/* LOCKED: First name */}
+          {/* LOCKED: First name - always read-only */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">First name</label>
             <input
@@ -370,10 +387,11 @@ export default function ProfileInfoSectionConsumer() {
               value={profile.firstName}
               readOnly
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none bg-gray-50 cursor-not-allowed"
+              title="Name cannot be changed - verified from ID"
             />
           </div>
 
-          {/* LOCKED: Last name */}
+          {/* LOCKED: Last name - always read-only */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">Last name</label>
             <input
@@ -381,18 +399,33 @@ export default function ProfileInfoSectionConsumer() {
               value={profile.lastName}
               readOnly
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none bg-gray-50 cursor-not-allowed"
+              title="Name cannot be changed - verified from ID"
             />
           </div>
 
-          {/* EDITABLE: Address */}
+          {/* EDITABLE: Farm Name */}
           <div>
-            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">Address</label>
+            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">Farm Name</label>
             <input
               type="text"
-              value={editedProfile.address}
+              value={editedProfile.farmName}
               readOnly={!isEditing}
-              onChange={(e) => handleInputChange('address', e.target.value)}
-              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none ${isEditing ? 'focus:border-primary bg-white' : 'bg-gray-50'}`}
+              onChange={(e) => handleInputChange('farmName', e.target.value)}
+              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none ${isEditing ? 'focus:border-primary bg-white' : 'bg-gray-50'
+                }`}
+            />
+          </div>
+
+          {/* EDITABLE: Farm Address */}
+          <div>
+            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">Farm Address</label>
+            <input
+              type="text"
+              value={editedProfile.farmAddress}
+              readOnly={!isEditing}
+              onChange={(e) => handleInputChange('farmAddress', e.target.value)}
+              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none ${isEditing ? 'focus:border-primary bg-white' : 'bg-gray-50'
+                }`}
             />
           </div>
 
@@ -404,24 +437,25 @@ export default function ProfileInfoSectionConsumer() {
               value={editedProfile.phoneNo}
               readOnly={!isEditing}
               onChange={(e) => handleInputChange('phoneNo', e.target.value)}
-              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none ${isEditing ? 'focus:border-primary bg-white' : 'bg-gray-50'}`}
+              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none ${isEditing ? 'focus:border-primary bg-white' : 'bg-gray-50'
+                }`}
             />
           </div>
 
-          {/* EDITABLE: Interest */}
+          {/* EDITABLE: Farm Type */}
           <div>
-            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">Interest</label>
+            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">Farm Type</label>
             <select
-              value={editedProfile.interest || ''}
+              value={editedProfile.farmType}
               disabled={!isEditing}
-              onChange={(e) => handleInputChange('interest', e.target.value)}
-              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none bg-white cursor-pointer ${isEditing ? 'focus:border-primary' : 'bg-gray-50'}`}
+              onChange={(e) => handleInputChange('farmType', e.target.value)}
+              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none bg-white cursor-pointer ${isEditing ? 'focus:border-primary' : 'bg-gray-50'
+                }`}
             >
-              <option value="">Select interest...</option>
-              <option value="Vegetables">Vegetables</option>
-              <option value="Fruits">Fruits</option>
               <option value="Rice">Rice</option>
               <option value="Corn">Corn</option>
+              <option value="Vegetables">Vegetables</option>
+              <option value="Fruits">Fruits</option>
               <option value="Livestock">Livestock</option>
               <option value="Poultry">Poultry</option>
               <option value="Fishery">Fishery</option>
@@ -438,7 +472,20 @@ export default function ProfileInfoSectionConsumer() {
               readOnly={!isEditing}
               onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder="No email provided"
-              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none ${isEditing ? 'focus:border-primary bg-white' : 'bg-gray-50'}`}
+              className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none ${isEditing ? 'focus:border-primary bg-white' : 'bg-gray-50'
+                }`}
+            />
+          </div>
+
+          {/* LOCKED: Verified ID Name - always read-only */}
+          <div>
+            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">Verified ID Name</label>
+            <input
+              type="text"
+              value={profile.verificationData?.extractedFullName || 'N/A'}
+              readOnly
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary outline-none bg-gray-50 cursor-not-allowed"
+              title="Verified from government ID"
             />
           </div>
         </div>

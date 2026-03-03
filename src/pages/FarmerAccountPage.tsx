@@ -6,6 +6,7 @@ import accountSettingsIcon from '../assets/icons/account-settings.svg';
 import shareIcon from '../assets/icons/share.svg';
 import MyAccountFarmerListing from '../components/Profile/MyAccountFarmerListing';
 import MyAccountFarmerReviews from '../components/Profile/MyAccountFarmerReviews';
+import ProfileInfoSectionFarmer from '../components/Profile/ProfileInfoSectionFarmer';
 
 interface FarmerProfile {
     firstName: string;
@@ -26,7 +27,7 @@ interface FarmerProfile {
 }
 
 export default function FarmerAccountPage() {
-    const [activeTab, setActiveTab] = useState<'listings' | 'reviews'>('listings');
+    const [activeTab, setActiveTab] = useState<'listings' | 'reviews' | 'profile'>('listings');
     const [profile, setProfile] = useState<FarmerProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const { user } = useAuth();
@@ -115,7 +116,10 @@ export default function FarmerAccountPage() {
                                 {isVerified ? 'Verified' : 'Not Verified'}
                             </span>
                         </div>
-                        <button className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer">
+                        <button 
+                            onClick={() => setActiveTab('profile')}
+                            className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer"
+                        >
                             Profile details &gt;
                         </button>
                     </div>
@@ -133,7 +137,10 @@ export default function FarmerAccountPage() {
                     </div>
 
                     {/* Edit Profile Button */}
-                    <button className="px-6 py-2 rounded-full bg-primary text-white text-sm font-semibold cursor-pointer hover:bg-green-700 transition-colors">
+                    <button 
+                        onClick={() => setActiveTab('profile')}
+                        className="px-6 py-2 rounded-full bg-primary text-white text-sm font-semibold cursor-pointer hover:bg-green-700 transition-colors"
+                    >
                         Edit Profile
                     </button>
 
@@ -164,12 +171,22 @@ export default function FarmerAccountPage() {
                 >
                     Reviews
                 </button>
+                <button
+                    onClick={() => setActiveTab('profile')}
+                    className={`px-6 py-3 text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'profile'
+                        ? 'text-primary border-b-2 border-primary'
+                        : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    Profile Info
+                </button>
             </div>
 
             {/* Tab Content */}
             <div key={activeTab} className="animate-tab-fade-in">
                 {activeTab === 'listings' && <MyAccountFarmerListing />}
                 {activeTab === 'reviews' && <MyAccountFarmerReviews />}
+                {activeTab === 'profile' && <ProfileInfoSectionFarmer />}
             </div>
         </section>
     );

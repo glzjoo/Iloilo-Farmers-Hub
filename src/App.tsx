@@ -1,5 +1,5 @@
-import { Routes, Route, useLocation } from 'react-router-dom';  // removed BrowserRouter (if need BrowserRouter e balik lng)
-import { useAuth } from './context/AuthContext';  // i dont think needed pa ang AuthProvider so i removed it from here, but if needed, just import it again
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import Shop from './pages/Shop';
 import Navbar from './components/layout/Navbar';
@@ -13,28 +13,39 @@ import ItemsDetailsPage from './pages/ItemsDetailsPage';
 import MessagesPage from './pages/MessagesPage';
 import FarmerSignupPage from './pages/FarmerSignupPage';
 import LoginPage from './pages/LoginPage';
-import OtpPage from './pages/LoginOtpPage';
-import NavbarLoggedIn from './components/layout/NavbarLoggedIn';
 import ConsumerSignupPage from './pages/ConsumerSignupPage';
 import IDVerificationPage from './pages/IDVerificationPage';
 import NavbarLoggedInFarmer from './components/layout/NavbarLoggedInFarmer';
+import NavbarLoggedInConsumer from './components/layout/NavbarLoggedInConsumer';
 import SellModalPage from './pages/SellModalPage';
 import MyListingPage from './pages/MyListingPage';
 import FarmerOtpPage from './pages/FarmerOtpPage';
 import ConsumerOtpPage from './pages/ConsumerOtpPage';
 import LoginOtpPage from './pages/LoginOtpPage';
 import FarmerAccountPage from './pages/FarmerAccountPage';
-import FarmerAccountSetting from './pages/FarmerAccountSetting';
+import ConsumerAccountPage from './pages/ConsumerAccountPage';
+
 
 function AppLayout() {
     const location = useLocation();
-    const { isLoggedIn } = useAuth();
+    const { isLoggedIn, userProfile } = useAuth();
     const isShopPage = location.pathname === '/shop';
 
     const getNavbar = () => {
-        //write condition here next time for navbarloggedin if user or famer
-        if (isLoggedIn) return <NavbarLoggedInFarmer />;
-        if (isShopPage) return <NavbarWithFilter />;
+        if (!isLoggedIn) {
+            // Not logged in - show public navbar
+            if (isShopPage) return <NavbarWithFilter />;
+            return <Navbar />;
+        }
+
+        // Logged in - check role
+        if (userProfile?.role === 'farmer') {
+            return <NavbarLoggedInFarmer />;
+        } else if (userProfile?.role === 'consumer') {
+            return <NavbarLoggedInConsumer />;
+        }
+
+        // Fallback while loading profile
         return <Navbar />;
     };
 
@@ -57,11 +68,11 @@ function AppLayout() {
                 <Route path="/consumer/otp-verification" element={<ConsumerOtpPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/login/otp-verification" element={<LoginOtpPage />} />
-                <Route path="/otp" element={<OtpPage />} />
                 <Route path="/sell" element={<SellModalPage />} />
+                <Route path="/AddProduct" element={<SellModalPage />} />
                 <Route path="/my-listings" element={<MyListingPage />} />
                 <Route path="/farmer-account" element={<FarmerAccountPage />} />
-                <Route path="/farmer-account-setting" element={<FarmerAccountSetting />} />
+                <Route path="/consumer-account" element={<ConsumerAccountPage />} />
             </Routes>
             <Footer />
         </div>
@@ -69,7 +80,7 @@ function AppLayout() {
 }
 
 function App() {
-    return <AppLayout />;  // just simpliefied wrapper
+    return <AppLayout />;
 }
 
 export default App;
