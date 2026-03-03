@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import settingIcon from '../assets/icons/account-settings.svg';
 import accountIcon from '../assets/icons/account-icon.svg';
-import EditProfileFarmer from '../components/settings/editProfileFarmer';
+import EditProfileFarmer from '../components/settings/EditProfileFarmer';
 import SecuritySettingFarmer from '../components/settings/SecuritySettingFarmer';
 
 export default function FarmerAccountSetting() {
