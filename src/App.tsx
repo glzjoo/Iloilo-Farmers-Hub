@@ -1,9 +1,8 @@
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import Shop from './pages/Shop';
 import Navbar from './components/layout/Navbar';
-import NavbarWithFilter from './components/layout/NavbarWithFilter';
 import AboutUs from './pages/AboutUs';
 import Subscriptions from './pages/Subscriptions';
 import Footer from './components/layout/Footer';
@@ -24,17 +23,16 @@ import ConsumerOtpPage from './pages/ConsumerOtpPage';
 import LoginOtpPage from './pages/LoginOtpPage';
 import FarmerAccountPage from './pages/FarmerAccountPage';
 import ConsumerAccountPage from './pages/ConsumerAccountPage';
+import FarmerAccountSettingPage from './pages/FarmerAccountSetting';
+import ConsumerAccountSettingPage from './pages/ConsumerAccountSetting';
 
 
 function AppLayout() {
-    const location = useLocation();
     const { isLoggedIn, userProfile } = useAuth();
-    const isShopPage = location.pathname === '/shop';
 
     const getNavbar = () => {
         if (!isLoggedIn) {
             // Not logged in - show public navbar
-            if (isShopPage) return <NavbarWithFilter />;
             return <Navbar />;
         }
 
@@ -73,6 +71,8 @@ function AppLayout() {
                 <Route path="/my-listings" element={<MyListingPage />} />
                 <Route path="/farmer-account" element={<FarmerAccountPage />} />
                 <Route path="/consumer-account" element={<ConsumerAccountPage />} />
+                <Route path="/farmer-account-setting" element={<FarmerAccountSettingPage />} />
+                <Route path="/consumer-account-setting" element={<ConsumerAccountSettingPage />} />
             </Routes>
             <Footer />
         </div>

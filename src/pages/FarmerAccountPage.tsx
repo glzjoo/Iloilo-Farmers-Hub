@@ -6,7 +6,8 @@ import accountSettingsIcon from '../assets/icons/account-settings.svg';
 import shareIcon from '../assets/icons/share.svg';
 import MyAccountFarmerListing from '../components/Profile/MyAccountFarmerListing';
 import MyAccountFarmerReviews from '../components/Profile/MyAccountFarmerReviews';
-import ProfileInfoSectionFarmer from '../components/Profile/ProfileInfoSectionFarmer';
+import { Link } from 'react-router-dom';
+
 
 interface FarmerProfile {
     firstName: string;
@@ -72,8 +73,6 @@ export default function FarmerAccountPage() {
         ? `${profile.firstName} ${profile.lastName}`
         : 'Farmer';
 
-    const isVerified = profile?.verificationStatus === 'verified';
-
     if (loading) {
         return (
             <section className="max-w-6xl mx-auto px-10 py-8">
@@ -109,19 +108,7 @@ export default function FarmerAccountPage() {
                     <div className="flex-1">
                         <div className="flex items-center gap-2 mb-0.5">
                             <h2 className="text-lg font-bold font-primary">{displayName}</h2>
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${isVerified
-                                ? 'bg-green-600 text-white'
-                                : 'bg-green-600 text-white'
-                                }`}>
-                                {isVerified ? 'Verified' : 'Not Verified'}
-                            </span>
                         </div>
-                        <button 
-                            onClick={() => setActiveTab('profile')}
-                            className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer"
-                        >
-                            Profile details &gt;
-                        </button>
                     </div>
 
                     {/* Reviews */}
@@ -137,12 +124,13 @@ export default function FarmerAccountPage() {
                     </div>
 
                     {/* Edit Profile Button */}
-                    <button 
-                        onClick={() => setActiveTab('profile')}
-                        className="px-6 py-2 rounded-full bg-primary text-white text-sm font-semibold cursor-pointer hover:bg-green-700 transition-colors"
-                    >
-                        Edit Profile
-                    </button>
+                    <Link to="/farmer-account-setting">
+                        <button
+                            className="px-6 py-2 rounded-full bg-primary text-white text-sm font-semibold cursor-pointer hover:bg-green-700 transition-colors"
+                        >
+                            Edit Profile
+                        </button>
+                    </Link>
 
                     {/* Share Icon */}
                     <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
@@ -171,22 +159,12 @@ export default function FarmerAccountPage() {
                 >
                     Reviews
                 </button>
-                <button
-                    onClick={() => setActiveTab('profile')}
-                    className={`px-6 py-3 text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'profile'
-                        ? 'text-primary border-b-2 border-primary'
-                        : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                >
-                    Profile Info
-                </button>
             </div>
 
             {/* Tab Content */}
             <div key={activeTab} className="animate-tab-fade-in">
                 {activeTab === 'listings' && <MyAccountFarmerListing />}
                 {activeTab === 'reviews' && <MyAccountFarmerReviews />}
-                {activeTab === 'profile' && <ProfileInfoSectionFarmer />}
             </div>
         </section>
     );

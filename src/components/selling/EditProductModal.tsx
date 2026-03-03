@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import AddProductImage from "./AddProductImage";
+import AddProductImage from "./addproductimage";
 import type { Product } from "../../types";
 import addtocart from '../../assets/icons/add-to-cart.svg';
 import minus from '../../assets/icons/minus.svg';
@@ -20,13 +20,14 @@ export default function EditProductModal({ product, onClose, onUpdateSuccess }: 
     const [category, setCategory] = useState(product.category);
     const [price, setPrice] = useState(product.price);
     const [unit, setUnit] = useState(product.unit);
-    // Parse stock number for editing, keep unit separate
     const [stockValue, setStockValue] = useState(() => {
         const match = product.stock.match(/^(\d+)/);
         return match ? parseInt(match[1]) : 0;
     });
     const [status, setStatus] = useState(product.status);
     const [description, setDescription] = useState(product.description || "");
+    const [customCategory, setCustomCategory] = useState('');
+    const [customUnit, setCustomUnit] = useState('');
 
     const inputClass = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary";
     const labelClass = "block text-sm font-semibold text-gray-800 mb-1";
@@ -43,14 +44,15 @@ export default function EditProductModal({ product, onClose, onUpdateSuccess }: 
         setIsLoading(true);
 
         try {
-            // Reconstruct stock string with unit
-            const stockString = `${stockValue}${unit}`;
+            const finalCategory = category === 'Other' ? customCategory.trim() : category;
+            const finalUnit = unit === 'Other' ? customUnit.trim() : unit;
+            const stockString = `${stockValue}${finalUnit}`;
 
             const updates: Partial<Omit<Product, 'id' | 'farmerId' | 'createdAt'>> = {
                 name,
-                category,
+                category: finalCategory,
                 price: Number(price),
-                unit,
+                unit: finalUnit,
                 stock: stockString,
                 status,
                 description,
@@ -58,7 +60,6 @@ export default function EditProductModal({ product, onClose, onUpdateSuccess }: 
 
             await updateProduct(product.id, updates, newImageFile);
 
-            // Construct updated product for immediate UI update
             const updatedProduct: Product = {
                 ...product,
                 ...updates,
@@ -114,20 +115,42 @@ export default function EditProductModal({ product, onClose, onUpdateSuccess }: 
                                 {/* Category */}
                                 <div>
                                     <label className={labelClass}>Category</label>
-                                    <select
-                                        value={category}
-                                        onChange={(e) => setCategory(e.target.value)}
-                                        className={inputClass}
-                                    >
-                                        <option value="Vegetables">Vegetables</option>
-                                        <option value="Rice">Rice</option>
-                                        <option value="Corn">Corn</option>
-                                        <option value="Fruits">Fruits</option>
-                                        <option value="Livestock">Livestock</option>
-                                        <option value="Poultry">Poultry</option>
-                                        <option value="Fishery">Fishery</option>
-                                        <option value="Other">Other</option>
-                                    </select>
+                                    {category === 'Other' ? (
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                value={customCategory}
+                                                onChange={(e) => setCustomCategory(e.target.value)}
+                                                placeholder="Type your category"
+                                                className={inputClass}
+                                                autoFocus
+                                                required
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => { setCategory('Vegetables'); setCustomCategory(''); }}
+                                                className="text-gray-400 hover:text-gray-600 text-lg cursor-pointer bg-transparent border-none"
+                                                title="Back to list"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <select
+                                            value={category}
+                                            onChange={(e) => setCategory(e.target.value)}
+                                            className={inputClass}
+                                        >
+                                            <option value="Vegetables">Vegetables</option>
+                                            <option value="Rice">Rice</option>
+                                            <option value="Corn">Corn</option>
+                                            <option value="Fruits">Fruits</option>
+                                            <option value="Livestock">Livestock</option>
+                                            <option value="Poultry">Poultry</option>
+                                            <option value="Fishery">Fishery</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    )}
                                 </div>
 
                                 {/* Price */}
@@ -148,17 +171,39 @@ export default function EditProductModal({ product, onClose, onUpdateSuccess }: 
                                 {/* Unit */}
                                 <div>
                                     <label className={labelClass}>Unit</label>
-                                    <select
-                                        value={unit}
-                                        onChange={(e) => setUnit(e.target.value)}
-                                        className={inputClass}
-                                    >
-                                        <option value="kg">Kilogram (kg)</option>
-                                        <option value="pcs">Pieces (pcs)</option>
-                                        <option value="ltr">Liters (ltr)</option>
-                                        <option value="gallon">Gallons (gallon)</option>
-                                        <option value="Other">Other</option>
-                                    </select>
+                                    {unit === 'Other' ? (
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                value={customUnit}
+                                                onChange={(e) => setCustomUnit(e.target.value)}
+                                                placeholder="Type your unit"
+                                                className={inputClass}
+                                                autoFocus
+                                                required
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => { setUnit('kg'); setCustomUnit(''); }}
+                                                className="text-gray-400 hover:text-gray-600 text-lg cursor-pointer bg-transparent border-none"
+                                                title="Back to list"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <select
+                                            value={unit}
+                                            onChange={(e) => setUnit(e.target.value)}
+                                            className={inputClass}
+                                        >
+                                            <option value="kg">Kilogram (kg)</option>
+                                            <option value="pcs">Pieces (pcs)</option>
+                                            <option value="ltr">Liters (ltr)</option>
+                                            <option value="gallon">Gallons (gallon)</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    )}
                                 </div>
 
                                 {/* Stock Quantity */}
@@ -219,8 +264,8 @@ export default function EditProductModal({ product, onClose, onUpdateSuccess }: 
 
                         {/* Image upload */}
                         <div className="w-[35%]">
-                            <AddProductImage 
-                                initialImage={product.image} 
+                            <AddProductImage
+                                initialImage={product.image}
                                 onImageSelect={setNewImageFile}
                             />
 

@@ -14,6 +14,7 @@ export default function FarmerSignup() {
   const { sanitizeName, sanitizeFarmName, sanitizeEmail, sanitizePhone } = useSanitizedInput();
   const [isLoading, setIsLoading] = useState(false);
   const [firebaseError, setFirebaseError] = useState<string | null>(null);
+  const [customFarmType, setCustomFarmType] = useState('');
 
   const {
     register,
@@ -32,8 +33,8 @@ export default function FarmerSignup() {
       farmName: '',
       farmAddress: '',
       phoneNo: '',
-      farmType: 'Rice', 
-      agreeToTerms: false, 
+      farmType: 'Rice',
+      agreeToTerms: false,
     },
   });
 
@@ -41,18 +42,25 @@ export default function FarmerSignup() {
     console.log('=== BUTTON CLICKED / FORM SUBMITTED ===');
     setIsLoading(true);
     setFirebaseError(null);
-    
+
     try {
-      console.log('Calling prepareFarmerSignup with data:', data);
-      const tempId = await prepareFarmerSignup(data);
+      // Use custom farm type text if "Other" was selected
+      const submitData = {
+        ...data,
+        farmType: data.farmType === 'Other' && customFarmType.trim()
+          ? customFarmType.trim() as any
+          : data.farmType,
+      };
+      console.log('Calling prepareFarmerSignup with data:', submitData);
+      const tempId = await prepareFarmerSignup(submitData);
       console.log('Got tempId, navigating...', tempId);
-      
-      navigate('/id-verification', { 
-        state: { 
+
+      navigate('/id-verification', {
+        state: {
           tempId,
           farmerData: data,
-          userType: 'farmer' 
-        } 
+          userType: 'farmer'
+        }
       });
       console.log('Navigate called!');
     } catch (error: any) {
@@ -71,17 +79,17 @@ export default function FarmerSignup() {
 
   const getInputClass = (fieldName: keyof FarmerSignupData) => {
     const baseClass = "w-full border rounded-lg px-4 py-2.5 text-sm font-primary outline-none transition-colors";
-    return errors[fieldName] 
-      ? `${baseClass} border-red-500 focus:border-red-500 bg-red-50` 
+    return errors[fieldName]
+      ? `${baseClass} border-red-500 focus:border-red-500 bg-red-50`
       : `${baseClass} border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary`;
   };
 
   // Debug log on every render
-  console.log('=== RENDER ===', { 
-    isLoading, 
-    formErrors: errors, 
+  console.log('=== RENDER ===', {
+    isLoading,
+    formErrors: errors,
     errorCount: Object.keys(errors).length,
-    isValid: Object.keys(errors).length === 0 
+    isValid: Object.keys(errors).length === 0
   });
 
   return (
@@ -111,11 +119,11 @@ export default function FarmerSignup() {
         </div>
 
         {/* Form */}
-        <form 
+        <form
           onSubmit={(e) => {
             console.log('Form submit event triggered');
             handleSubmit(onSubmit)(e);
-          }} 
+          }}
           className="grid grid-cols-2 gap-x-8 gap-y-5"
         >
           {/* First Name */}
@@ -289,19 +297,48 @@ export default function FarmerSignup() {
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
               Farm Type <span className="text-red-500">*</span>
             </label>
-            <select
-              {...register('farmType')}
-              className={getInputClass('farmType')}
-            >
-              <option value="Rice">Rice</option>
-              <option value="Corn">Corn</option>
-              <option value="Vegetables">Vegetables</option>
-              <option value="Fruits">Fruits</option>
-              <option value="Livestock">Livestock</option>
-              <option value="Poultry">Poultry</option>
-              <option value="Fishery">Fishery</option>
-              <option value="Other">Other</option>
-            </select>
+            <Controller
+              name="farmType"
+              control={control}
+              render={({ field }) => (
+                field.value === 'Other' ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={customFarmType}
+                      onChange={(e) => setCustomFarmType(e.target.value)}
+                      placeholder="Type your farm type"
+                      className={getInputClass('farmType')}
+                      autoFocus
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { field.onChange('Rice'); setCustomFarmType(''); }}
+                      className="text-gray-400 hover:text-gray-600 text-lg cursor-pointer bg-transparent border-none"
+                      title="Back to list"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={field.value}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    className={getInputClass('farmType')}
+                  >
+                    <option value="Rice">Rice</option>
+                    <option value="Corn">Corn</option>
+                    <option value="Vegetables">Vegetables</option>
+                    <option value="Fruits">Fruits</option>
+                    <option value="Livestock">Livestock</option>
+                    <option value="Poultry">Poultry</option>
+                    <option value="Fishery">Fishery</option>
+                    <option value="Other">Other</option>
+                  </select>
+                )
+              )}
+            />
             {errors.farmType && (
               <p className="mt-1 text-xs text-red-500 font-primary">{errors.farmType.message}</p>
             )}
@@ -335,7 +372,7 @@ export default function FarmerSignup() {
             >
               Clear All
             </button>
-            
+
             <button
               type="submit"
               disabled={isLoading}

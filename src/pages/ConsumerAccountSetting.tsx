@@ -4,7 +4,7 @@ import accountIcon from '../assets/icons/account-icon.svg';
 import EditProfileFarmer from '../components/settings/EditProfileFarmer';
 import SecuritySettingFarmer from '../components/settings/SecuritySettingFarmer';
 
-export default function FarmerAccountSetting() {
+export default function ConsumerAccountSetting() {
     const [activeTab, setActiveTab] = useState<'edit-profile' | 'security'>('edit-profile');
 
     return (

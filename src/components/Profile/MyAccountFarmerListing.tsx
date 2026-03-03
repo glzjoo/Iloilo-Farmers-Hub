@@ -6,6 +6,7 @@ import EditProductModal from '../selling/EditProductModal';
 import type { Product } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { getFarmerProducts, deleteProduct } from '../../services/productService';
+import MyAccountFarmerFilterDropdown from './MyAccountFarmerFilterDropdown';
 
 export default function MyAccountFarmerListing() {
     const { user } = useAuth();
@@ -15,12 +16,14 @@ export default function MyAccountFarmerListing() {
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+    const [showFilters, setShowFilters] = useState(false);
+    const [activeFilters, setActiveFilters] = useState({ category: 'All', status: 'All', sortBy: 'Newest' });
 
     // Fetch products on mount
     useEffect(() => {
         const fetchProducts = async () => {
             if (!user) return;
-            
+
             try {
                 setLoading(true);
                 const farmerProducts = await getFarmerProducts(user.uid);
@@ -56,17 +59,32 @@ export default function MyAccountFarmerListing() {
     };
 
     const handleUpdateSuccess = (updatedProduct: Product) => {
-        setProducts(prev => prev.map(p => 
+        setProducts(prev => prev.map(p =>
             p.id === updatedProduct.id ? updatedProduct : p
         ));
         setEditingProduct(null);
     };
 
-    // Filter products based on search
-    const filteredProducts = products.filter(product => 
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Filter and sort products
+    const filteredProducts = products
+        .filter(product =>
+            product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            product.category.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .filter(product => {
+            if (activeFilters.category !== 'All' && product.category !== activeFilters.category) return false;
+            if (activeFilters.status !== 'All' && product.status !== activeFilters.status.toLowerCase()) return false;
+            return true;
+        })
+        .sort((a, b) => {
+            switch (activeFilters.sortBy) {
+                case 'Price: High-Low': return b.price - a.price;
+                case 'Price: Low-High': return a.price - b.price;
+                case 'Name: A-Z': return a.name.localeCompare(b.name);
+                case 'Name: Z-A': return b.name.localeCompare(a.name);
+                default: return 0;
+            }
+        });
 
     if (loading) {
         return (
@@ -93,10 +111,30 @@ export default function MyAccountFarmerListing() {
                         <img src={searchIcon} alt="" className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50" />
                     </div>
 
-                    <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors">
-                        Filters
-                        <img src={filterIcon} alt="" className="w-4 h-4" />
-                    </button>
+                    {/* Filters Button */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium cursor-pointer transition-colors ${showFilters
+                                    ? 'border-primary bg-primary/5 text-primary'
+                                    : 'border-gray-300 hover:bg-gray-50'
+                                }`}
+                        >
+                            Filters
+                            <img src={filterIcon} alt="" className="w-4 h-4" />
+                        </button>
+
+                        {/* Filter Dropdown */}
+                        {showFilters && (
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={() => setShowFilters(false)} />
+                                <MyAccountFarmerFilterDropdown
+                                    onApply={(filters) => setActiveFilters(filters)}
+                                    onClose={() => setShowFilters(false)}
+                                />
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
 
