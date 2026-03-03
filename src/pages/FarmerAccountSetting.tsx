@@ -5,7 +5,7 @@ import EditProfileFarmer from '../components/settings/EditProfileFarmer';
 import SecuritySettingFarmer from '../components/settings/SecuritySettingFarmer';
 
 export default function FarmerAccountSetting() {
-    const [activeTab, setActiveTab] = useState<'edit-profile' | 'security'>('security');
+    const [activeTab, setActiveTab] = useState<'edit-profile' | 'security'>('edit-profile');
 
     return (
         <section className="w-full max-w-6xl mx-auto px-10 py-8 min-h-screen">
