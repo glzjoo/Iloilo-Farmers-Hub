@@ -3,7 +3,7 @@ import savedItemsIcon from '../../assets/icons/saved-items.png';
 import languageIcon from '../../assets/icons/language-logo.svg';
 import { Link, useLocation } from 'react-router-dom';
 import SearchBar from '../Search/SearchBar';
-
+import HamburgerFilter from './HamburgerFilter';
 
 export default function Navbar() {
     const location = useLocation();
@@ -46,7 +46,12 @@ export default function Navbar() {
             </nav>
 
             <div className="bg-white border-b border-gray-200 shadow-sm">
-                <div className="max-w-7xl mx-auto flex items-center justify-center gap-10 px-6 py-3">
+                <div className="max-w-7xl mx-auto relative flex items-center justify-center gap-10 px-6 py-3">
+                    {location.pathname === '/shop' && (
+                        <div className="absolute left-6">
+                            <HamburgerFilter />
+                        </div>
+                    )}
                     <Link to="/" className={linkClass('/')}>HOME</Link>
                     <Link to="/shop" className={linkClass('/shop')}>SHOP</Link>
                     <Link to="/subscriptions" className={linkClass('/subscriptions')}>SUBSCRIPTIONS</Link>

@@ -3,7 +3,6 @@ import { useAuth } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import Shop from './pages/Shop';
 import Navbar from './components/layout/Navbar';
-import NavbarWithFilter from './components/layout/NavbarWithFilter';
 import AboutUs from './pages/AboutUs';
 import Subscriptions from './pages/Subscriptions';
 import Footer from './components/layout/Footer';
@@ -24,18 +23,14 @@ import ConsumerOtpPage from './pages/ConsumerOtpPage';
 import LoginOtpPage from './pages/LoginOtpPage';
 import FarmerAccountPage from './pages/FarmerAccountPage';
 import ConsumerAccountPage from './pages/ConsumerAccountPage';
-import FarmerAccountSetting from './pages/FarmerAccountSetting';
 
 
 function AppLayout() {
-    const location = useLocation();
     const { isLoggedIn, userProfile } = useAuth();
-    const isShopPage = location.pathname === '/shop';
 
     const getNavbar = () => {
         if (!isLoggedIn) {
             // Not logged in - show public navbar
-            if (isShopPage) return <NavbarWithFilter />;
             return <Navbar />;
         }
 
@@ -74,7 +69,6 @@ function AppLayout() {
                 <Route path="/my-listings" element={<MyListingPage />} />
                 <Route path="/farmer-account" element={<FarmerAccountPage />} />
                 <Route path="/consumer-account" element={<ConsumerAccountPage />} />
-                <Route path="/farmer-account-setting" element={<FarmerAccountSetting />} />
             </Routes>
             <Footer />
         </div>
