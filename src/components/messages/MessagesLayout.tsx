@@ -134,7 +134,7 @@ export default function MessagesLayout({ conversationId, onBack }: MessagesLayou
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Debug:', { newMessage, userProfile, conversationId }); // ADD THIS
+    console.log('Debug:', { newMessage, userProfile, conversationId }); 
     
     if (!newMessage.trim() || !userProfile || !conversationId) return;
 
@@ -146,7 +146,7 @@ export default function MessagesLayout({ conversationId, onBack }: MessagesLayou
       text: newMessage.trim(), 
       senderName, 
       senderAvatar: userProfile.profileImage || '' 
-    }); // ADD THIS
+    }); 
 
     await sendMessage(newMessage.trim(), senderName, userProfile.profileImage || '');
     

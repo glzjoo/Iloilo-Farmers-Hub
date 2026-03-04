@@ -9,7 +9,7 @@ interface CartItemProps {
     farmerId: string;
     onQuantityChange: (productId: string, quantity: number) => void;
     onRemove: (productId: string) => void;
-    onMessageSeller: (farmerId: string) => void;
+    onMessageSeller: () => void; // Changed from (farmerId: string) => void
     isUpdating?: boolean;
 }
 
@@ -69,7 +69,7 @@ export default function CartItem({
                     Remove
                 </button>
                 <button 
-                    onClick={() => onMessageSeller(farmerId)}
+                    onClick={onMessageSeller}
                     className="px-4 py-1.5 bg-primary text-white text-sm font-primary font-medium rounded-full cursor-pointer border-none hover:bg-green-700"
                 >
                     Message Seller
