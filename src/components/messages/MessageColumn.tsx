@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useConversations } from '../../hooks/useMessaging';
-import { searchUsers } from '../../services/messageService';
+import { searchUsers, getUserProfile } from '../../services/messageService';
 import type { Conversation } from '../../types/messaging';
 import searchIcon from '../../assets/icons/search.svg';
 
@@ -26,6 +26,38 @@ export default function MessageColumn({
     avatar?: string;
   }> | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  // Store user avatars with uid as key
+  const [userAvatars, setUserAvatars] = useState<Record<string, string>>({});
+
+  // Fetch avatars for all conversation participants
+  useEffect(() => {
+    const fetchAvatars = async () => {
+      const newAvatars: Record<string, string> = {};
+      
+      for (const conversation of conversations) {
+        const otherId = conversation.participants.find(id => id !== user?.uid);
+        if (otherId && !userAvatars[otherId]) {
+          try {
+            const profile = await getUserProfile(otherId);
+            if (profile?.avatar) {
+              newAvatars[otherId] = profile.avatar;
+            }
+          } catch (error) {
+            console.error('Failed to fetch avatar for', otherId, error);
+          }
+        }
+      }
+      
+      // Only update state if we found new avatars
+      if (Object.keys(newAvatars).length > 0) {
+        setUserAvatars(prev => ({ ...prev, ...newAvatars }));
+      }
+    };
+    
+    if (conversations.length > 0 && user?.uid) {
+      fetchAvatars();
+    }
+  }, [conversations, user?.uid]);
 
   // Debounced search
   useEffect(() => {
@@ -85,6 +117,28 @@ export default function MessageColumn({
     };
   };
 
+  // Helper to get avatar for a user
+  const getAvatarForUser = (userId: string, name: string) => {
+    const avatar = userAvatars[userId];
+    const initial = name?.charAt(0).toUpperCase() || '?';
+    
+    if (avatar) {
+      return (
+        <img 
+          src={avatar} 
+          alt={name}
+          className="w-full h-full object-cover"
+        />
+      );
+    }
+    
+    return (
+      <span className="text-white font-bold text-lg">
+        {initial}
+      </span>
+    );
+  };
+
   return (
     // Main container - flex column, fixed width, full height, no shrink
     <div className="flex flex-col w-full h-full bg-white">
@@ -129,10 +183,18 @@ export default function MessageColumn({
                   onClick={() => handleSearchResultClick(result)}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-xs font-bold">
-                      {result.name.charAt(0).toUpperCase()}
-                    </span>
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {result.avatar ? (
+                      <img 
+                        src={result.avatar} 
+                        alt={result.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-white text-xs font-bold">
+                        {result.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900 truncate">{result.name}</p>
@@ -174,6 +236,7 @@ export default function MessageColumn({
               const isSelected = selectedConversationId === conversation.id;
               const unreadCount = conversation.unreadCount?.[user?.uid || ''] || 0;
               const lastMessage = conversation.lastMessage;
+              const otherId = conversation.participants.find(id => id !== user?.uid) || '';
 
               return (
                 <button
@@ -183,10 +246,10 @@ export default function MessageColumn({
                     isSelected ? 'bg-blue-50 border-l-4 border-l-primary' : 'hover:bg-gray-50 border-l-4 border-l-transparent'
                   }`}
                 >
-                  <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-bold text-lg">
-                      {otherParticipant?.name?.charAt(0).toUpperCase() || '?'}
-                    </span>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${
+                    !userAvatars[otherId] ? 'bg-primary' : ''
+                  }`}>
+                    {getAvatarForUser(otherId, otherParticipant?.name || '')}
                   </div>
                   
                   <div className="flex-1 min-w-0">

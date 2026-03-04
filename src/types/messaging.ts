@@ -6,9 +6,11 @@ export interface Message {
   senderName: string;
   text: string;
   createdAt: Timestamp;
-  readBy: string[]; // Array of UIDs who have read this message
-  type: 'text' | 'image';
+  readBy: string[];
+  type: 'text' | 'image' | 'video'; 
   imageUrl?: string;
+  videoUrl?: string;
+  thumbnailUrl?: string; 
 }
 
 export interface ParticipantInfo {

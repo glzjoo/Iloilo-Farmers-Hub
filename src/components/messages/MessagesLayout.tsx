@@ -1,18 +1,17 @@
-// MessagesLayout.tsx
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useMessages } from '../../hooks/useMessaging';
 import MessageProfile from './MessageProfile';
 import MessageBubble from './MessageBubble';
 import addbutton from '../../assets/icons/add.svg';
 import type { Farmer } from '../../types';
+import { uploadMedia, sendMediaMessage, getUserProfile } from '../../services/messageService';
 
 interface MessagesLayoutProps {
   conversationId: string | null;
   onBack?: () => void;
 }
 
-// Helper: Check if two messages are within 5 minutes
 const isWithinTimeWindow = (msg1: any, msg2: any, minutes: number = 5) => {
   if (!msg1?.createdAt || !msg2?.createdAt) return false;
   const time1 = msg1.createdAt instanceof Date ? msg1.createdAt : msg1.createdAt.toDate();
@@ -25,16 +24,85 @@ export default function MessagesLayout({ conversationId, onBack }: MessagesLayou
   const { user, userProfile } = useAuth();
   const { messages, loading, sending, sendMessage } = useMessages(conversationId, user?.uid);
   const [newMessage, setNewMessage] = useState('');
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [otherUserProfile, setOtherUserProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  // Store avatars for message senders
+  const [messageAvatars, setMessageAvatars] = useState<Record<string, string>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
-  // Group messages for display
+  // Fetch other user's profile for header
+  useEffect(() => {
+    if (!conversationId || !messages.length || !user) {
+      setOtherUserProfile(null);
+      return;
+    }
+    
+    const fetchProfile = async () => {
+      const otherMessage = messages.find(m => m.senderId !== user.uid);
+      if (!otherMessage) return;
+      
+      if (otherUserProfile?.uid === otherMessage.senderId) return;
+      
+      setProfileLoading(true);
+      try {
+        const profile = await getUserProfile(otherMessage.senderId);
+        if (profile) {
+          setOtherUserProfile(profile);
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+    
+    fetchProfile();
+  }, [conversationId, messages, user, otherUserProfile?.uid]);
+
+  // Fetch avatars for all message senders
+  useEffect(() => {
+    const fetchMessageAvatars = async () => {
+      const senderIds = [...new Set(messages.map(m => m.senderId))];
+      const newAvatars: Record<string, string> = {};
+      
+      for (const senderId of senderIds) {
+        if (senderId === user?.uid) {
+          // Use current user's avatar from userProfile
+          if (userProfile?.profileImage) {
+            newAvatars[senderId] = userProfile.profileImage;
+          }
+        } else if (!messageAvatars[senderId]) {
+          // Fetch other user's avatar
+          try {
+            const profile = await getUserProfile(senderId);
+            if (profile?.avatar) {
+              newAvatars[senderId] = profile.avatar;
+            }
+          } catch (error) {
+            console.error('Failed to fetch avatar for', senderId, error);
+          }
+        }
+      }
+      
+      if (Object.keys(newAvatars).length > 0) {
+        setMessageAvatars(prev => ({ ...prev, ...newAvatars }));
+      }
+    };
+    
+    if (messages.length > 0 && user?.uid) {
+      fetchMessageAvatars();
+    }
+  }, [messages, user?.uid, userProfile]);
+
   const messageGroups = useMemo(() => {
     const groups: Array<{
       message: any;
@@ -46,18 +114,10 @@ export default function MessagesLayout({ conversationId, onBack }: MessagesLayou
       const prevMessage = index > 0 ? messages[index - 1] : null;
       const nextMessage = index < messages.length - 1 ? messages[index + 1] : null;
       
-      // Show avatar if:
-      // - First message
-      // - Different sender from previous
-      // - Previous message is more than 5 minutes old
       const showAvatar = !prevMessage || 
         prevMessage.senderId !== message.senderId ||
         !isWithinTimeWindow(prevMessage, message, 5);
 
-      // Is last in group if:
-      // - Last message overall
-      // - Next message is different sender
-      // - Next message is more than 5 minutes later
       const isLastInGroup = !nextMessage || 
         nextMessage.senderId !== message.senderId ||
         !isWithinTimeWindow(message, nextMessage, 5);
@@ -74,13 +134,22 @@ export default function MessagesLayout({ conversationId, onBack }: MessagesLayou
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !userProfile) return;
+    console.log('Debug:', { newMessage, userProfile, conversationId }); // ADD THIS
+    
+    if (!newMessage.trim() || !userProfile || !conversationId) return;
 
     const senderName = userProfile.role === 'farmer' 
       ? (userProfile.farmName || `${userProfile.firstName} ${userProfile.lastName}`)
       : `${userProfile.firstName} ${userProfile.lastName}`;
 
-    await sendMessage(newMessage, senderName);
+    console.log('Sending:', { 
+      text: newMessage.trim(), 
+      senderName, 
+      senderAvatar: userProfile.profileImage || '' 
+    }); // ADD THIS
+
+    await sendMessage(newMessage.trim(), senderName, userProfile.profileImage || '');
+    
     setNewMessage('');
   };
 
@@ -89,6 +158,64 @@ export default function MessagesLayout({ conversationId, onBack }: MessagesLayou
       e.preventDefault();
       handleSend(e);
     }
+  };
+
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !conversationId || !user || !userProfile) return;
+
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    
+    if (!isImage && !isVideo) {
+      alert('Please select an image or video file');
+      return;
+    }
+
+    const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert(`File too large. Max size: ${isVideo ? '50MB' : '10MB'}`);
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const { url, type } = await uploadMedia(
+        file, 
+        conversationId,
+        user.uid,
+        (progress) => setUploadProgress(progress)
+      );
+
+      const senderName = userProfile.role === 'farmer' 
+        ? (userProfile.farmName || `${userProfile.firstName} ${userProfile.lastName}`)
+        : `${userProfile.firstName} ${userProfile.lastName}`;
+
+      await sendMediaMessage(
+        conversationId,
+        user.uid,
+        senderName,
+        userProfile.profileImage || '',
+        url,
+        type,
+        ''
+      );
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('Failed to upload file. Please try again.');
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [conversationId, user, userProfile]);
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   const otherParticipant: Farmer | null = useMemo(() => {
@@ -109,7 +236,6 @@ export default function MessagesLayout({ conversationId, onBack }: MessagesLayou
     return null;
   }, [messages, user?.uid, conversationId]);
 
-  // Empty state - no conversation selected
   if (!conversationId) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 h-full">
@@ -126,20 +252,17 @@ export default function MessagesLayout({ conversationId, onBack }: MessagesLayou
     );
   }
 
-  const loadingParticipant: Farmer = {
+  const participantData = otherUserProfile || otherParticipant || {
     uid: 'loading',
     firstName: 'Loading...',
     lastName: '',
-    phoneNo: '',
-    email: null,
-    createdAt: new Date(),
+    displayName: 'Loading...',
+    role: 'consumer',
   };
 
   return (
-    // Main container - flex column, full height
     <div className="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
       
-      {/* Header - fixed height */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-gray-50 flex-shrink-0 z-20">
         {onBack && (
           <button 
@@ -152,11 +275,11 @@ export default function MessagesLayout({ conversationId, onBack }: MessagesLayou
           </button>
         )}
         <MessageProfile 
-          farmer={otherParticipant || loadingParticipant} 
+          user={participantData}
+          loading={profileLoading}
         />
       </div>
 
-      {/* Messages - flex-1 to fill space, scrollable */}
       <div className="flex-1 overflow-y-auto p-4 space-y-1 bg-white z-10">
         {loading ? (
           <div className="flex items-center justify-center h-full">
@@ -172,7 +295,10 @@ export default function MessagesLayout({ conversationId, onBack }: MessagesLayou
             {messageGroups.map(({ message, showAvatar, isLastInGroup }) => (
               <MessageBubble 
                 key={message.id} 
-                message={message} 
+                message={{
+                  ...message,
+                  senderAvatar: messageAvatars[message.senderId] || ''
+                }} 
                 showAvatar={showAvatar}
                 isLastInGroup={isLastInGroup}
               />
@@ -182,16 +308,40 @@ export default function MessagesLayout({ conversationId, onBack }: MessagesLayou
         )}
       </div>
 
-      {/* Input - fixed height */}
+      {isUploading && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
+          <div className="bg-white rounded-lg p-6 w-80">
+            <p className="text-center font-semibold mb-4">Uploading...</p>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-primary h-2 rounded-full transition-all duration-300" 
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+            <p className="text-center text-sm text-gray-500 mt-2">{Math.round(uploadProgress || 0)}%</p>
+          </div>
+        </div>
+      )}
+
       <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0 z-20">
         <form 
           onSubmit={handleSend}
           className="flex items-center gap-3"
         >
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            accept="image/*,video/*"
+            className="hidden"
+          />
+          
           <button 
             type="button"
-            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border-none cursor-pointer text-gray-500 hover:bg-gray-200 transition-colors flex-shrink-0"
-            title="Add attachment (coming soon)"
+            onClick={triggerFileInput}
+            disabled={isUploading}
+            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border-none cursor-pointer text-gray-500 hover:bg-gray-200 transition-colors flex-shrink-0 disabled:opacity-50"
+            title="Add photo or video"
           >
             <img src={addbutton} alt="Add" className="w-5 h-5" />
           </button>
@@ -201,16 +351,16 @@ export default function MessagesLayout({ conversationId, onBack }: MessagesLayou
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message..."
-            className="flex-1 border border-gray-300 rounded-full px-4 py-2.5 text-sm font-primary outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-            disabled={sending}
+            placeholder={isUploading ? "Uploading..." : "Type a message..."}
+            className="flex-1 border border-gray-300 rounded-full px-4 py-2.5 text-sm font-primary outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:bg-gray-100"
+            disabled={sending || isUploading}
           />
           
           <button 
             type="submit"
-            disabled={!newMessage.trim() || sending}
+            disabled={!newMessage.trim() || sending || isUploading}
             className={`w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer flex-shrink-0 transition-colors ${
-              newMessage.trim() && !sending
+              newMessage.trim() && !sending && !isUploading
                 ? 'bg-primary hover:bg-primary-dark text-white'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}

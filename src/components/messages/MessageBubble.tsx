@@ -1,21 +1,24 @@
-// MessageBubble.tsx
+// MessageBubble.tsx - Full updated version
 import type { Message } from '../../types/messaging';
 import { useAuth } from '../../context/AuthContext';
+import { useState } from 'react';
 
 interface MessageBubbleProps {
-  message: Message;
+  message: Message & { senderAvatar?: string };
   showAvatar: boolean;
-  isLastInGroup: boolean; // NEW: Show timestamp only on last message in group
+  isLastInGroup: boolean;
 }
 
 export default function MessageBubble({ 
   message, 
   showAvatar = true,
-  isLastInGroup = true // Default to true for backwards compatibility
+  isLastInGroup = true
 }: MessageBubbleProps) {
   const { user } = useAuth();
   const isOwnMessage = message.senderId === user?.uid;
   const isRead = message.readBy.length > 1;
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
 
   const formatTime = (timestamp: { toDate: () => Date } | Date | undefined) => {
     if (!timestamp) return '';
@@ -23,7 +26,6 @@ export default function MessageBubble({
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Generate consistent background color from name
   const getAvatarColor = (name: string) => {
     const colors = [
       'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 
@@ -36,23 +38,79 @@ export default function MessageBubble({
     return colors[Math.abs(hash) % colors.length];
   };
 
+  const renderContent = () => {
+    switch (message.type) {
+      case 'image':
+        return (
+          <div className="relative">
+            {!imageLoaded && (
+              <div className="w-64 h-48 bg-gray-200 rounded-lg animate-pulse flex items-center justify-center">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            )}
+            <img 
+              src={message.imageUrl} 
+              alt="Shared image"
+              className={`max-w-64 max-h-80 rounded-lg object-cover cursor-pointer transition-opacity ${imageLoaded ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}
+              onLoad={() => setImageLoaded(true)}
+              onClick={() => window.open(message.imageUrl, '_blank')}
+            />
+            {message.text && (
+              <p className="text-sm mt-2">{message.text}</p>
+            )}
+          </div>
+        );
+      
+      case 'video':
+        return (
+          <div className="relative w-64">
+            {!videoLoaded && (
+              <div className="w-64 h-48 bg-gray-900 rounded-lg flex items-center justify-center">
+                <svg className="w-12 h-12 text-white opacity-50" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+            )}
+            <video 
+              src={message.videoUrl}
+              controls
+              className={`max-w-64 max-h-80 rounded-lg ${videoLoaded ? 'block' : 'hidden'}`}
+              onLoadedData={() => setVideoLoaded(true)}
+              preload="metadata"
+            />
+            {message.text && (
+              <p className="text-sm mt-2">{message.text}</p>
+            )}
+          </div>
+        );
+      
+      default:
+        return <p className="text-sm font-primary leading-relaxed">{message.text}</p>;
+    }
+  };
+
   return (
     <div className={`flex items-end gap-2 mb-1 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
-      {/* Avatar - Only show if showAvatar is true */}
+      {/* Avatar */}
       {showAvatar && !isOwnMessage ? (
-        <div className={`w-8 h-8 rounded-full ${getAvatarColor(message.senderName)} flex items-center justify-center flex-shrink-0 mb-5 shadow-sm`}>
-          {message.senderName ? (
-            <span className="text-white text-sm font-bold">
-              {message.senderName.charAt(0).toUpperCase()}
-            </span>
+        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mb-5 shadow-sm overflow-hidden">
+          {message.senderAvatar ? (
+            <img 
+              src={message.senderAvatar} 
+              alt={message.senderName}
+              className="w-full h-full object-cover"
+            />
           ) : (
-            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-            </svg>
+            <div className={`w-full h-full ${getAvatarColor(message.senderName)} flex items-center justify-center`}>
+              <span className="text-white text-sm font-bold">
+                {message.senderName.charAt(0).toUpperCase()}
+              </span>
+            </div>
           )}
         </div>
       ) : (
-        // Spacer for alignment when avatar is hidden
         <div className="w-8 flex-shrink-0" />
       )}
       
@@ -63,12 +121,14 @@ export default function MessageBubble({
             isOwnMessage
               ? 'bg-primary text-white rounded-br-none'
               : 'bg-gray-100 text-gray-900 rounded-bl-none'
-          } ${!showAvatar && isOwnMessage ? 'rounded-tr-2xl' : ''} ${!showAvatar && !isOwnMessage ? 'rounded-tl-2xl' : ''}`}
+          } ${!showAvatar && isOwnMessage ? 'rounded-tr-2xl' : ''} ${!showAvatar && !isOwnMessage ? 'rounded-tl-2xl' : ''} ${
+            message.type !== 'text' ? 'p-2' : ''
+          }`}
         >
-          <p className="text-sm font-primary leading-relaxed">{message.text}</p>
+          {renderContent()}
         </div>
         
-        {/* Timestamp and Read Receipt - Only show if last in group */}
+        {/* Timestamp and Read Receipt */}
         {isLastInGroup && (
           <div className={`flex items-center gap-1 mt-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
             <span className="text-xs text-gray-400">

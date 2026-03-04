@@ -16,24 +16,35 @@ import {
   writeBatch,
   increment,
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { 
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+} from 'firebase/storage';
+import { db, storage } from '../lib/firebase';
 import type { Message, Conversation, ParticipantInfo } from '../types/messaging';
 
 const CONVERSATIONS_COLLECTION = 'conversations';
 const MESSAGES_SUBCOLLECTION = 'messages';
 
+// Interface for user profile when creating conversations
+interface ConversationUserProfile {
+  firstName: string;
+  lastName: string;
+  role: 'consumer' | 'farmer';
+  farmName?: string;
+}
+
 /**
  * Create or get existing conversation between two users
- * Called when "Contact Seller" is clicked
  */
 export async function createConversation(
   currentUserId: string,
-  currentUserProfile: { firstName: string; lastName: string; role: 'consumer' | 'farmer' },
+  currentUserProfile: ConversationUserProfile,
   otherUserId: string,
-  otherUserProfile: { firstName: string; lastName: string; role: 'consumer' | 'farmer' },
+  otherUserProfile: ConversationUserProfile,
   productId?: string
 ): Promise<string> {
-  // Check if conversation already exists
   const conversationsRef = collection(db, CONVERSATIONS_COLLECTION);
   const q = query(
     conversationsRef,
@@ -54,15 +65,18 @@ export async function createConversation(
     return existingConversationId;
   }
 
-  // Create new conversation
   const participantInfo: Record<string, ParticipantInfo> = {
     [currentUserId]: {
-      name: `${currentUserProfile.firstName} ${currentUserProfile.lastName}`,
+      name: currentUserProfile.role === 'farmer' && currentUserProfile.farmName
+        ? currentUserProfile.farmName
+        : `${currentUserProfile.firstName} ${currentUserProfile.lastName}`,
       avatar: '',
       role: currentUserProfile.role,
     },
     [otherUserId]: {
-      name: `${otherUserProfile.firstName} ${otherUserProfile.lastName}`,
+      name: otherUserProfile.role === 'farmer' && otherUserProfile.farmName
+        ? otherUserProfile.farmName
+        : `${otherUserProfile.firstName} ${otherUserProfile.lastName}`,
       avatar: '',
       role: otherUserProfile.role,
     },
@@ -96,25 +110,25 @@ export async function sendMessage(
   conversationId: string,
   senderId: string,
   senderName: string,
+  senderAvatar: string,
   text: string
 ): Promise<void> {
   const batch = writeBatch(db);
   
-  // Add message to subcollection
   const messagesRef = collection(db, CONVERSATIONS_COLLECTION, conversationId, MESSAGES_SUBCOLLECTION);
   const newMessage = {
     senderId,
     senderName,
+    senderAvatar,
     text,
     createdAt: serverTimestamp(),
-    readBy: [senderId], // Sender has implicitly read it
+    readBy: [senderId],
     type: 'text',
   };
   
   const messageDocRef = doc(messagesRef);
   batch.set(messageDocRef, newMessage);
   
-  // Update conversation lastMessage and increment unread for other participant
   const conversationRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
   const conversationSnap = await getDoc(conversationRef);
   const conversationData = conversationSnap.data();
@@ -136,6 +150,101 @@ export async function sendMessage(
 }
 
 /**
+ * Upload media (image/video) to Firebase Storage
+ */
+export async function uploadMedia(
+  file: File,
+  conversationId: string,
+  uploaderId: string,
+  onProgress?: (progress: number) => void
+): Promise<{ url: string; type: 'image' | 'video' }> {
+  const isVideo = file.type.startsWith('video/');
+  const folder = isVideo ? 'videos' : 'images';
+  const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+  const storageRef = ref(storage, `message-attachments/${conversationId}/${fileName}`);
+  
+  const metadata = {
+    contentType: file.type,
+    customMetadata: {
+      uploader: uploaderId,
+      conversationId: conversationId,
+    },
+  };
+  
+  const uploadTask = uploadBytesResumable(storageRef, file, metadata);
+
+  return new Promise((resolve, reject) => {
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        onProgress?.(progress);
+      },
+      (error) => {
+        reject(error);
+      },
+      async () => {
+        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+        resolve({
+          url: downloadURL,
+          type: isVideo ? 'video' : 'image',
+        });
+      }
+    );
+  });
+}
+
+/**
+ * Send media message (image or video)
+ */
+export async function sendMediaMessage(
+  conversationId: string,
+  senderId: string,
+  senderName: string,
+  senderAvatar: string,
+  mediaUrl: string,
+  type: 'image' | 'video',
+  caption?: string
+): Promise<void> {
+  const batch = writeBatch(db);
+  
+  const messagesRef = collection(db, CONVERSATIONS_COLLECTION, conversationId, MESSAGES_SUBCOLLECTION);
+  const newMessage = {
+    senderId,
+    senderName,
+    senderAvatar,
+    text: caption || '',
+    createdAt: serverTimestamp(),
+    readBy: [senderId],
+    type,
+    ...(type === 'image' ? { imageUrl: mediaUrl } : { videoUrl: mediaUrl }),
+  };
+  
+  const messageDocRef = doc(messagesRef);
+  batch.set(messageDocRef, newMessage);
+  
+  const conversationRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
+  const conversationSnap = await getDoc(conversationRef);
+  const conversationData = conversationSnap.data();
+  const otherParticipantId = conversationData?.participants.find((id: string) => id !== senderId);
+  
+  const lastMessageText = type === 'image' ? '📷 Photo' : '🎥 Video';
+  
+  batch.update(conversationRef, {
+    lastMessage: {
+      text: caption || lastMessageText,
+      senderId,
+      createdAt: serverTimestamp(),
+      readBy: [senderId],
+    },
+    lastMessageAt: serverTimestamp(),
+    [`unreadCount.${otherParticipantId}`]: increment(1),
+  });
+  
+  await batch.commit();
+}
+
+/**
  * Mark messages as read
  */
 export async function markConversationAsRead(
@@ -143,29 +252,9 @@ export async function markConversationAsRead(
   userId: string
 ): Promise<void> {
   const conversationRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
-  
   await updateDoc(conversationRef, {
     [`unreadCount.${userId}`]: 0,
   });
-  
-  // Also mark individual messages as read
-  const messagesRef = collection(db, CONVERSATIONS_COLLECTION, conversationId, MESSAGES_SUBCOLLECTION);
-  const q = query(
-    messagesRef,
-    where('readBy', 'not-in', [[userId]]) // Messages not read by this user
-  );
-  
-  const snapshot = await getDocs(q);
-  const batch = writeBatch(db);
-  
-  snapshot.forEach((messageDoc) => {
-    const messageRef = doc(db, CONVERSATIONS_COLLECTION, conversationId, MESSAGES_SUBCOLLECTION, messageDoc.id);
-    batch.update(messageRef, {
-      readBy: [...(messageDoc.data().readBy || []), userId],
-    });
-  });
-  
-  await batch.commit();
 }
 
 /**
@@ -198,7 +287,7 @@ export async function getMessages(
     } as Message);
   });
   
-  return messages.reverse(); // Return in chronological order
+  return messages.reverse();
 }
 
 /**
@@ -250,8 +339,7 @@ export function subscribeToConversations(
 }
 
 /**
- * Search users by name (for starting new conversations)
- * Searches both consumers and farmers collections
+ * Search users by name
  */
 export async function searchUsers(searchTerm: string, currentUserId: string): Promise<Array<{
   uid: string;
@@ -264,7 +352,6 @@ export async function searchUsers(searchTerm: string, currentUserId: string): Pr
   const term = searchTerm.toLowerCase();
   const results: Array<{ uid: string; name: string; role: 'consumer' | 'farmer'; avatar?: string }> = [];
   
-  // Search farmers
   const farmersSnapshot = await getDocs(collection(db, 'farmers'));
   farmersSnapshot.forEach((doc) => {
     if (doc.id === currentUserId) return;
@@ -282,7 +369,6 @@ export async function searchUsers(searchTerm: string, currentUserId: string): Pr
     }
   });
   
-  // Search consumers
   const consumersSnapshot = await getDocs(collection(db, 'consumers'));
   consumersSnapshot.forEach((doc) => {
     if (doc.id === currentUserId) return;
@@ -299,18 +385,17 @@ export async function searchUsers(searchTerm: string, currentUserId: string): Pr
     }
   });
   
-  return results.slice(0, 10); // Limit results
+  return results.slice(0, 10);
 }
 
 /**
  * Get or create conversation with specific user
- * Used when clicking "Contact Seller" on product page
  */
 export async function getOrCreateConversationWithUser(
   currentUserId: string,
-  currentUserProfile: { firstName: string; lastName: string; role: 'consumer' | 'farmer' },
+  currentUserProfile: ConversationUserProfile,
   otherUserId: string,
-  otherUserProfile: { firstName: string; lastName: string; role: 'consumer' | 'farmer' },
+  otherUserProfile: ConversationUserProfile,
   productId?: string
 ): Promise<string> {
   return createConversation(
@@ -320,4 +405,56 @@ export async function getOrCreateConversationWithUser(
     otherUserProfile,
     productId
   );
+}
+
+/**
+ * Get user profile by ID
+ */
+export async function getUserProfile(userId: string): Promise<{
+  uid: string;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+  role: 'consumer' | 'farmer';
+  avatar?: string;
+  farmName?: string;
+  isOnline?: boolean;
+} | null> {
+  try {
+    // Try farmers collection first
+    const farmerDoc = await getDoc(doc(db, 'farmers', userId));
+    if (farmerDoc.exists()) {
+      const data = farmerDoc.data();
+      return {
+        uid: userId,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        displayName: data.farmName || `${data.firstName} ${data.lastName}`,
+        role: 'farmer',
+        avatar: data.profileImage,
+        farmName: data.farmName,
+        isOnline: false,
+      };
+    }
+
+    // Try consumers collection
+    const consumerDoc = await getDoc(doc(db, 'consumers', userId));
+    if (consumerDoc.exists()) {
+      const data = consumerDoc.data();
+      return {
+        uid: userId,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        displayName: `${data.firstName} ${data.lastName}`,
+        role: 'consumer',
+        avatar: data.profileImage,
+        isOnline: false,
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    return null;
+  }
 }

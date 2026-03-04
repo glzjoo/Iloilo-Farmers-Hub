@@ -1,21 +1,21 @@
 interface MessageProfileProps {
-  farmer: {
-    firstName: string;
-    lastName: string;
-    profileImage?: string;
+  user: {
+    uid: string;
+    firstName?: string;
+    lastName?: string;
+    displayName?: string;
+    avatar?: string;
+    role?: 'consumer' | 'farmer';
     farmName?: string;
-    phoneNo?: string;
-    email?: string | null;
-    createdAt?: Date;
+    isOnline?: boolean;
   };
-  isOnline?: boolean;
+  loading?: boolean;
 }
 
-export default function MessageProfile({ farmer, isOnline = false }: MessageProfileProps) {
-  const displayName = farmer.farmName || `${farmer.firstName} ${farmer.lastName}`;
+export default function MessageProfile({ user, loading = false }: MessageProfileProps) {
+  const displayName = user?.displayName || user?.farmName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Unknown';
   const initial = displayName.charAt(0).toUpperCase();
 
-  // Generate consistent background color from name
   const getAvatarColor = (name: string) => {
     const colors = [
       'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 
@@ -28,12 +28,24 @@ export default function MessageProfile({ farmer, isOnline = false }: MessageProf
     return colors[Math.abs(hash) % colors.length];
   };
 
+  if (loading) {
+    return (
+      <section className="flex items-center gap-3 flex-1 animate-pulse">
+        <div className="w-10 h-10 rounded-full bg-gray-300" />
+        <div className="flex-1">
+          <div className="h-4 bg-gray-300 rounded w-32 mb-1" />
+          <div className="h-3 bg-gray-300 rounded w-20" />
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="flex items-center gap-3 flex-1">
       <div className="relative">
-        {farmer.profileImage ? (
+        {user?.avatar ? (
           <img 
-            src={farmer.profileImage} 
+            src={user.avatar} 
             alt={displayName}
             className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
           />
@@ -42,7 +54,7 @@ export default function MessageProfile({ farmer, isOnline = false }: MessageProf
             <span className="text-white font-bold text-lg">{initial}</span>
           </div>
         )}
-        {isOnline && (
+        {user?.isOnline && (
           <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
         )}
       </div>
@@ -50,8 +62,8 @@ export default function MessageProfile({ farmer, isOnline = false }: MessageProf
         <h2 className="text-base font-primary font-semibold text-black truncate">
           {displayName}
         </h2>
-        <p className="text-xs text-gray-500">
-          {isOnline ? 'Online' : 'Tap to view profile'}
+        <p className="text-xs text-gray-500 capitalize">
+          {user?.isOnline ? 'Online' : user?.role || 'User'}
         </p>
       </div>
     </section>
