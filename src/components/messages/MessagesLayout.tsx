@@ -36,7 +36,7 @@ const isWithinTimeWindow = (msg1: any, msg2: any, minutes: number = 5) => {
 
 export default function MessagesLayout({ conversationId, onBack, productContext, onCloseProductContext }: MessagesLayoutProps) {
   const { user, userProfile } = useAuth();
-  // ✅ FIXED: Extract sendOfferMessage from the hook
+  //  Extract sendOfferMessage from the hook
   const { messages, loading, sending, sendMessage, sendOfferMessage } = useMessages(conversationId, user?.uid);
   const [newMessage, setNewMessage] = useState('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -406,7 +406,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
             ? (userProfile.farmName || `${userProfile.firstName} ${userProfile.lastName}`)
             : `${userProfile.firstName} ${userProfile.lastName}`;
           
-          // ✅ FIXED: Now uses the hook's sendOfferMessage with proper error handling and loading state
+          // Now uses the hook's sendOfferMessage with proper error handling and loading state
           try {
             await sendOfferMessage(senderName, userProfile.profileImage || '', offerPrice);
           } catch (error) {
