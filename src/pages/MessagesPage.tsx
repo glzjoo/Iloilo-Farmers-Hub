@@ -3,7 +3,6 @@ import { useAuth } from '../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import MessageColumn from '../components/messages/MessageColumn';
 import MessagesLayout from '../components/messages/MessagesLayout';
-import ProductContext from '../components/messages/ProductContext';
 import { getOrCreateConversationWithUser, getUserProfile } from '../services/messageService';
 
 interface LocationState {
@@ -15,6 +14,7 @@ interface LocationState {
     price: number;
     image: string;
     unit: string;
+    quantity?: number;
   };
 }
 
@@ -61,11 +61,11 @@ export default function MessagesPage() {
 
           // Set product context for display
           setProductContext(state.product!);
-          
+
           // Select the conversation
           setSelectedConversationId(conversationId);
           setIsMobileSidebarVisible(false);
-          
+
           // Clear navigation state to prevent re-creation on refresh
           navigate('/messages', { replace: true, state: {} });
         } catch (error) {
@@ -89,7 +89,7 @@ export default function MessagesPage() {
   };
 
   const handleStartNewConversation = async (
-    otherUserId: string, 
+    otherUserId: string,
     otherUserProfile: { name: string; role: 'consumer' | 'farmer' }
   ) => {
     if (!user || !userProfile) return;
@@ -110,7 +110,7 @@ export default function MessagesPage() {
           role: otherUserProfile.role,
         }
       );
-      
+
       handleSelectConversation(conversationId);
     } catch (error) {
       console.error('Failed to start conversation:', error);
@@ -137,17 +137,11 @@ export default function MessagesPage() {
         ${!isMobileSidebarVisible ? 'flex' : 'hidden'} 
         md:flex flex-1 h-full min-h-0 flex-col
       `}>
-        {/* Product Context Section - Shows for both farmer and consumer */}
-        {productContext && (
-          <ProductContext 
-            product={productContext}
-            onClose={() => setProductContext(null)}
-          />
-        )}
-        
-        <MessagesLayout 
+        <MessagesLayout
           conversationId={selectedConversationId}
           onBack={handleBackToSidebar}
+          productContext={productContext}
+          onCloseProductContext={() => setProductContext(null)}
         />
       </div>
     </div>

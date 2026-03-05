@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import minus from '../../assets/icons/minus.svg';
 import add from '../../assets/icons/add.svg';
 import type { Product } from '../../types';
-import { getShopProducts, getProductsByCategory } from '../../services/ShopService';
+import { getShopProducts, getProductsByCategory } from '../../services/shopService';
 import { addToCart } from '../../services/cartService';
 import { useAuth } from '../../context/AuthContext';
 
@@ -27,24 +27,24 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
             try {
                 setLoading(true);
                 setError('');
-                
+
                 let fetchedProducts: Product[];
-                
+
                 if (selectedCategory && selectedCategory !== 'All') {
                     fetchedProducts = await getProductsByCategory(selectedCategory);
                 } else {
                     fetchedProducts = await getShopProducts();
                 }
-                
+
                 setProducts(fetchedProducts);
-                
+
                 // Initialize quantities
                 const initialQuantities: Record<string, number> = {};
                 fetchedProducts.forEach(p => {
                     initialQuantities[p.id] = 1;
                 });
                 setQuantities(initialQuantities);
-                
+
             } catch (err: any) {
                 setError(err.message || 'Failed to fetch products');
             } finally {
@@ -75,7 +75,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
 
     const handleAddToCart = async (e: React.MouseEvent, product: Product) => {
         e.stopPropagation();
-        
+
         if (!user) {
             alert('Please login to add items to cart');
             navigate('/login');
@@ -136,7 +136,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="text-center py-16 text-red-500">
                         <p className="text-xl">{error}</p>
-                        <button 
+                        <button
                             onClick={() => window.location.reload()}
                             className="mt-4 px-4 py-2 bg-primary text-white rounded-lg"
                         >
@@ -167,14 +167,14 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                         {filteredProducts.map((product) => (
-                            <div 
-                                key={product.id} 
+                            <div
+                                key={product.id}
                                 className="cursor-pointer group"
                                 onClick={() => handleProductClick(product.id)}
                             >
                                 <div className="relative overflow-hidden rounded-lg">
-                                    <img 
-                                        src={product.image || '/placeholder-product.png'} 
+                                    <img
+                                        src={product.image || '/placeholder-product.png'}
                                         alt={product.name}
                                         className="w-full h-32 object-cover transition-transform group-hover:scale-105"
                                     />
@@ -184,7 +184,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                                         </div>
                                     )}
                                 </div>
-                                
+
                                 <div className="flex items-center justify-between mt-2">
                                     <div className="flex-1 min-w-0">
                                         <h3 className="text-sm font-semibold text-gray-900 truncate">{product.name}</h3>
@@ -194,7 +194,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                                 </div>
 
                                 <div className="flex items-center gap-1 mt-2">
-                                    <button 
+                                    <button
                                         className="bg-transparent border-none cursor-pointer p-0 disabled:opacity-50"
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -207,7 +207,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                                     <span className="text-sm font-semibold text-gray-900 w-5 text-center">
                                         {quantities[product.id] || 1}
                                     </span>
-                                    <button 
+                                    <button
                                         className="bg-transparent border-none cursor-pointer p-0 disabled:opacity-50"
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -219,7 +219,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                                     </button>
                                 </div>
 
-                                <button 
+                                <button
                                     className="w-full bg-primary flex items-center justify-center gap-2 text-white text-sm font-medium px-4 py-2 rounded-2xl border-none cursor-pointer mb-5 mt-2 hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                                     onClick={(e) => handleAddToCart(e, product)}
                                     disabled={product.stock === '0' || product.stock.startsWith('0') || addingToCart === product.id}

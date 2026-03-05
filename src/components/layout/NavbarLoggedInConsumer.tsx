@@ -3,7 +3,6 @@ import languageIcon from '../../assets/icons/language-logo.svg';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import messagesIcon from '../../assets/icons/messages.svg';
-import accountSettingsIcon from '../../assets/icons/account-settings.svg';
 import logOutIcon from '../../assets/icons/log-out.svg';
 import cartIcon from '../../assets/icons/saved-items.png';
 import { useAuth } from '../../context/AuthContext';

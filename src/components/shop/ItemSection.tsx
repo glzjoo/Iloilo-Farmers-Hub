@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import type { Product } from '../../types';
-import { getProductById } from '../../services/ShopService';
+import { getProductById } from '../../services/shopService';
 
 export default function ItemSection() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const productId = searchParams.get('id');
-    
+
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -77,7 +77,7 @@ export default function ItemSection() {
             <section className="w-full py-12">
                 <div className="max-w-4xl mx-auto px-10 text-center">
                     <p className="text-red-500 text-xl">{error || 'Product not found'}</p>
-                    <button 
+                    <button
                         onClick={() => navigate('/shop')}
                         className="mt-4 px-6 py-2 bg-primary text-white rounded-lg"
                     >
@@ -167,14 +167,14 @@ export default function ItemSection() {
                     </div>
 
                     <div className="flex gap-4 mt-16">
-                        <button 
+                        <button
                             onClick={handleAddToCart}
                             disabled={isOutOfStock}
                             className="px-8 py-2.5 border-2 border-primary text-primary font-primary font-semibold rounded-full cursor-pointer bg-white hover:bg-green-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300 disabled:cursor-not-allowed"
                         >
                             {isOutOfStock ? 'Out of Stock' : 'Add to cart'}
                         </button>
-                        <button 
+                        <button
                             onClick={handleMessageSeller}
                             className="px-8 py-2.5 bg-primary text-white font-primary font-semibold rounded-full cursor-pointer border-none hover:bg-green-700"
                         >
