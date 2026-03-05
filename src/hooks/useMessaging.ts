@@ -4,6 +4,7 @@ import {
   subscribeToConversations,
   subscribeToMessages,
   sendMessage as sendMessageService,
+  sendOfferMessage as sendOfferMessageService, 
   markConversationAsRead,
   getMessages,
 } from '../services/messageService';
@@ -68,23 +69,45 @@ export function useMessages(conversationId: string | null | undefined, userId: s
     }
   }, [conversationId, userId]);
 
-  // THIS IS THE KEY FIX - Proper parameter order
   const sendMessage = useCallback(async (
     text: string, 
     senderName: string, 
     senderAvatar: string
   ) => {
     if (!conversationId || !userId || !text.trim()) {
-      console.log('Send blocked:', { conversationId, userId, text }); // Debug
+      console.log('Send blocked:', { conversationId, userId, text });
       return;
     }
     
     setSending(true);
     try {
-      console.log('Calling service with:', { conversationId, userId, senderName, senderAvatar, text }); // Debug
+      console.log('Calling service with:', { conversationId, userId, senderName, senderAvatar, text });
       await sendMessageService(conversationId, userId, senderName, senderAvatar, text.trim());
     } catch (error) {
       console.error('Send error:', error);
+      throw error;
+    } finally {
+      setSending(false);
+    }
+  }, [conversationId, userId]);
+
+  //  sendOfferMessage wrapper
+  const sendOfferMessage = useCallback(async (
+    senderName: string,
+    senderAvatar: string,
+    offerPrice: number
+  ) => {
+    if (!conversationId || !userId || !offerPrice || offerPrice <= 0) {
+      console.log('Send offer blocked:', { conversationId, userId, offerPrice });
+      return;
+    }
+    
+    setSending(true);
+    try {
+      console.log('Calling sendOfferMessage with:', { conversationId, userId, senderName, offerPrice });
+      await sendOfferMessageService(conversationId, userId, senderName, senderAvatar, offerPrice);
+    } catch (error) {
+      console.error('Send offer error:', error);
       throw error;
     } finally {
       setSending(false);
@@ -111,6 +134,7 @@ export function useMessages(conversationId: string | null | undefined, userId: s
     sending,
     hasMore,
     sendMessage,
+    sendOfferMessage, 
     loadMoreMessages,
   };
 }

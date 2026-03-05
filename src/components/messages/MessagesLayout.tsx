@@ -6,7 +6,7 @@ import MessageBubble from './MessageBubble';
 import ProductContext from './ProductContext';
 import addbutton from '../../assets/icons/add.svg';
 import type { Farmer } from '../../types';
-import { uploadMedia, sendMediaMessage, getUserProfile, sendOfferMessage } from '../../services/messageService';
+import { uploadMedia, sendMediaMessage, getUserProfile } from '../../services/messageService';
 import { getProductById } from '../../services/productService';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
@@ -36,7 +36,8 @@ const isWithinTimeWindow = (msg1: any, msg2: any, minutes: number = 5) => {
 
 export default function MessagesLayout({ conversationId, onBack, productContext, onCloseProductContext }: MessagesLayoutProps) {
   const { user, userProfile } = useAuth();
-  const { messages, loading, sending, sendMessage } = useMessages(conversationId, user?.uid);
+  // ✅ FIXED: Extract sendOfferMessage from the hook
+  const { messages, loading, sending, sendMessage, sendOfferMessage } = useMessages(conversationId, user?.uid);
   const [newMessage, setNewMessage] = useState('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -103,8 +104,6 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
                 price: product.price,
                 image: product.image || '',
                 unit: product.unit,
-                // We don't have exact quantity from just the product, but the offer message might have it.
-                // For now we just show the product itself.
               });
             }
           }
@@ -406,13 +405,14 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
           const senderName = userProfile.role === 'farmer'
             ? (userProfile.farmName || `${userProfile.firstName} ${userProfile.lastName}`)
             : `${userProfile.firstName} ${userProfile.lastName}`;
-          await sendOfferMessage(
-            conversationId,
-            user.uid,
-            senderName,
-            userProfile.profileImage || '',
-            offerPrice
-          );
+          
+          // ✅ FIXED: Now uses the hook's sendOfferMessage with proper error handling and loading state
+          try {
+            await sendOfferMessage(senderName, userProfile.profileImage || '', offerPrice);
+          } catch (error) {
+            console.error('Failed to send offer:', error);
+            alert('Failed to send offer. Please try again.');
+          }
         }}
       />
 
