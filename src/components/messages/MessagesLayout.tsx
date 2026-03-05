@@ -7,6 +7,9 @@ import ProductContext from './ProductContext';
 import addbutton from '../../assets/icons/add.svg';
 import type { Farmer } from '../../types';
 import { uploadMedia, sendMediaMessage, getUserProfile, sendOfferMessage } from '../../services/messageService';
+import { getProductById } from '../../services/productService';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 import MakeOfferButton from './MakeOfferButton';
 
 interface MessagesLayoutProps {
@@ -39,6 +42,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
   const [isUploading, setIsUploading] = useState(false);
   const [otherUserProfile, setOtherUserProfile] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [fetchedProductContext, setFetchedProductContext] = useState<MessagesLayoutProps['productContext']>(null);
   // Store avatars for message senders
   const [messageAvatars, setMessageAvatars] = useState<Record<string, string>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -78,6 +82,40 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
 
     fetchProfile();
   }, [conversationId, messages, user, otherUserProfile?.uid]);
+
+  // Fetch product context if not provided via props (e.g., when Farmer opens the chat)
+  useEffect(() => {
+    if (!conversationId || productContext) return;
+
+    const fetchProductFromConversation = async () => {
+      try {
+        const convRef = doc(db, 'conversations', conversationId);
+        const convSnap = await getDoc(convRef);
+
+        if (convSnap.exists()) {
+          const data = convSnap.data();
+          if (data.relatedProductId) {
+            const product = await getProductById(data.relatedProductId);
+            if (product) {
+              setFetchedProductContext({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                image: product.image || '',
+                unit: product.unit,
+                // We don't have exact quantity from just the product, but the offer message might have it.
+                // For now we just show the product itself.
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch product context:', error);
+      }
+    };
+
+    fetchProductFromConversation();
+  }, [conversationId, productContext]);
 
   // Fetch avatars for all message senders
   useEffect(() => {
@@ -142,6 +180,19 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
 
     return groups;
   }, [messages]);
+
+  const latestReceivedOfferPrice = useMemo(() => {
+    // find the most recent offer from the other participant
+    const offerMsg = [...messages].reverse().find(m => m.type === 'offer' && m.senderId !== user?.uid);
+    console.log('--- DEBUG OFFER IN MESSAGES ---', {
+      totalMessages: messages.length,
+      foundOfferMsg: offerMsg,
+      offerPrice: offerMsg ? offerMsg.offerPrice : null,
+      userId: user?.uid,
+      allOfferTypes: messages.filter(m => m.type === 'offer')
+    });
+    return offerMsg ? offerMsg.offerPrice : null;
+  }, [messages, user?.uid]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -292,9 +343,9 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
       </div>
 
       {/* Product Context - under profile header */}
-      {productContext && (
+      {(productContext || fetchedProductContext) && (
         <ProductContext
-          product={productContext}
+          product={(productContext || fetchedProductContext)!}
           onClose={onCloseProductContext}
         />
       )}

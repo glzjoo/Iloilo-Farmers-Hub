@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { Product } from '../../types';
-import { getRelatedProducts } from '../../services/ShopService';
+import { getRelatedProducts } from '../../services/shopService';
 
 export default function RelatedProducts() {
     const [searchParams] = useSearchParams();
@@ -12,16 +12,16 @@ export default function RelatedProducts() {
     useEffect(() => {
         const fetchRelated = async () => {
             if (!productId) return;
-            
+
             try {
                 // First get current product to know its category
-                const { getProductById } = await import('../../services/ShopService');
+                const { getProductById } = await import('../../services/shopService');
                 const currentProduct = await getProductById(productId);
-                
+
                 if (currentProduct) {
                     const related = await getRelatedProducts(
-                        currentProduct.category, 
-                        productId, 
+                        currentProduct.category,
+                        productId,
                         5
                     );
                     setRelatedProducts(related);
@@ -44,16 +44,16 @@ export default function RelatedProducts() {
         <section className="w-full py-8 bg-gray-50">
             <div className="max-w-7xl mx-auto px-6">
                 <h2 className="text-3xl font-primary text-center font-semi-bold text-black mb-8">Related Products</h2>
-                
+
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                     {relatedProducts.map((product) => (
-                        <a 
+                        <a
                             key={product.id}
                             href={`/item-details?id=${product.id}`}
                             className="block bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                         >
-                            <img 
-                                src={product.image || '/placeholder-product.png'} 
+                            <img
+                                src={product.image || '/placeholder-product.png'}
                                 alt={product.name}
                                 className="w-full h-32 object-cover"
                             />

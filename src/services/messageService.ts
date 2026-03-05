@@ -62,6 +62,13 @@ export async function createConversation(
   });
 
   if (existingConversationId) {
+    if (productId) {
+      // Update the existing conversation with the new product context
+      const conversationRef = doc(db, CONVERSATIONS_COLLECTION, existingConversationId);
+      await updateDoc(conversationRef, {
+        relatedProductId: productId
+      });
+    }
     return existingConversationId;
   }
 
