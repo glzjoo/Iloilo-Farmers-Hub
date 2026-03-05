@@ -7,10 +7,11 @@ export interface Message {
   text: string;
   createdAt: Timestamp;
   readBy: string[];
-  type: 'text' | 'image' | 'video'; 
+  type: 'text' | 'image' | 'video' | 'offer';
   imageUrl?: string;
   videoUrl?: string;
-  thumbnailUrl?: string; 
+  thumbnailUrl?: string;
+  offerPrice?: number;
 }
 
 export interface ParticipantInfo {

@@ -1,0 +1,81 @@
+import { useState } from 'react';
+
+interface MakeOfferModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    product: {
+        name: string;
+        price: number;
+        unit: string;
+        image: string;
+    };
+    farmerName: string;
+    onSubmitOffer: (offerPrice: number) => void;
+}
+
+export default function MakeOfferModal({ isOpen, onClose, product, farmerName, onSubmitOffer }: MakeOfferModalProps) {
+    const [offerPrice, setOfferPrice] = useState('');
+
+    if (!isOpen) return null;
+
+    const handleSubmit = () => {
+        const price = parseFloat(offerPrice);
+        if (isNaN(price) || price <= 0) {
+            alert('Please enter a valid offer price');
+            return;
+        }
+        onSubmitOffer(price);
+        setOfferPrice('');
+        onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+            <div
+                className="w-full max-w-md rounded-xl overflow-hidden shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/*Header */}
+                <div className="bg-primary px-5 py-3 flex items-center justify-between">
+                    <div className="text-white font-semibold text-md">
+                        {farmerName} is selling this for PHP {product.price.toFixed(2)} per {product.unit}
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="text-white hover:text-white cursor-pointer transition-colors"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div className="bg-white p-6">
+                    {/* Offer Input */}
+                    <p className="text-center text-gray-500 text-sm mb-3">You are offering</p>
+                    <div className="relative mb-6">
+                        <input
+                            type="number"
+                            value={offerPrice}
+                            onChange={(e) => setOfferPrice(e.target.value)}
+                            placeholder={`PHP ${product.price.toFixed(2)}`}
+                            className="w-full text-center text-2xl font-bold text-gray-800 bg-green-100/60 border border-green-200 rounded-lg py-4 px-4 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                            style={{ MozAppearance: 'textfield' }}
+                            min="0"
+                            step="0.01"
+                        />
+                    </div>
+
+                    {/* Submit Button */}
+                    <div className="flex justify-center">
+                        <button className='bg-primary rounded-full px-10 py-2.5 text-white font-semibold text-sm cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95s'
+                            onClick={handleSubmit}
+                        >
+                            Make offer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div >
+    );
+}

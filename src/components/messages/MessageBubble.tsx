@@ -2,6 +2,7 @@
 import type { Message } from '../../types/messaging';
 import { useAuth } from '../../context/AuthContext';
 import { useState } from 'react';
+import OfferPriceBubble from './OfferPriceBubble';
 
 interface MessageBubbleProps {
   message: Message & { senderAvatar?: string };
@@ -9,8 +10,8 @@ interface MessageBubbleProps {
   isLastInGroup: boolean;
 }
 
-export default function MessageBubble({ 
-  message, 
+export default function MessageBubble({
+  message,
   showAvatar = true,
   isLastInGroup = true
 }: MessageBubbleProps) {
@@ -28,7 +29,7 @@ export default function MessageBubble({
 
   const getAvatarColor = (name: string) => {
     const colors = [
-      'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 
+      'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500',
       'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'
     ];
     let hash = 0;
@@ -50,8 +51,8 @@ export default function MessageBubble({
                 </svg>
               </div>
             )}
-            <img 
-              src={message.imageUrl} 
+            <img
+              src={message.imageUrl}
               alt="Shared image"
               className={`max-w-64 max-h-80 rounded-lg object-cover cursor-pointer transition-opacity ${imageLoaded ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}
               onLoad={() => setImageLoaded(true)}
@@ -62,18 +63,18 @@ export default function MessageBubble({
             )}
           </div>
         );
-      
+
       case 'video':
         return (
           <div className="relative w-64">
             {!videoLoaded && (
               <div className="w-64 h-48 bg-gray-900 rounded-lg flex items-center justify-center">
                 <svg className="w-12 h-12 text-white opacity-50" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z"/>
+                  <path d="M8 5v14l11-7z" />
                 </svg>
               </div>
             )}
-            <video 
+            <video
               src={message.videoUrl}
               controls
               className={`max-w-64 max-h-80 rounded-lg ${videoLoaded ? 'block' : 'hidden'}`}
@@ -85,11 +86,43 @@ export default function MessageBubble({
             )}
           </div>
         );
-      
+
       default:
         return <p className="text-sm font-primary leading-relaxed">{message.text}</p>;
     }
   };
+
+  // Offer messages get their own special layout
+  if (message.type === 'offer') {
+    return (
+      <div className="mb-1">
+        <OfferPriceBubble
+          offerPrice={message.offerPrice || 0}
+          isSender={isOwnMessage}
+        />
+        {isLastInGroup && (
+          <div className={`flex items-center gap-1 mt-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+            <span className="text-xs text-gray-400">
+              {formatTime(message.createdAt)}
+            </span>
+            {isOwnMessage && (
+              <span className="text-xs" title={isRead ? 'Read' : 'Delivered'}>
+                {isRead ? (
+                  <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                  </svg>
+                )}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={`flex items-end gap-2 mb-1 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -97,8 +130,8 @@ export default function MessageBubble({
       {showAvatar && !isOwnMessage ? (
         <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mb-5 shadow-sm overflow-hidden">
           {message.senderAvatar ? (
-            <img 
-              src={message.senderAvatar} 
+            <img
+              src={message.senderAvatar}
               alt={message.senderName}
               className="w-full h-full object-cover"
             />
@@ -113,37 +146,35 @@ export default function MessageBubble({
       ) : (
         <div className="w-8 flex-shrink-0" />
       )}
-      
+
       {/* Message Content */}
       <div className={`max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
         <div
-          className={`px-4 py-2.5 rounded-2xl shadow-sm ${
-            isOwnMessage
-              ? 'bg-primary text-white rounded-br-none'
-              : 'bg-gray-100 text-gray-900 rounded-bl-none'
-          } ${!showAvatar && isOwnMessage ? 'rounded-tr-2xl' : ''} ${!showAvatar && !isOwnMessage ? 'rounded-tl-2xl' : ''} ${
-            message.type !== 'text' ? 'p-2' : ''
-          }`}
+          className={`px-4 py-2.5 rounded-2xl shadow-sm ${isOwnMessage
+            ? 'bg-primary text-white rounded-br-none'
+            : 'bg-gray-100 text-gray-900 rounded-bl-none'
+            } ${!showAvatar && isOwnMessage ? 'rounded-tr-2xl' : ''} ${!showAvatar && !isOwnMessage ? 'rounded-tl-2xl' : ''} ${message.type !== 'text' ? 'p-2' : ''
+            }`}
         >
           {renderContent()}
         </div>
-        
+
         {/* Timestamp and Read Receipt */}
         {isLastInGroup && (
           <div className={`flex items-center gap-1 mt-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
             <span className="text-xs text-gray-400">
               {formatTime(message.createdAt)}
             </span>
-            
+
             {isOwnMessage && (
               <span className="text-xs" title={isRead ? 'Read' : 'Delivered'}>
                 {isRead ? (
                   <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z"/>
+                    <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />
                   </svg>
                 ) : (
                   <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                   </svg>
                 )}
               </span>

@@ -36,12 +36,12 @@ export default function ItemsCheckout() {
 
     const handleQuantityChange = async (productId: string, newQuantity: number) => {
         if (!user || newQuantity < 1) return;
-        
+
         setUpdatingItem(productId);
         try {
             await updateCartItemQuantity(user.uid, productId, newQuantity);
-            setCartItems(prev => prev.map(item => 
-                item.productId === productId 
+            setCartItems(prev => prev.map(item =>
+                item.productId === productId
                     ? { ...item, quantity: newQuantity }
                     : item
             ));
@@ -54,9 +54,9 @@ export default function ItemsCheckout() {
 
     const handleRemove = async (productId: string) => {
         if (!user) return;
-        
+
         if (!confirm('Are you sure you want to remove this item?')) return;
-        
+
         try {
             await removeFromCart(user.uid, productId);
             setCartItems(prev => prev.filter(item => item.productId !== productId));
@@ -66,7 +66,6 @@ export default function ItemsCheckout() {
     };
 
     const handleMessageSeller = (item: CartItemType) => {
-        // Navigate to messages with product context
         navigate('/messages', {
             state: {
                 farmerId: item.farmerId,
@@ -76,7 +75,8 @@ export default function ItemsCheckout() {
                     name: item.name,
                     price: item.price,
                     image: item.image,
-                    unit: item.unit
+                    unit: item.unit,
+                    quantity: item.quantity
                 }
             }
         });
@@ -92,7 +92,7 @@ export default function ItemsCheckout() {
                 <div className="max-w-5xl mx-auto px-10 text-center">
                     <h2 className="text-3xl font-primary font-semibold text-primary mb-8">Your Favorites</h2>
                     <p className="text-gray-500 mb-4">Please login to view your list</p>
-                    <button 
+                    <button
                         onClick={() => navigate('/login')}
                         className="px-6 py-2 bg-primary text-white rounded-lg"
                     >
@@ -131,7 +131,7 @@ export default function ItemsCheckout() {
                 {cartItems.length === 0 ? (
                     <div className="text-center py-16">
                         <p className="text-xl text-gray-500 mb-4">Your list is empty</p>
-                        <button 
+                        <button
                             onClick={() => navigate('/shop')}
                             className="px-6 py-2 bg-primary text-white rounded-lg"
                         >
@@ -165,9 +165,9 @@ export default function ItemsCheckout() {
                                     ₱{calculateTotal().toFixed(2)}
                                 </span>
                             </div>
-                            
+
                             <div className="flex justify-center gap-4">
-                                <button 
+                                <button
                                     onClick={() => navigate('/shop')}
                                     className="px-10 py-3 bg-gray-200 text-gray-700 font-primary font-semibold rounded-full cursor-pointer hover:bg-gray-300"
                                 >
