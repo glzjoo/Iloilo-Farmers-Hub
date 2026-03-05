@@ -65,10 +65,21 @@ export default function ItemsCheckout() {
         }
     };
 
-    const handleMessageSeller = (farmerId: string) => {
-        // TODO: Navigate to messages with this farmer
-        console.log('Message farmer:', farmerId);
-        alert('Messaging feature coming soon!');
+    const handleMessageSeller = (item: CartItemType) => {
+        // Navigate to messages with product context
+        navigate('/messages', {
+            state: {
+                farmerId: item.farmerId,
+                farmerName: item.farmerName,
+                product: {
+                    id: item.productId,
+                    name: item.name,
+                    price: item.price,
+                    image: item.image,
+                    unit: item.unit
+                }
+            }
+        });
     };
 
     const calculateTotal = () => {
@@ -142,7 +153,7 @@ export default function ItemsCheckout() {
                                 farmerId={item.farmerId}
                                 onQuantityChange={handleQuantityChange}
                                 onRemove={handleRemove}
-                                onMessageSeller={handleMessageSeller}
+                                onMessageSeller={() => handleMessageSeller(item)}
                                 isUpdating={updatingItem === item.productId}
                             />
                         ))}

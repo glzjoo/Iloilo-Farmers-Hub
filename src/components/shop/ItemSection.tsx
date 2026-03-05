@@ -11,7 +11,7 @@ export default function ItemSection() {
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [selectedImage, setSelectedImage] = useState(0);
+//    const [selectedImage, setSelectedImage] = useState(0); for carousel, but we only have one image for now
     const [quantity, setQuantity] = useState(1);
 
     useEffect(() => {
@@ -40,13 +40,14 @@ export default function ItemSection() {
         fetchProduct();
     }, [productId]);
 
-    const handlePrev = () => {
-        setSelectedImage((prev) => (prev === 0 ? 0 : prev - 1));
-    };
-
-    const handleNext = () => {
-        setSelectedImage((prev) => (prev === 0 ? 0 : prev + 1));
-    };
+// For now, we only have one image per product, so the navigation is simplified
+//    const handlePrev = () => {
+//        setSelectedImage((prev) => (prev === 0 ? 0 : prev - 1));
+//    };
+//
+//    const handleNext = () => {
+//        setSelectedImage((prev) => (prev === 0 ? 0 : prev + 1));
+//   };
 
     const handleMessageSeller = () => {
         // TODO: Navigate to messaging with this farmer
@@ -95,6 +96,7 @@ export default function ItemSection() {
     return (
         <section className="w-full py-12">
             <div className="max-w-4xl mx-auto px-10 flex gap-10">
+                // REPLACE the image section with this simpler version:
                 <div className="flex flex-col items-center w-[320px] flex-shrink-0">
                     <div className="w-full h-[260px] rounded-xl overflow-hidden mb-3 bg-gray-100">
                         <img
@@ -102,16 +104,6 @@ export default function ItemSection() {
                             alt={product.name}
                             className="w-full h-full object-cover"
                         />
-                    </div>
-                    {/* Thumbnail navigation - simplified since we only have one image */}
-                    <div className="flex items-center gap-2 w-full justify-center">
-                        <div className="w-14 h-14 object-cover rounded-md border-2 border-primary">
-                            <img
-                                src={product.image || '/placeholder-product.png'}
-                                alt="thumbnail"
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
                     </div>
                 </div>
 
