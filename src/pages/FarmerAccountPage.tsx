@@ -14,6 +14,7 @@ interface FarmerProfile {
     lastName: string;
     farmName: string;
     farmAddress: string;
+
     phoneNo: string;
     farmType: string;
     email: string | null;
@@ -109,6 +110,8 @@ export default function FarmerAccountPage() {
                         <div className="flex items-center gap-2 mb-0.5">
                             <h2 className="text-lg font-bold font-primary">{displayName}</h2>
                         </div>
+                        {/* Location */}
+                        <p className="text-sm text-gray-500">{profile?.farmAddress}</p>
                     </div>
 
                     {/* Reviews */}
@@ -133,9 +136,14 @@ export default function FarmerAccountPage() {
                     </Link>
 
                     {/* Share Icon */}
-                    <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
+                    <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors shrink-0">
                         <img src={shareIcon} alt="Share" className="w-5 h-5" />
                     </button>
+                </div>
+
+                {/* Farm Description */}
+                <div className="mt-4 md:ml-24 pr-4">
+                    <p className="text-sm text-gray-500 leading-relaxed">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
                 </div>
             </div>
 

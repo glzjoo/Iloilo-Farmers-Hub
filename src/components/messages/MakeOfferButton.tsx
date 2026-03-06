@@ -12,7 +12,7 @@ interface MakeOfferModalProps {
     farmerName: string;
     onSubmitOffer: (offerPrice: number) => void;
     disabled?: boolean;
-    remainingOffers?: number; 
+    remainingOffers?: number;
 }
 
 function MakeOfferModal({ isOpen, onClose, product, farmerName, onSubmitOffer, disabled, remainingOffers }: MakeOfferModalProps) {
@@ -58,7 +58,7 @@ function MakeOfferModal({ isOpen, onClose, product, farmerName, onSubmitOffer, d
                             You have {remainingOffers} offer{remainingOffers !== 1 ? 's' : ''} remaining
                         </p>
                     )}
-                    
+
                     <p className="text-center text-gray-500 text-sm mb-3">You are offering</p>
                     <div className="relative mb-6">
                         <input
@@ -74,7 +74,7 @@ function MakeOfferModal({ isOpen, onClose, product, farmerName, onSubmitOffer, d
                     </div>
 
                     <div className="flex justify-center">
-                        <button 
+                        <button
                             className='bg-primary rounded-full px-10 py-2.5 text-white font-semibold text-sm cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95'
                             onClick={handleSubmit}
                         >
@@ -97,7 +97,7 @@ interface MakeOfferButtonProps {
     farmerName: string;
     onSubmitOffer: (offerPrice: number) => void;
     disabled?: boolean;
-    remainingOffers?: number; 
+    remainingOffers?: number;
 }
 
 export default function MakeOfferButton({ product, farmerName, onSubmitOffer, disabled, remainingOffers }: MakeOfferButtonProps) {
@@ -110,11 +110,14 @@ export default function MakeOfferButton({ product, farmerName, onSubmitOffer, di
             <button
                 onClick={() => !disabled && setIsModalOpen(true)}
                 disabled={disabled}
-                className={`rounded-full px-10 py-2.5 font-semibold text-sm cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 ${
-                    disabled 
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                        : 'bg-primary text-white'
-                }`}
+                className={`w-fit mx-auto px-8 py-2 rounded-full text-gray-700 font-semibold text-sm cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95`}
+                style={{
+                    background: 'linear-gradient(180deg, rgba(220,252,231,0.7) 0%, rgba(187,247,208,0.4) 100%)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    border: '1.5px solid rgba(34,197,94,0.3)',
+                    boxShadow: '0 3px 12px rgba(34,197,94,0.12), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+                }}
             >
                 {disabled ? 'Limit reached' : 'Make Offer'}
             </button>
