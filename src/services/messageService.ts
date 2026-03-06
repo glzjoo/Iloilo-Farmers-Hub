@@ -15,6 +15,7 @@ import {
   onSnapshot,
   writeBatch,
   increment,
+  arrayUnion,
 } from 'firebase/firestore';
 import {
   ref,
@@ -43,7 +44,7 @@ export async function createConversation(
   currentUserProfile: ConversationUserProfile,
   otherUserId: string,
   otherUserProfile: ConversationUserProfile,
-  productId?: string // FIXED: Changed from 'product' object to 'productId' string
+  productId?: string // Changed from 'product' object to 'productId' string
 ): Promise<string> {
   const conversationsRef = collection(db, CONVERSATIONS_COLLECTION);
   const q = query(
@@ -103,7 +104,7 @@ export async function createConversation(
     unreadCount: { [currentUserId]: 0, [otherUserId]: 0 },
     createdAt: serverTimestamp(),
     status: 'active',
-    ...(productId && { relatedProductId: productId }), // FIXED: Now productId is defined
+    ...(productId && { relatedProductId: productId }), // Now productId is defined
   };
 
   const docRef = await addDoc(collection(db, CONVERSATIONS_COLLECTION), newConversation);
@@ -157,6 +158,64 @@ export async function sendMessage(
 }
 
 /**
+ * Respond to an offer (accept or reject)
+ */
+export async function respondToOffer(
+  conversationId: string,
+  messageId: string,
+  responderId: string,
+  response: 'accepted' | 'rejected'
+): Promise<void> {
+  const batch = writeBatch(db);
+
+  // Update the offer message
+  const messageRef = doc(db, CONVERSATIONS_COLLECTION, conversationId, MESSAGES_SUBCOLLECTION, messageId);
+  
+  // Get current message data for price
+  const messageSnap = await getDoc(messageRef);
+  const messageData = messageSnap.data();
+  const offerPrice = messageData?.offerPrice;
+
+  batch.update(messageRef, {
+    offerStatus: response,
+    offerResponseAt: serverTimestamp(),
+    offerResponseBy: responderId,
+    readBy: arrayUnion(responderId),
+  });
+
+  // Update conversation
+  const conversationRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
+  
+  if (response === 'accepted') {
+    batch.update(conversationRef, {
+      pendingOfferId: null,
+      pendingOfferPrice: null,
+      lastMessage: {
+        text: `✅ Offer accepted: PHP ${offerPrice?.toFixed(2)}`,
+        senderId: responderId,
+        createdAt: serverTimestamp(),
+        readBy: [responderId],
+      },
+      lastMessageAt: serverTimestamp(),
+    });
+  } else {
+    batch.update(conversationRef, {
+      pendingOfferId: null,
+      pendingOfferPrice: null,
+      lastMessage: {
+        text: `❌ Offer rejected`,
+        senderId: responderId,
+        createdAt: serverTimestamp(),
+        readBy: [responderId],
+      },
+      lastMessageAt: serverTimestamp(),
+    });
+  }
+
+  await batch.commit();
+}
+
+/**
  * Send an offer message
  */
 export async function sendOfferMessage(
@@ -165,7 +224,7 @@ export async function sendOfferMessage(
   senderName: string,
   senderAvatar: string,
   offerPrice: number
-): Promise<void> {
+): Promise<string> { // Return message ID
   const batch = writeBatch(db);
 
   const messagesRef = collection(db, CONVERSATIONS_COLLECTION, conversationId, MESSAGES_SUBCOLLECTION);
@@ -178,6 +237,7 @@ export async function sendOfferMessage(
     readBy: [senderId],
     type: 'offer',
     offerPrice,
+    offerStatus: 'pending', // NEW: Start as pending
   };
 
   const messageDocRef = doc(messagesRef);
@@ -190,16 +250,19 @@ export async function sendOfferMessage(
 
   batch.update(conversationRef, {
     lastMessage: {
-      text: `💰 Made an offer: PHP ${offerPrice.toFixed(2)}`,
+      text: `New offer: PHP ${offerPrice.toFixed(2)}`,
       senderId,
       createdAt: serverTimestamp(),
       readBy: [senderId],
     },
     lastMessageAt: serverTimestamp(),
     [`unreadCount.${otherParticipantId}`]: increment(1),
+    pendingOfferId: messageDocRef.id, // Track pending offer
+    pendingOfferPrice: offerPrice, // Track pending price
   });
 
   await batch.commit();
+  return messageDocRef.id;
 }
 
 /**

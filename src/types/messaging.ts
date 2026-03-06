@@ -11,7 +11,11 @@ export interface Message {
   imageUrl?: string;
   videoUrl?: string;
   thumbnailUrl?: string;
+// Offer-specific fields
   offerPrice?: number;
+  offerStatus?: 'pending' | 'accepted' | 'rejected'; 
+  offerResponseAt?: Timestamp; //  When farmer responded
+  offerResponseBy?: string; // Who responded (farmer UID)
 }
 
 export interface ParticipantInfo {
@@ -36,6 +40,8 @@ export interface Conversation {
   createdAt: Timestamp;
   relatedProductId?: string;
   status: 'active' | 'archived';
+  pendingOfferId?: string; // Track active pending offer
+  pendingOfferPrice?: number; // Quick access to pending offer amount
 }
 
 export interface ConversationPreview {

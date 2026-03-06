@@ -4,8 +4,10 @@ import {
   subscribeToConversations,
   subscribeToMessages,
   sendMessage as sendMessageService,
+  sendOfferMessage as sendOfferMessageService, 
   markConversationAsRead,
   getMessages,
+  respondToOffer as respondToOfferService,
 } from '../services/messageService';
 
 export function useConversations(userId: string | undefined) {
@@ -68,26 +70,71 @@ export function useMessages(conversationId: string | null | undefined, userId: s
     }
   }, [conversationId, userId]);
 
-  // THIS IS THE KEY FIX - Proper parameter order
   const sendMessage = useCallback(async (
     text: string, 
     senderName: string, 
     senderAvatar: string
   ) => {
     if (!conversationId || !userId || !text.trim()) {
-      console.log('Send blocked:', { conversationId, userId, text }); // Debug
+      console.log('Send blocked:', { conversationId, userId, text });
       return;
     }
     
     setSending(true);
     try {
-      console.log('Calling service with:', { conversationId, userId, senderName, senderAvatar, text }); // Debug
+      console.log('Calling service with:', { conversationId, userId, senderName, senderAvatar, text });
       await sendMessageService(conversationId, userId, senderName, senderAvatar, text.trim());
     } catch (error) {
       console.error('Send error:', error);
       throw error;
     } finally {
       setSending(false);
+    }
+  }, [conversationId, userId]);
+
+  // sendOfferMessage wrapper
+  const sendOfferMessage = useCallback(async (
+    senderName: string,
+    senderAvatar: string,
+    offerPrice: number
+  ) => {
+    if (!conversationId || !userId || !offerPrice || offerPrice <= 0) {
+      console.log('Send offer blocked:', { conversationId, userId, offerPrice });
+      return;
+    }
+    
+    setSending(true);
+    try {
+      console.log('Calling sendOfferMessage with:', { conversationId, userId, senderName, offerPrice });
+      await sendOfferMessageService(conversationId, userId, senderName, senderAvatar, offerPrice);
+    } catch (error) {
+      console.error('Send offer error:', error);
+      throw error;
+    } finally {
+      setSending(false);
+    }
+  }, [conversationId, userId]);
+
+  // respondToOffer wrapper - MOVED UP before return
+  const respondToOffer = useCallback(async (
+    messageId: string,
+    response: 'accepted' | 'rejected'
+  ) => {
+    if (!conversationId || !userId) {
+      console.log('Respond to offer blocked:', { conversationId, userId });
+      return;
+    }
+    
+    try {
+      console.log('Calling respondToOffer with:', { conversationId, messageId, userId, response });
+      await respondToOfferService(conversationId, messageId, userId, response);
+      console.log('Respond to offer SUCCESS');
+    } catch (error: any) {
+      console.error('Respond to offer FULL ERROR:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      console.error('Error details:', error.customData);
+      throw error;
     }
   }, [conversationId, userId]);
 
@@ -105,12 +152,15 @@ export function useMessages(conversationId: string | null | undefined, userId: s
     }
   }, [conversationId, messages]);
 
+  //  Only ONE return statement with all functions
   return {
     messages,
     loading,
     sending,
     hasMore,
     sendMessage,
+    sendOfferMessage,
+    respondToOffer, 
     loadMoreMessages,
   };
 }

@@ -8,12 +8,14 @@ interface MessageBubbleProps {
   message: Message & { senderAvatar?: string };
   showAvatar: boolean;
   isLastInGroup: boolean;
+  onRespondToOffer?: (messageId: string, response: 'accepted' | 'rejected') => Promise<void>;
 }
 
 export default function MessageBubble({
   message,
   showAvatar = true,
-  isLastInGroup = true
+  isLastInGroup = true,
+  onRespondToOffer
 }: MessageBubbleProps) {
   const { user } = useAuth();
   const isOwnMessage = message.senderId === user?.uid;
@@ -92,16 +94,20 @@ export default function MessageBubble({
     }
   };
 
-  // Offer messages get their own special layout
+  //  Offer messages now use OfferPriceBubble which has matching alignment
   if (message.type === 'offer') {
     return (
       <div className="mb-1">
         <OfferPriceBubble
           offerPrice={message.offerPrice || 0}
           isSender={isOwnMessage}
+          offerStatus={message.offerStatus} 
+          messageId={message.id} 
+          onRespondToOffer={onRespondToOffer}
         />
+        {/* Timestamp row for offer messages */}
         {isLastInGroup && (
-          <div className={`flex items-center gap-1 mt-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+          <div className={`flex items-center gap-1 mt-1 ${isOwnMessage ? 'justify-end' : 'justify-start'} pl-10 pr-10`}>
             <span className="text-xs text-gray-400">
               {formatTime(message.createdAt)}
             </span>
