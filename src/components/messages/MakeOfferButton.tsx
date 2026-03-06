@@ -11,10 +11,11 @@ interface MakeOfferModalProps {
     };
     farmerName: string;
     onSubmitOffer: (offerPrice: number) => void;
-    disabled?: boolean; 
+    disabled?: boolean;
+    remainingOffers?: number; 
 }
 
-function MakeOfferModal({ isOpen, onClose, product, farmerName, onSubmitOffer, disabled }: MakeOfferModalProps) {
+function MakeOfferModal({ isOpen, onClose, product, farmerName, onSubmitOffer, disabled, remainingOffers }: MakeOfferModalProps) {
     const [offerPrice, setOfferPrice] = useState('');
 
     if (!isOpen) return null;
@@ -51,6 +52,13 @@ function MakeOfferModal({ isOpen, onClose, product, farmerName, onSubmitOffer, d
                 </div>
 
                 <div className="bg-white p-6">
+                    {/*  Show remaining offers in modal */}
+                    {remainingOffers !== undefined && (
+                        <p className="text-center text-xs text-gray-500 mb-2">
+                            You have {remainingOffers} offer{remainingOffers !== 1 ? 's' : ''} remaining
+                        </p>
+                    )}
+                    
                     <p className="text-center text-gray-500 text-sm mb-3">You are offering</p>
                     <div className="relative mb-6">
                         <input
@@ -68,7 +76,7 @@ function MakeOfferModal({ isOpen, onClose, product, farmerName, onSubmitOffer, d
                     <div className="flex justify-center">
                         <button 
                             className='bg-primary rounded-full px-10 py-2.5 text-white font-semibold text-sm cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95'
-                            onClick={handleSubmit} 
+                            onClick={handleSubmit}
                         >
                             Make offer
                         </button>
@@ -79,7 +87,6 @@ function MakeOfferModal({ isOpen, onClose, product, farmerName, onSubmitOffer, d
     );
 }
 
-//  Main button component with disabled support
 interface MakeOfferButtonProps {
     product: {
         name: string;
@@ -89,10 +96,11 @@ interface MakeOfferButtonProps {
     } | null;
     farmerName: string;
     onSubmitOffer: (offerPrice: number) => void;
-    disabled?: boolean; 
+    disabled?: boolean;
+    remainingOffers?: number; 
 }
 
-export default function MakeOfferButton({ product, farmerName, onSubmitOffer, disabled }: MakeOfferButtonProps) {
+export default function MakeOfferButton({ product, farmerName, onSubmitOffer, disabled, remainingOffers }: MakeOfferButtonProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     if (!product) return null;
@@ -100,15 +108,15 @@ export default function MakeOfferButton({ product, farmerName, onSubmitOffer, di
     return (
         <>
             <button
-                onClick={() => !disabled && setIsModalOpen(true)} // Don't open if disabled
+                onClick={() => !disabled && setIsModalOpen(true)}
                 disabled={disabled}
-                className={`mx-4 mb-2 px-6 py-3 rounded-full font-semibold text-sm transition-all duration-200 ${
+                className={`rounded-full px-10 py-2.5 font-semibold text-sm cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 ${
                     disabled 
                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                        : 'bg-green-100 text-green-700 hover:bg-green-200 hover:scale-105 active:scale-95'
+                        : 'bg-primary text-white'
                 }`}
             >
-                {disabled ? 'Offer limit reached' : 'Make Offer'}
+                {disabled ? 'Limit reached' : 'Make Offer'}
             </button>
 
             <MakeOfferModal
@@ -118,6 +126,7 @@ export default function MakeOfferButton({ product, farmerName, onSubmitOffer, di
                 farmerName={farmerName}
                 onSubmitOffer={onSubmitOffer}
                 disabled={disabled}
+                remainingOffers={remainingOffers}
             />
         </>
     );
