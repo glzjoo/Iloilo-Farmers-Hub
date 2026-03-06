@@ -34,20 +34,30 @@ const isWithinTimeWindow = (msg1: any, msg2: any, minutes: number = 5) => {
   return diffMs <= minutes * 60 * 1000;
 };
 
+//  Maximum offers per consumer
+const MAX_OFFERS_PER_CONSUMER = 5;
+
 export default function MessagesLayout({ conversationId, onBack, productContext, onCloseProductContext }: MessagesLayoutProps) {
   const { user, userProfile } = useAuth();
-  //  Extract sendOfferMessage from the hook
-  const { messages, loading, sending, sendMessage, sendOfferMessage } = useMessages(conversationId, user?.uid);
+  const { messages, loading, sending, sendMessage, sendOfferMessage, respondToOffer } = useMessages(conversationId, user?.uid);
   const [newMessage, setNewMessage] = useState('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [otherUserProfile, setOtherUserProfile] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [fetchedProductContext, setFetchedProductContext] = useState<MessagesLayoutProps['productContext']>(null);
-  // Store avatars for message senders
   const [messageAvatars, setMessageAvatars] = useState<Record<string, string>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  //  Check if user is consumer and count their offers
+  const isConsumer = userProfile?.role === 'consumer';
+  const consumerOffersCount = useMemo(() => {
+    if (!isConsumer || !messages.length) return 0;
+    return messages.filter(m => m.type === 'offer' && m.senderId === user?.uid).length;
+  }, [messages, user?.uid, isConsumer]);
+  
+  const hasReachedOfferLimit = consumerOffersCount >= MAX_OFFERS_PER_CONSUMER;
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -84,7 +94,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
     fetchProfile();
   }, [conversationId, messages, user, otherUserProfile?.uid]);
 
-  // Fetch product context if not provided via props (e.g., when Farmer opens the chat)
+  // Fetch product context if not provided via props
   useEffect(() => {
     if (!conversationId || productContext) return;
 
@@ -124,12 +134,10 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
 
       for (const senderId of senderIds) {
         if (senderId === user?.uid) {
-          // Use current user's avatar from userProfile
           if (userProfile?.profileImage) {
             newAvatars[senderId] = userProfile.profileImage;
           }
         } else if (!messageAvatars[senderId]) {
-          // Fetch other user's avatar
           try {
             const profile = await getUserProfile(senderId);
             if (profile?.avatar) {
@@ -181,36 +189,19 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
   }, [messages]);
 
   const latestReceivedOfferPrice = useMemo(() => {
-    // find the most recent offer from the other participant
-    const offerMsg = [...messages].reverse().find(m => m.type === 'offer' && m.senderId !== user?.uid);
-    console.log('--- DEBUG OFFER IN MESSAGES ---', {
-      totalMessages: messages.length,
-      foundOfferMsg: offerMsg,
-      offerPrice: offerMsg ? offerMsg.offerPrice : null,
-      userId: user?.uid,
-      allOfferTypes: messages.filter(m => m.type === 'offer')
-    });
+    const offerMsg = [...messages].reverse().find(m => m.type === 'offer' && m.senderId !== user?.uid && m.offerStatus === 'pending');
     return offerMsg ? offerMsg.offerPrice : null;
   }, [messages, user?.uid]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Debug:', { newMessage, userProfile, conversationId });
-
     if (!newMessage.trim() || !userProfile || !conversationId) return;
 
     const senderName = userProfile.role === 'farmer'
       ? (userProfile.farmName || `${userProfile.firstName} ${userProfile.lastName}`)
       : `${userProfile.firstName} ${userProfile.lastName}`;
 
-    console.log('Sending:', {
-      text: newMessage.trim(),
-      senderName,
-      senderAvatar: userProfile.profileImage || ''
-    });
-
     await sendMessage(newMessage.trim(), senderName, userProfile.profileImage || '');
-
     setNewMessage('');
   };
 
@@ -341,7 +332,6 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
         />
       </div>
 
-      {/* Product Context - under profile header */}
       {(productContext || fetchedProductContext) && (
         <ProductContext
           product={(productContext || fetchedProductContext)!}
@@ -370,6 +360,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
                 }}
                 showAvatar={showAvatar}
                 isLastInGroup={isLastInGroup}
+                onRespondToOffer={respondToOffer} 
               />
             ))}
             <div ref={messagesEndRef} />
@@ -392,29 +383,46 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
         </div>
       )}
 
-      <MakeOfferButton
-        product={productContext ? {
-          name: productContext.name,
-          price: productContext.price,
-          unit: productContext.unit,
-          image: productContext.image,
-        } : null}
-        farmerName={otherUserProfile?.farmName || otherUserProfile?.displayName || participantData?.firstName || 'Seller'}
-        onSubmitOffer={async (offerPrice: number) => {
-          if (!conversationId || !user?.uid || !userProfile) return;
-          const senderName = userProfile.role === 'farmer'
-            ? (userProfile.farmName || `${userProfile.firstName} ${userProfile.lastName}`)
-            : `${userProfile.firstName} ${userProfile.lastName}`;
-          
-          // Now uses the hook's sendOfferMessage with proper error handling and loading state
-          try {
-            await sendOfferMessage(senderName, userProfile.profileImage || '', offerPrice);
-          } catch (error) {
-            console.error('Failed to send offer:', error);
-            alert('Failed to send offer. Please try again.');
-          }
-        }}
-      />
+      {/*  Only show MakeOfferButton for consumers */}
+      {isConsumer && (
+        <MakeOfferButton
+          product={productContext ? {
+            name: productContext.name,
+            price: productContext.price,
+            unit: productContext.unit,
+            image: productContext.image,
+          } : null}
+          farmerName={otherUserProfile?.farmName || otherUserProfile?.displayName || participantData?.firstName || 'Seller'}
+          disabled={hasReachedOfferLimit} //  Disable if limit reached
+          onSubmitOffer={async (offerPrice: number) => {
+            if (!conversationId || !user?.uid || !userProfile) return;
+            
+            //  Double-check limit before sending
+            if (hasReachedOfferLimit) {
+              alert(`You have reached the maximum of ${MAX_OFFERS_PER_CONSUMER} offers.`);
+              return;
+            }
+            
+            const senderName = `${userProfile.firstName} ${userProfile.lastName}`;
+            
+            try {
+              await sendOfferMessage(senderName, userProfile.profileImage || '', offerPrice);
+            } catch (error) {
+              console.error('Failed to send offer:', error);
+              alert('Failed to send offer. Please try again.');
+            }
+          }}
+        />
+      )}
+
+      {/* ✅ Show message if consumer reached limit */}
+      {isConsumer && hasReachedOfferLimit && (
+        <div className="px-4 py-2 bg-yellow-50 border-t border-yellow-200 text-center">
+          <p className="text-xs text-yellow-700">
+            You have reached the maximum of {MAX_OFFERS_PER_CONSUMER} offers for this conversation.
+          </p>
+        </div>
+      )}
 
       <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0 z-20">
         <form
