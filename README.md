@@ -63,10 +63,10 @@ src/
 
 ## Team
 
-Glaiza Mae Salvaloza - Developer
-Ray Jane Andrada -  Developer
-April Beatrice Sanda - UI/UX
-Rizza Mia Abogadil - UI/UX
+- Glaiza Mae Salvaloza - Developer
+- Ray Jane Andrada -  Developer
+- April Beatrice Sanda - UI/UX
+- Rizza Mia Abogadil - UI/UX
 
 ## License
 
