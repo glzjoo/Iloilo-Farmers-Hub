@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
 
 # Editor directories and files
 .vscode/*
@@ -30,3 +31,9 @@ dist-ssr
 .env.production
 .env.test
 .env.*.local
+
+# server keys
+server/vision-key.json
+server/firebase-service-account.json
+
+
