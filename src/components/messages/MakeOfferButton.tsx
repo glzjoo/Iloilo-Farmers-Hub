@@ -1,5 +1,143 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import ReviewPromptModal from './ReviewPromptModal';
 
+interface MakeOfferButtonProps {
+  product: {
+    name: string;
+    price: number;
+    unit: string;
+    image: string;
+  } | null;
+  farmerName: string;
+  onSubmitOffer: (offerPrice: number) => void;
+  disabled?: boolean;
+  remainingOffers?: number;
+  orderStatus?: 'pending' | 'accepted' | 'completed' | null;
+  onConfirmReceived?: () => void;
+  conversationId?: string;
+  productId?: string;
+  farmerId?: string;
+}
+
+export default function MakeOfferButton({ 
+  product, 
+  farmerName, 
+  onSubmitOffer, 
+  disabled, 
+  remainingOffers,
+  orderStatus,
+  onConfirmReceived,
+  conversationId,
+  productId,
+  farmerId,
+}: MakeOfferButtonProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [hasConfirmedReceived, setHasConfirmedReceived] = useState(false);
+  const [showReviewPrompt, setShowReviewPrompt] = useState(true); // Track if user clicked
+
+  if (!product) return null;
+
+  // If order is completed and user has confirmed received, show review modal
+  if (orderStatus === 'completed' && hasConfirmedReceived) {
+    return (
+      <ReviewPromptModal
+        isOpen={true}
+        onClose={() => setHasConfirmedReceived(false)} // Allow closing without reviewing
+        productId={productId || ''}
+        farmerId={farmerId || ''}
+      />
+    );
+  }
+
+  // If order is accepted, show "Order Received" button
+  if (orderStatus === 'accepted') {
+    return (
+      <div className="px-4 py-3 bg-blue-50 border-t border-blue-200">
+        <p className="text-sm text-blue-800 text-center mb-2">
+          Have you received the product?
+        </p>
+        <button
+          onClick={() => {
+            if (onConfirmReceived) {
+              onConfirmReceived();
+            }
+            setHasConfirmedReceived(true); // Mark as confirmed, modal will show on next render
+          }}
+          className="w-full py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors"
+        >
+          Order Received
+        </button>
+      </div>
+    );
+  }
+
+  // If order is completed but user hasn't clicked "Order Received" yet
+  // (this handles the case where page was refreshed)
+  if (orderStatus === 'completed' && !hasConfirmedReceived && showReviewPrompt) {
+    return (
+      <div className="px-4 py-2 bg-green-50 border-t border-green-200 relative">
+        {/* X button - top right, actually dismisses */}
+        <button
+          onClick={() => setShowReviewPrompt(false)} // Dismiss without reviewing
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+          title="Dismiss"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        
+        {/* Centered content */}
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-sm text-green-800 font-medium">
+            Order completed!
+          </span>
+          <button
+            onClick={() => setHasConfirmedReceived(true)} // Shows review modal
+            className="text-sm text-green-600 underline hover:text-green-800 font-medium"
+          >
+            Leave a review
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  // Default: Show Make Offer button
+  return (
+    <>
+      <button
+        onClick={() => !disabled && setIsModalOpen(true)}
+        disabled={disabled}
+            className={`w-fit mx-auto px-8 py-2 rounded-full text-gray-700 font-semibold text-sm cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95`}
+                style={{
+                    background: 'linear-gradient(180deg, rgba(220,252,231,0.7) 0%, rgba(187,247,208,0.4) 100%)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    border: '1.5px solid rgba(34,197,94,0.3)',
+                    boxShadow: '0 3px 12px rgba(34,197,94,0.12), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+        }}
+      >
+        {disabled ? 'Limit reached' : 'Make Offer'}
+      </button>
+
+      <MakeOfferModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        product={product}
+        farmerName={farmerName}
+        onSubmitOffer={onSubmitOffer}
+        disabled={disabled}
+        remainingOffers={remainingOffers}
+      />
+    </>
+  );
+}
+
+
+// Keep the existing MakeOfferModal component here (unchanged)
 interface MakeOfferModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -52,7 +190,6 @@ function MakeOfferModal({ isOpen, onClose, product, farmerName, onSubmitOffer, d
                 </div>
 
                 <div className="bg-white p-6">
-                    {/*  Show remaining offers in modal */}
                     {remainingOffers !== undefined && (
                         <p className="text-center text-xs text-gray-500 mb-2">
                             You have {remainingOffers} offer{remainingOffers !== 1 ? 's' : ''} remaining
@@ -84,53 +221,5 @@ function MakeOfferModal({ isOpen, onClose, product, farmerName, onSubmitOffer, d
                 </div>
             </div>
         </div>
-    );
-}
-
-interface MakeOfferButtonProps {
-    product: {
-        name: string;
-        price: number;
-        unit: string;
-        image: string;
-    } | null;
-    farmerName: string;
-    onSubmitOffer: (offerPrice: number) => void;
-    disabled?: boolean;
-    remainingOffers?: number;
-}
-
-export default function MakeOfferButton({ product, farmerName, onSubmitOffer, disabled, remainingOffers }: MakeOfferButtonProps) {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-
-    if (!product) return null;
-
-    return (
-        <>
-            <button
-                onClick={() => !disabled && setIsModalOpen(true)}
-                disabled={disabled}
-                className={`w-fit mx-auto px-8 py-2 rounded-full text-gray-700 font-semibold text-sm cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95`}
-                style={{
-                    background: 'linear-gradient(180deg, rgba(220,252,231,0.7) 0%, rgba(187,247,208,0.4) 100%)',
-                    backdropFilter: 'blur(12px)',
-                    WebkitBackdropFilter: 'blur(12px)',
-                    border: '1.5px solid rgba(34,197,94,0.3)',
-                    boxShadow: '0 3px 12px rgba(34,197,94,0.12), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
-                }}
-            >
-                {disabled ? 'Limit reached' : 'Make Offer'}
-            </button>
-
-            <MakeOfferModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                product={product}
-                farmerName={farmerName}
-                onSubmitOffer={onSubmitOffer}
-                disabled={disabled}
-                remainingOffers={remainingOffers}
-            />
-        </>
     );
 }

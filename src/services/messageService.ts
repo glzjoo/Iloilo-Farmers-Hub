@@ -573,3 +573,181 @@ export async function getUserProfile(userId: string): Promise<{
     return null;
   }
 }
+
+/**
+ * Send order request (Farmer initiates sale)
+ */
+export async function sendOrderRequest(
+  conversationId: string,
+  senderId: string,
+  senderName: string,
+  senderAvatar: string,
+  orderDetails: {
+    productId: string;
+    productName: string;
+    productImage: string;
+    pricePerUnit: number;
+    quantity: number;
+    totalPrice: number;
+    unit: string;
+  }
+): Promise<string> {
+  const batch = writeBatch(db);
+
+  const messagesRef = collection(db, CONVERSATIONS_COLLECTION, conversationId, MESSAGES_SUBCOLLECTION);
+  const newMessage = {
+    senderId,
+    senderName,
+    senderAvatar,
+    text: `Order request: ${orderDetails.productName} x${orderDetails.quantity}`,
+    createdAt: serverTimestamp(),
+    readBy: [senderId],
+    type: 'order_request',
+    orderDetails,
+    orderStatus: 'pending',
+  };
+
+  const messageDocRef = doc(messagesRef);
+  batch.set(messageDocRef, newMessage);
+
+  const conversationRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
+  const conversationSnap = await getDoc(conversationRef);
+  const conversationData = conversationSnap.data();
+  const otherParticipantId = conversationData?.participants.find((id: string) => id !== senderId);
+
+  batch.update(conversationRef, {
+    lastMessage: {
+      text: `📦 Order request: ${orderDetails.productName}`,
+      senderId,
+      createdAt: serverTimestamp(),
+      readBy: [senderId],
+    },
+    lastMessageAt: serverTimestamp(),
+    [`unreadCount.${otherParticipantId}`]: increment(1),
+    activeOrderId: messageDocRef.id,
+    orderStatus: 'pending',
+  });
+
+  await batch.commit();
+  return messageDocRef.id;
+}
+
+/**
+ * Respond to order request (Consumer accepts/rejects)
+ */
+export async function respondToOrder(
+  conversationId: string,
+  messageId: string,
+  responderId: string,
+  response: 'accepted' | 'rejected',
+  orderDetails: any
+): Promise<void> {
+  const batch = writeBatch(db);
+
+  // Update the order message
+  const messageRef = doc(db, CONVERSATIONS_COLLECTION, conversationId, MESSAGES_SUBCOLLECTION, messageId);
+  
+  batch.update(messageRef, {
+    orderStatus: response,
+    orderResponseAt: serverTimestamp(),
+    orderResponseBy: responderId,
+    readBy: arrayUnion(responderId),
+  });
+
+  // Send response message
+  const messagesRef = collection(db, CONVERSATIONS_COLLECTION, conversationId, MESSAGES_SUBCOLLECTION);
+  const responseMessage = {
+    senderId: responderId,
+    senderName: response === 'accepted' ? 'Order Accepted' : 'Order Rejected',
+    senderAvatar: '',
+    text: response === 'accepted' 
+      ? `✅ I accept the order for ${orderDetails.productName}` 
+      : `❌ I cannot accept this order`,
+    createdAt: serverTimestamp(),
+    readBy: [responderId],
+    type: 'order_response',
+    orderStatus: response,
+  };
+
+  const responseMsgRef = doc(messagesRef);
+  batch.set(responseMsgRef, responseMessage);
+
+  // Update conversation
+  const conversationRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
+  
+  if (response === 'accepted') {
+    batch.update(conversationRef, {
+      orderStatus: 'accepted',
+      lastAcceptedOfferPrice: orderDetails.pricePerUnit, // Store for future reference
+      lastMessage: {
+        text: `✅ Order accepted`,
+        senderId: responderId,
+        createdAt: serverTimestamp(),
+        readBy: [responderId],
+      },
+      lastMessageAt: serverTimestamp(),
+    });
+  } else {
+    batch.update(conversationRef, {
+      activeOrderId: null,
+      orderStatus: null,
+      lastMessage: {
+        text: `❌ Order rejected`,
+        senderId: responderId,
+        createdAt: serverTimestamp(),
+        readBy: [responderId],
+      },
+      lastMessageAt: serverTimestamp(),
+    });
+  }
+
+  await batch.commit();
+}
+
+/**
+ * Confirm order received (Consumer side)
+ */
+export async function confirmOrderReceived(
+  conversationId: string,
+  userId: string,
+  userName: string,
+  userAvatar: string
+): Promise<void> {
+  const batch = writeBatch(db);
+
+  // Send confirmation message
+  const messagesRef = collection(db, CONVERSATIONS_COLLECTION, conversationId, MESSAGES_SUBCOLLECTION);
+  const confirmMessage = {
+    senderId: userId,
+    senderName: userName,
+    senderAvatar: userAvatar,
+    text: '📦 I received the product!',
+    createdAt: serverTimestamp(),
+    readBy: [userId],
+    type: 'order_received',
+  };
+
+  const msgRef = doc(messagesRef);
+  batch.set(msgRef, confirmMessage);
+
+  // Update conversation
+  const conversationRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
+  const conversationSnap = await getDoc(conversationRef);
+  const conversationData = conversationSnap.data();
+  const otherParticipantId = conversationData?.participants.find((id: string) => id !== userId);
+
+  batch.update(conversationRef, {
+    orderStatus: 'completed',
+    activeOrderId: null,
+    lastMessage: {
+      text: '📦 Order received by customer',
+      senderId: userId,
+      createdAt: serverTimestamp(),
+      readBy: [userId],
+    },
+    lastMessageAt: serverTimestamp(),
+    [`unreadCount.${otherParticipantId}`]: increment(1),
+  });
+
+  await batch.commit();
+}

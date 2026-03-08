@@ -1,21 +1,23 @@
-// MessageBubble.tsx - Full updated version
 import type { Message } from '../../types/messaging';
 import { useAuth } from '../../context/AuthContext';
 import { useState } from 'react';
 import OfferPriceBubble from './OfferPriceBubble';
+import OrderRequestBubble from './OrderRequestBubble';
 
 interface MessageBubbleProps {
   message: Message & { senderAvatar?: string };
   showAvatar: boolean;
   isLastInGroup: boolean;
   onRespondToOffer?: (messageId: string, response: 'accepted' | 'rejected') => Promise<void>;
+  onRespondToOrder?: (messageId: string, response: 'accepted' | 'rejected') => Promise<void>;
 }
 
 export default function MessageBubble({
   message,
   showAvatar = true,
   isLastInGroup = true,
-  onRespondToOffer
+  onRespondToOffer,
+  onRespondToOrder,
 }: MessageBubbleProps) {
   const { user } = useAuth();
   const isOwnMessage = message.senderId === user?.uid;
@@ -94,15 +96,15 @@ export default function MessageBubble({
     }
   };
 
-  //  Offer messages now use OfferPriceBubble which has matching alignment
+  // Offer messages use OfferPriceBubble
   if (message.type === 'offer') {
     return (
       <div className="mb-1">
         <OfferPriceBubble
           offerPrice={message.offerPrice || 0}
           isSender={isOwnMessage}
-          offerStatus={message.offerStatus} 
-          messageId={message.id} 
+          offerStatus={message.offerStatus}
+          messageId={message.id}
           onRespondToOffer={onRespondToOffer}
         />
         {/* Timestamp row for offer messages */}
@@ -130,48 +132,23 @@ export default function MessageBubble({
     );
   }
 
-  return (
-    <div className={`flex items-end gap-2 mb-1 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
-      {/* Avatar */}
-      {showAvatar && !isOwnMessage ? (
-        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mb-5 shadow-sm overflow-hidden">
-          {message.senderAvatar ? (
-            <img
-              src={message.senderAvatar}
-              alt={message.senderName}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className={`w-full h-full ${getAvatarColor(message.senderName)} flex items-center justify-center`}>
-              <span className="text-white text-sm font-bold">
-                {message.senderName.charAt(0).toUpperCase()}
-              </span>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="w-8 flex-shrink-0" />
-      )}
-
-      {/* Message Content */}
-      <div className={`max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
-        <div
-          className={`px-4 py-2.5 rounded-2xl shadow-sm ${isOwnMessage
-            ? 'bg-primary text-white rounded-br-none'
-            : 'bg-gray-100 text-gray-900 rounded-bl-none'
-            } ${!showAvatar && isOwnMessage ? 'rounded-tr-2xl' : ''} ${!showAvatar && !isOwnMessage ? 'rounded-tl-2xl' : ''} ${message.type !== 'text' ? 'p-2' : ''
-            }`}
-        >
-          {renderContent()}
-        </div>
-
-        {/* Timestamp and Read Receipt */}
+  // Order request messages
+  if (message.type === 'order_request') {
+    return (
+      <div className="mb-1">
+        <OrderRequestBubble
+          orderDetails={message.orderDetails!}
+          isSender={isOwnMessage}
+          orderStatus={message.orderStatus}
+          messageId={message.id}
+          onRespondToOrder={onRespondToOrder}
+        />
+        {/* Timestamp row */}
         {isLastInGroup && (
-          <div className={`flex items-center gap-1 mt-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+          <div className={`flex items-center gap-1 mt-1 ${isOwnMessage ? 'justify-end' : 'justify-start'} pl-10 pr-10`}>
             <span className="text-xs text-gray-400">
               {formatTime(message.createdAt)}
             </span>
-
             {isOwnMessage && (
               <span className="text-xs" title={isRead ? 'Read' : 'Delivered'}>
                 {isRead ? (
@@ -188,6 +165,141 @@ export default function MessageBubble({
           </div>
         )}
       </div>
+    );
+  }
+
+  // Order response messages (green/red status)
+  if (message.type === 'order_response') {
+    const isAccepted = message.orderStatus === 'accepted';
+    return (
+      <div className={`flex items-end gap-2 mb-1 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+        <div className="w-8 flex-shrink-0" />
+        <div className={`max-w-[70%] rounded-2xl px-4 py-2.5 shadow-sm text-white ${
+          isAccepted ? 'bg-green-500' : 'bg-red-500'
+        } ${isOwnMessage ? 'rounded-br-none' : 'rounded-bl-none'}`}>
+          <p className="text-sm font-medium">{message.text}</p>
+        </div>
+        {isLastInGroup && (
+          <div className={`flex items-center gap-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+            <span className="text-xs text-gray-400">
+              {formatTime(message.createdAt)}
+            </span>
+            {isOwnMessage && (
+              <span className="text-xs" title={isRead ? 'Read' : 'Delivered'}>
+                {isRead ? (
+                  <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                  </svg>
+                )}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Order received confirmation
+  if (message.type === 'order_received') {
+    return (
+      <div className={`flex items-end gap-2 mb-1 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+        <div className="w-8 flex-shrink-0" />
+        <div className={`max-w-[70%] rounded-2xl px-4 py-2.5 shadow-sm bg-blue-500 text-white ${
+          isOwnMessage ? 'rounded-br-none' : 'rounded-bl-none'
+        }`}>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium">{message.text}</p>
+          </div>
+        </div>
+        {isLastInGroup && (
+          <div className={`flex items-center gap-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+            <span className="text-xs text-gray-400">
+              {formatTime(message.createdAt)}
+            </span>
+            {isOwnMessage && (
+              <span className="text-xs" title={isRead ? 'Read' : 'Delivered'}>
+                {isRead ? (
+                  <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                  </svg>
+                )}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Regular text/image/video messages
+  return (
+    <div className={`flex items-end gap-2 mb-1 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+      {/* Avatar */}
+      {showAvatar && !isOwnMessage ? (
+        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mb-5 shadow-sm overflow-hidden">
+          {message.senderAvatar ? (
+            <img
+              src={message.senderAvatar}
+              alt={message.senderName}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // If image fails to load, show fallback
+                (e.target as HTMLImageElement).style.display = 'none';
+                (e.target as HTMLImageElement).parentElement?.classList.add(getAvatarColor(message.senderName));
+              }}
+            />
+          ) : (
+            <div className={`w-full h-full ${getAvatarColor(message.senderName)} flex items-center justify-center`}>
+              <span className="text-white text-sm font-bold">
+                {message.senderName.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="w-8 flex-shrink-0" />
+      )}
+
+      {/* Message bubble */}
+      <div className={`max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+        <div className={`rounded-2xl px-4 py-2.5 shadow-sm ${
+          isOwnMessage 
+            ? 'bg-primary text-white rounded-br-none' 
+            : 'bg-gray-100 text-gray-800 rounded-bl-none'
+        }`}>
+          {renderContent()}
+        </div>
+      </div>
+
+      {/* Read receipt - only for last message in group */}
+      {isLastInGroup && (
+        <div className={`flex items-center gap-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+          <span className="text-xs text-gray-400">
+            {formatTime(message.createdAt)}
+          </span>
+          {isOwnMessage && (
+            <span className="text-xs" title={isRead ? 'Read' : 'Delivered'}>
+              {isRead ? (
+                <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                </svg>
+              )}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

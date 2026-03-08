@@ -4,11 +4,16 @@ import { useMessages } from '../../hooks/useMessaging';
 import MessageProfile from './MessageProfile';
 import MessageBubble from './MessageBubble';
 import ProductContext from './ProductContext';
+import FarmerProductContext from './FarmerProductContext';
 import addbutton from '../../assets/icons/add.svg';
 import type { Farmer } from '../../types';
-import { uploadMedia, sendMediaMessage, getUserProfile } from '../../services/messageService';
+import {
+  uploadMedia,
+  sendMediaMessage,
+  getUserProfile,
+} from '../../services/messageService';
 import { getProductById } from '../../services/productService';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'; // Added getDocs, collection, query, where
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import MakeOfferButton from './MakeOfferButton';
 
@@ -34,12 +39,22 @@ const isWithinTimeWindow = (msg1: any, msg2: any, minutes: number = 5) => {
   return diffMs <= minutes * 60 * 1000;
 };
 
-//  Maximum offers per consumer account (global across all conversations)
 const MAX_OFFERS_PER_CONSUMER = 5;
 
 export default function MessagesLayout({ conversationId, onBack, productContext, onCloseProductContext }: MessagesLayoutProps) {
   const { user, userProfile } = useAuth();
-  const { messages, loading, sending, sendMessage, sendOfferMessage, respondToOffer } = useMessages(conversationId, user?.uid);
+  const {
+    messages,
+    loading,
+    sending,
+    sendMessage,
+    sendOfferMessage,
+    respondToOffer,
+    sendOrderRequest,
+    respondToOrder,
+    confirmOrderReceived,
+  } = useMessages(conversationId, user?.uid);
+  
   const [newMessage, setNewMessage] = useState('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -47,12 +62,20 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
   const [profileLoading, setProfileLoading] = useState(false);
   const [fetchedProductContext, setFetchedProductContext] = useState<MessagesLayoutProps['productContext']>(null);
   const [messageAvatars, setMessageAvatars] = useState<Record<string, string>>({});
-  const [totalUserOffers, setTotalUserOffers] = useState(0); // Global offer count
+  const [totalUserOffers, setTotalUserOffers] = useState(0);
   const [offersLoading, setOffersLoading] = useState(true);
+  const [conversationData, setConversationData] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch total offers across ALL conversations for this user
+  // Debug: Log messages when they change
+  useEffect(() => {
+    console.log('Messages updated:', messages.length, 'messages');
+    const orderRequests = messages.filter(m => m.type === 'order_request');
+    console.log('Order requests in messages:', orderRequests.length);
+  }, [messages]);
+
+  // Fetch total offers
   useEffect(() => {
     const fetchTotalOffers = async () => {
       if (!user?.uid || userProfile?.role !== 'consumer') {
@@ -63,18 +86,16 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
 
       setOffersLoading(true);
       try {
-        // Get all conversations where user is a participant
         const conversationsRef = collection(db, 'conversations');
         const q = query(conversationsRef, where('participants', 'array-contains', user.uid));
         const conversationsSnap = await getDocs(q);
-        
+
         let totalOffers = 0;
-        
-        // Count offers in each conversation
+
         for (const convDoc of conversationsSnap.docs) {
           const messagesRef = collection(db, 'conversations', convDoc.id, 'messages');
           const messagesSnap = await getDocs(messagesRef);
-          
+
           messagesSnap.forEach(msgDoc => {
             const msgData = msgDoc.data();
             if (msgData.type === 'offer' && msgData.senderId === user.uid) {
@@ -82,7 +103,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
             }
           });
         }
-        
+
         setTotalUserOffers(totalOffers);
       } catch (error) {
         console.error('Error fetching total offers:', error);
@@ -92,7 +113,26 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
     };
 
     fetchTotalOffers();
-  }, [user?.uid, userProfile?.role, messages]); // Re-fetch when messages change
+  }, [user?.uid, userProfile?.role, messages]);
+
+  // Fetch conversation data
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const fetchConversationData = async () => {
+      try {
+        const convRef = doc(db, 'conversations', conversationId);
+        const convSnap = await getDoc(convRef);
+        if (convSnap.exists()) {
+          setConversationData(convSnap.data());
+        }
+      } catch (error) {
+        console.error('Error fetching conversation data:', error);
+      }
+    };
+
+    fetchConversationData();
+  }, [conversationId, messages]);
 
   const isConsumer = userProfile?.role === 'consumer';
   const hasReachedOfferLimit = totalUserOffers >= MAX_OFFERS_PER_CONSUMER;
@@ -104,7 +144,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
     }
   }, [messages]);
 
-  // Fetch other user's profile for header
+  // Fetch other user's profile
   useEffect(() => {
     if (!conversationId || !messages.length || !user) {
       setOtherUserProfile(null);
@@ -133,7 +173,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
     fetchProfile();
   }, [conversationId, messages, user, otherUserProfile?.uid]);
 
-  // Fetch product context if not provided via props
+  // Fetch product context
   useEffect(() => {
     if (!conversationId || productContext) return;
 
@@ -165,7 +205,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
     fetchProductFromConversation();
   }, [conversationId, productContext]);
 
-  // Fetch avatars for all message senders
+  // Fetch avatars
   useEffect(() => {
     const fetchMessageAvatars = async () => {
       const senderIds = [...new Set(messages.map(m => m.senderId))];
@@ -227,10 +267,31 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
     return groups;
   }, [messages]);
 
-  const latestReceivedOfferPrice = useMemo(() => {
-    const offerMsg = [...messages].reverse().find(m => m.type === 'offer' && m.senderId !== user?.uid && m.offerStatus === 'pending');
-    return offerMsg ? offerMsg.offerPrice : null;
+  const latestReceivedOfferPrice = useMemo((): number | null => {
+    const offerMsg = [...messages].reverse().find(
+      m => m.type === 'offer' && m.senderId !== user?.uid && m.offerStatus === 'accepted'
+    );
+    return offerMsg?.offerPrice ?? null;
   }, [messages, user?.uid]);
+
+  const activeOrder = useMemo(() => {
+    return messages.find(m =>
+      m.type === 'order_request' && m.orderStatus === 'pending'
+    );
+  }, [messages]);
+
+  const currentOrderStatus = useMemo(() => {
+    if (activeOrder) return 'pending';
+    if (conversationData?.orderStatus === 'accepted') return 'accepted';
+    if (conversationData?.orderStatus === 'completed') return 'completed';
+    return null;
+  }, [activeOrder, conversationData]);
+
+  const otherParticipantId = useMemo(() => {
+    if (!messages.length || !user) return null;
+    const otherMsg = messages.find(m => m.senderId !== user.uid);
+    return otherMsg?.senderId;
+  }, [messages, user]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -309,6 +370,77 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
     fileInputRef.current?.click();
   };
 
+  const handleSendOrderRequest = async (quantity: number, totalPrice: number) => {
+    console.log('handleSendOrderRequest called with:', { quantity, totalPrice });
+    
+    // FIXED: Use currentProductContext instead of productContext
+    if (!userProfile || !conversationId || !currentProductContext) {
+      console.error('Missing required data:', { userProfile, conversationId, currentProductContext });
+      return;
+    }
+
+    const senderName = userProfile.farmName || `${userProfile.firstName} ${userProfile.lastName}`;
+
+    try {
+      console.log('About to call sendOrderRequest from hook');
+      await sendOrderRequest(
+        senderName,
+        userProfile.profileImage || '',
+        {
+          productId: currentProductContext.id,
+          productName: currentProductContext.name,
+          productImage: currentProductContext.image,
+          pricePerUnit: latestReceivedOfferPrice || currentProductContext.price,
+          quantity,
+          totalPrice,
+          unit: currentProductContext.unit,
+        }
+      );
+      console.log('sendOrderRequest completed successfully');
+    } catch (error) {
+      console.error('Failed to send order:', error);
+      alert('Failed to send order request. Please try again.');
+    }
+  };
+
+  const handleRespondToOrder = async (messageId: string, response: 'accepted' | 'rejected') => {
+    console.log('handleRespondToOrder called:', { messageId, response });
+    
+    if (!conversationId || !activeOrder?.orderDetails || !user) {
+      console.error('Missing required data:', { conversationId, activeOrder, user });
+      return;
+    }
+
+    try {
+      await respondToOrder(
+        messageId,
+        response,
+        activeOrder.orderDetails
+      );
+      console.log('respondToOrder completed successfully');
+    } catch (error) {
+      console.error('Failed to respond to order:', error);
+      alert('Failed to respond. Please try again.');
+      throw error;
+    }
+  };
+
+  const handleConfirmReceived = async () => {
+    if (!userProfile || !conversationId || !user) return;
+
+    const senderName = `${userProfile.firstName} ${userProfile.lastName}`;
+
+    try {
+      await confirmOrderReceived(
+        senderName,
+        userProfile.profileImage || ''
+      );
+    } catch (error) {
+      console.error('Failed to confirm order:', error);
+      alert('Failed to confirm. Please try again.');
+    }
+  };
+
   const otherParticipant: Farmer | null = useMemo(() => {
     if (!conversationId || !messages.length) return null;
     const firstMessage = messages.find(m => m.senderId !== user?.uid);
@@ -351,6 +483,8 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
     role: 'consumer',
   };
 
+  const currentProductContext = productContext || fetchedProductContext;
+
   return (
     <div className="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
 
@@ -371,9 +505,21 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
         />
       </div>
 
-      {(productContext || fetchedProductContext) && (
+      {userProfile?.role === 'farmer' && currentProductContext && (
+        <FarmerProductContext
+          product={currentProductContext}
+          offerPrice={latestReceivedOfferPrice} 
+          consumerId={otherParticipantId || ''}
+          conversationId={conversationId}
+          lastAcceptedOfferPrice={latestReceivedOfferPrice ?? null}
+          onSendOrderRequest={handleSendOrderRequest}
+          onClose={onCloseProductContext}
+        />
+      )}
+
+      {userProfile?.role === 'consumer' && currentProductContext && (
         <ProductContext
-          product={(productContext || fetchedProductContext)!}
+          product={currentProductContext}
           onClose={onCloseProductContext}
         />
       )}
@@ -399,7 +545,8 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
                 }}
                 showAvatar={showAvatar}
                 isLastInGroup={isLastInGroup}
-                onRespondToOffer={respondToOffer} 
+                onRespondToOffer={respondToOffer}
+                onRespondToOrder={handleRespondToOrder}
               />
             ))}
             <div ref={messagesEndRef} />
@@ -422,31 +569,34 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
         </div>
       )}
 
-      {/* Only show MakeOfferButton for consumers */}
       {isConsumer && !offersLoading && (
         <MakeOfferButton
-          product={productContext ? {
-            name: productContext.name,
-            price: productContext.price,
-            unit: productContext.unit,
-            image: productContext.image,
+          product={currentProductContext ? {
+            name: currentProductContext.name,
+            price: currentProductContext.price,
+            unit: currentProductContext.unit,
+            image: currentProductContext.image,
           } : null}
           farmerName={otherUserProfile?.farmName || otherUserProfile?.displayName || participantData?.firstName || 'Seller'}
-          disabled={hasReachedOfferLimit}
-          remainingOffers={remainingOffers} // Pass remaining offers to show in UI
+          disabled={hasReachedOfferLimit && currentOrderStatus !== 'accepted'}
+          remainingOffers={remainingOffers}
+          orderStatus={currentOrderStatus}
+          onConfirmReceived={handleConfirmReceived}
+          conversationId={conversationId || ''}
+          productId={currentProductContext?.id || ''}
+          farmerId={otherParticipantId || ''}
           onSubmitOffer={async (offerPrice: number) => {
             if (!conversationId || !user?.uid || !userProfile) return;
-            
+
             if (hasReachedOfferLimit) {
               alert(`You have reached the maximum of ${MAX_OFFERS_PER_CONSUMER} offers across all conversations.\n\nUpgrade your subscription to make more offers!`);
               return;
             }
-            
+
             const senderName = `${userProfile.firstName} ${userProfile.lastName}`;
-            
+
             try {
               await sendOfferMessage(senderName, userProfile.profileImage || '', offerPrice);
-              // Increment local count after successful send
               setTotalUserOffers(prev => prev + 1);
             } catch (error) {
               console.error('Failed to send offer:', error);
@@ -456,20 +606,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
         />
       )}
 
-      {/* Show global limit message for consumers */}
-      {isConsumer && hasReachedOfferLimit && (
-        <div className="px-4 py-2 bg-yellow-50 border-t border-yellow-200 text-center">
-          <p className="text-xs text-yellow-700">
-            You have used all {MAX_OFFERS_PER_CONSUMER} offers. 
-            <button className="underline ml-1 font-semibold hover:text-yellow-800">
-              Upgrade to make more
-            </button>
-          </p>
-        </div>
-      )}
-
-      {/* Show remaining offers counter */}
-      {isConsumer && !hasReachedOfferLimit && remainingOffers <= 2 && (
+      {isConsumer && !hasReachedOfferLimit && remainingOffers <= 2 && currentOrderStatus !== 'accepted' && (
         <div className="px-4 py-1 bg-blue-50 text-center">
           <p className="text-xs text-blue-600">
             {remainingOffers} offer{remainingOffers !== 1 ? 's' : ''} remaining
