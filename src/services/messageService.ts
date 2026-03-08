@@ -237,7 +237,7 @@ export async function sendOfferMessage(
     readBy: [senderId],
     type: 'offer',
     offerPrice,
-    offerStatus: 'pending', // NEW: Start as pending
+    offerStatus: 'pending', // Start as pending
   };
 
   const messageDocRef = doc(messagesRef);
@@ -259,6 +259,12 @@ export async function sendOfferMessage(
     [`unreadCount.${otherParticipantId}`]: increment(1),
     pendingOfferId: messageDocRef.id, // Track pending offer
     pendingOfferPrice: offerPrice, // Track pending price
+  });
+
+  // NEW: Increment consumer's offer count
+  const consumerRef = doc(db, 'consumers', senderId);
+  batch.update(consumerRef, {
+    offerCount: increment(1)
   });
 
   await batch.commit();
@@ -592,8 +598,38 @@ export async function sendOrderRequest(
     unit: string;
   }
 ): Promise<string> {
+  // Check stock FIRST (before any batch operations)
+  const productRef = doc(db, 'products', orderDetails.productId);
+  const productSnap = await getDoc(productRef);
+  
+  if (!productSnap.exists()) {
+    throw new Error('Product not found');
+  }
+  
+  const currentStock = parseInt(productSnap.data()?.stock) || 0;
+  const orderQuantity = orderDetails.quantity;
+  
+  console.log('Stock check:', { 
+    currentStock, 
+    orderQuantity, 
+    productId: orderDetails.productId 
+  });
+  
+  if (currentStock < orderQuantity) {
+    throw new Error(`Insufficient stock. You only have ${currentStock} ${orderDetails.unit} available.`);
+  }
+
+  // Now create batch and subtract stock
   const batch = writeBatch(db);
 
+  // Subtract stock
+  const newStock = currentStock - orderQuantity;
+  batch.update(productRef, {
+    stock: newStock.toString(),
+    updatedAt: serverTimestamp(),
+  });
+
+  // Create order message
   const messagesRef = collection(db, CONVERSATIONS_COLLECTION, conversationId, MESSAGES_SUBCOLLECTION);
   const newMessage = {
     senderId,
@@ -610,6 +646,7 @@ export async function sendOrderRequest(
   const messageDocRef = doc(messagesRef);
   batch.set(messageDocRef, newMessage);
 
+  // Update conversation
   const conversationRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
   const conversationSnap = await getDoc(conversationRef);
   const conversationData = conversationSnap.data();
@@ -628,10 +665,17 @@ export async function sendOrderRequest(
     orderStatus: 'pending',
   });
 
+  // Commit all changes
   await batch.commit();
+  
+  console.log('Order sent and stock updated:', { 
+    oldStock: currentStock, 
+    newStock,
+    productId: orderDetails.productId 
+  });
+  
   return messageDocRef.id;
 }
-
 /**
  * Respond to order request (Consumer accepts/rejects)
  */
@@ -676,9 +720,10 @@ export async function respondToOrder(
   const conversationRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
   
   if (response === 'accepted') {
+    // REMOVED: Stock update - already done when farmer sent order
     batch.update(conversationRef, {
       orderStatus: 'accepted',
-      lastAcceptedOfferPrice: orderDetails.pricePerUnit, // Store for future reference
+      lastAcceptedOfferPrice: orderDetails.pricePerUnit,
       lastMessage: {
         text: `✅ Order accepted`,
         senderId: responderId,
@@ -688,6 +733,7 @@ export async function respondToOrder(
       lastMessageAt: serverTimestamp(),
     });
   } else {
+    // REMOVED: Stock restoration - we'll handle this separately if needed
     batch.update(conversationRef, {
       activeOrderId: null,
       orderStatus: null,

@@ -32,9 +32,10 @@ export default function OrderRequestBubble({
     setIsResponding(true);
     try {
       await onRespondToOrder(messageId, response);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to respond to order:', error);
-      alert('Failed to respond. Please try again.');
+      // Show the actual error message
+      alert(error.message || 'Failed to respond. Please try again.');
     } finally {
       setIsResponding(false);
     }

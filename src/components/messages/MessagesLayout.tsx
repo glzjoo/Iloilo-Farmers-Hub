@@ -370,36 +370,35 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
     fileInputRef.current?.click();
   };
 
-  const handleSendOrderRequest = async (quantity: number, totalPrice: number) => {
-    console.log('handleSendOrderRequest called with:', { quantity, totalPrice });
-    
-    // FIXED: Use currentProductContext instead of productContext
-    if (!userProfile || !conversationId || !currentProductContext) {
-      console.error('Missing required data:', { userProfile, conversationId, currentProductContext });
-      return;
-    }
+const handleSendOrderRequest = async (quantity: number, totalPrice: number) => {
+  console.log('handleSendOrderRequest called with:', { quantity, totalPrice });
+  
+  if (!userProfile || !conversationId || !currentProductContext) {
+    console.error('Missing required data:', { userProfile, conversationId, currentProductContext });
+    return;
+  }
 
-    const senderName = userProfile.farmName || `${userProfile.firstName} ${userProfile.lastName}`;
+  const senderName = userProfile.farmName || `${userProfile.firstName} ${userProfile.lastName}`;
 
-    try {
-      console.log('About to call sendOrderRequest from hook');
-      await sendOrderRequest(
-        senderName,
-        userProfile.profileImage || '',
-        {
-          productId: currentProductContext.id,
-          productName: currentProductContext.name,
-          productImage: currentProductContext.image,
-          pricePerUnit: latestReceivedOfferPrice || currentProductContext.price,
-          quantity,
-          totalPrice,
-          unit: currentProductContext.unit,
-        }
-      );
-      console.log('sendOrderRequest completed successfully');
-    } catch (error) {
+  try {
+    console.log('About to call sendOrderRequest from hook');
+    await sendOrderRequest(
+      senderName,
+      userProfile.profileImage || '',
+      {
+        productId: currentProductContext.id,
+        productName: currentProductContext.name,
+        productImage: currentProductContext.image,
+        pricePerUnit: latestReceivedOfferPrice || currentProductContext.price,
+        quantity,
+        totalPrice,
+        unit: currentProductContext.unit,
+      }
+    );
+    console.log('sendOrderRequest completed successfully');
+  } catch (error: any) {
       console.error('Failed to send order:', error);
-      alert('Failed to send order request. Please try again.');
+      alert(error.message || 'Failed to send order request. Please try again.');
     }
   };
 
@@ -418,9 +417,14 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
         activeOrder.orderDetails
       );
       console.log('respondToOrder completed successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to respond to order:', error);
-      alert('Failed to respond. Please try again.');
+      // Show specific error message for stock issues
+      if (error.message?.includes('Insufficient stock')) {
+        alert(error.message);
+      } else {
+        alert('Failed to respond. Please try again.');
+      }
       throw error;
     }
   };

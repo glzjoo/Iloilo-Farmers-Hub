@@ -38,6 +38,9 @@ export interface Farmer {
     farmAddress?: string;
     farmType?: string;
     lastPhotoChange?: Date | { toDate(): Date } | any;
+    //offer count
+    offerCount?: number;       
+    remainingOffers?: number;  
 }
 
 export interface Consumer {
@@ -146,6 +149,8 @@ export interface CartItem {
     farmerId: string;
     farmerName: string;
     addedAt: Date | any;
+    stock: number;
+    soldCount?: number;
 }
 
 export interface Cart {
