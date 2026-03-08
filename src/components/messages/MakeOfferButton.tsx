@@ -34,7 +34,8 @@ export default function MakeOfferButton({
 }: MakeOfferButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [hasConfirmedReceived, setHasConfirmedReceived] = useState(false); // Track if user clicked
+  const [hasConfirmedReceived, setHasConfirmedReceived] = useState(false);
+  const [showReviewPrompt, setShowReviewPrompt] = useState(true); // Track if user clicked
 
   if (!product) return null;
 
@@ -74,35 +75,49 @@ export default function MakeOfferButton({
 
   // If order is completed but user hasn't clicked "Order Received" yet
   // (this handles the case where page was refreshed)
-  if (orderStatus === 'completed' && !hasConfirmedReceived) {
+  if (orderStatus === 'completed' && !hasConfirmedReceived && showReviewPrompt) {
     return (
-      <div className="px-4 py-3 bg-green-50 border-t border-green-200 text-center">
-        <p className="text-sm text-green-800">
-          Order completed!
-        </p>
+      <div className="px-4 py-2 bg-green-50 border-t border-green-200 relative">
+        {/* X button - top right, actually dismisses */}
         <button
-          onClick={() => setHasConfirmedReceived(true)}
-          className="mt-2 text-sm text-green-600 underline hover:text-green-800"
+          onClick={() => setShowReviewPrompt(false)} // Dismiss without reviewing
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+          title="Dismiss"
         >
-          Leave a review
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
+        
+        {/* Centered content */}
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-sm text-green-800 font-medium">
+            Order completed!
+          </span>
+          <button
+            onClick={() => setHasConfirmedReceived(true)} // Shows review modal
+            className="text-sm text-green-600 underline hover:text-green-800 font-medium"
+          >
+            Leave a review
+          </button>
+        </div>
       </div>
     );
   }
-
+  
   // Default: Show Make Offer button
   return (
     <>
       <button
         onClick={() => !disabled && setIsModalOpen(true)}
         disabled={disabled}
-        className={`w-fit mx-auto px-8 py-2 rounded-full text-gray-700 font-semibold text-sm cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95`}
-        style={{
-          background: 'linear-gradient(180deg, rgba(220,252,231,0.7) 0%, rgba(187,247,208,0.4) 100%)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          border: '1.5px solid rgba(34,197,94,0.3)',
-          boxShadow: '0 3px 12px rgba(34,197,94,0.12), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+            className={`w-fit mx-auto px-8 py-2 rounded-full text-gray-700 font-semibold text-sm cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95`}
+                style={{
+                    background: 'linear-gradient(180deg, rgba(220,252,231,0.7) 0%, rgba(187,247,208,0.4) 100%)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    border: '1.5px solid rgba(34,197,94,0.3)',
+                    boxShadow: '0 3px 12px rgba(34,197,94,0.12), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
         }}
       >
         {disabled ? 'Limit reached' : 'Make Offer'}
@@ -120,6 +135,7 @@ export default function MakeOfferButton({
     </>
   );
 }
+
 
 // Keep the existing MakeOfferModal component here (unchanged)
 interface MakeOfferModalProps {

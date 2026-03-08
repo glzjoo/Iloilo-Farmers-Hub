@@ -1,4 +1,3 @@
-// src/components/messages/OrderRequestBubble.tsx
 import { useAuth } from '../../context/AuthContext';
 import { useState } from 'react';
 
@@ -61,6 +60,7 @@ export default function OrderRequestBubble({
     return {
       text: isSender ? 'Order sent' : 'New order request',
       bgColor: isSender ? 'bg-primary' : 'bg-[#5f6a5d]',
+      icon: '📦',
       subText: isSender ? 'Waiting for confirmation...' : 'Review and respond',
     };
   };
@@ -99,7 +99,7 @@ export default function OrderRequestBubble({
             <p className="text-xl font-bold">₱{orderDetails.totalPrice.toFixed(2)}</p>
           </div>
 
-          {/* ACTION BUTTONS - Only for consumer when pending */}
+          {/* Action Buttons - Only for consumer when pending */}
           {!isSender && orderStatus === 'pending' && isConsumer && onRespondToOrder && (
             <div className="flex gap-2 mt-2 pt-2 border-t border-white/20">
               <button

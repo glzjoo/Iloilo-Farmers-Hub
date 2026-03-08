@@ -212,7 +212,6 @@ export default function MessageBubble({
           isOwnMessage ? 'rounded-br-none' : 'rounded-bl-none'
         }`}>
           <div className="flex items-center gap-2">
-            <span>📦</span>
             <p className="text-sm font-medium">{message.text}</p>
           </div>
         </div>
@@ -244,11 +243,26 @@ export default function MessageBubble({
   return (
     <div className={`flex items-end gap-2 mb-1 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
       {/* Avatar */}
-      {showAvatar ? (
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getAvatarColor(message.senderName)}`}>
-          <span className="text-white text-xs font-bold">
-            {message.senderName.charAt(0).toUpperCase()}
-          </span>
+      {showAvatar && !isOwnMessage ? (
+        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mb-5 shadow-sm overflow-hidden">
+          {message.senderAvatar ? (
+            <img
+              src={message.senderAvatar}
+              alt={message.senderName}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // If image fails to load, show fallback
+                (e.target as HTMLImageElement).style.display = 'none';
+                (e.target as HTMLImageElement).parentElement?.classList.add(getAvatarColor(message.senderName));
+              }}
+            />
+          ) : (
+            <div className={`w-full h-full ${getAvatarColor(message.senderName)} flex items-center justify-center`}>
+              <span className="text-white text-sm font-bold">
+                {message.senderName.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
         </div>
       ) : (
         <div className="w-8 flex-shrink-0" />
