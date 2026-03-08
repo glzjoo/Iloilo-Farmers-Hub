@@ -8,6 +8,7 @@ const ratingBars = [
     { stars: 1, percent: 5 },
 ];
 
+{/* Item review outine for item review page */ }
 const reviews = [
     {
         name: 'John Doe',

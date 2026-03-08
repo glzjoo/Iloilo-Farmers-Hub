@@ -18,7 +18,6 @@ export default function ReviewFarmer() {
                             <span className="text-sm text-gray-600 mt-1">Iloilo City</span>
                         </div>
                     </div>
-
                     {/* Product Selection */}
                     <div className="flex items-center gap-4">
                         <img src={okra} className="w-14 h-14 bg-gray-200 rounded-lg object-cover" alt="Okra" />
@@ -32,7 +31,6 @@ export default function ReviewFarmer() {
                 </div>
 
                 <div className="w-full h-px bg-[#D9D9D9] mt-8 mb-6"></div>
-
                 {/* Rating and Reviews Form */}
                 <ReviewFarmerDetails />
 

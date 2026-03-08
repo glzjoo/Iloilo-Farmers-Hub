@@ -30,7 +30,7 @@ export default function ReviewFarmerDetails() {
                         />
                     ))}
                 </div>
-
+                {/* Add photos or video */}
                 <p className="font-medium text-black mb-4">Add photos or video</p>
                 <div className="flex gap-4">
                     <button className="flex-1 max-w-[140px] h-28 border border-gray-300 rounded-xl flex flex-col items-center justify-center text-[#187A38] hover:bg-green-50 transition-colors">
@@ -65,6 +65,8 @@ export default function ReviewFarmerDetails() {
                         />
                     </div>
                 </div>
+                {/* Submit */}
+                <button className="w-full h-10 bg-[#187A38] rounded-md text-white font-semibold mt-5">Submit Review</button>
             </div>
         </div>
     );
