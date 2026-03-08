@@ -3,43 +3,12 @@ import checkIcon from '../../assets/icons/Check.svg';
 const plans = [
     {
         title: 'Starter',
-        description: 'Perfect for small-scale farmers starting their online journey',
         price: '199',
         button: 'Start free trial',
         features: [
-            'List up to 15 products',
-            'Your own online storefront',
-            'Basic sales analytics',
-            'Product photo gallery',
-        ],
-    },
-    {
-        title: 'Grower',
-        description: 'Best for active sellers with diverse produce.',
-        price: '399',
-        button: 'Start free trial',
-        features: [
-            'List up to 50 products',
-            'Featured store placement',
-            'Advanced sales analytics',
-            'Priority customer visibility',
-            'Priority support',
-            'Inventory management tools',
-            'Promotional campaigns',
-        ],
-    },
-    {
-        title: 'Professional',
-        description: 'For established and cooperatives.',
-        price: '799',
-        button: 'Start free trial',
-        features: [
-            'Unlimited product listings',
-            'Premium store placement',
-            'Complete business analytics',
-            'Top search visibility',
-            'Multi-user accounts',
-            'Custom promotions & discounts',
+            'No Ads',
+            'Unlimited Make offer',
+            'Premium Badge',
         ],
     },
 ];
@@ -48,8 +17,8 @@ export default function SellerPlan() {
     return (
         <section className="w-full py-16 px-10">
             <div className="max-w-7xl mx-auto mb-10">
-                <h1 className="text-3xl text-center font-primary font-bold text-black mb-2">Choose Your Seller Plan</h1>
-                <p className="text-lg text-center font-primary text-gray-600">Flexible pricing for farmers of all sizes. Start selling with a 30-day free trial.</p>
+                <h1 className="text-3xl text-center font-primary font-bold text-black mb-2">Choose Your Consumer Plan</h1>
+                <p className="text-lg text-center font-primary text-gray-600">Start selling with a 30-day free trial.</p>
             </div>
 
             <div className="flex flex-col gap-6 max-w-4xl mx-auto">
@@ -61,14 +30,13 @@ export default function SellerPlan() {
                         {/* Title, description, price */}
                         <div className="w-[200px] flex-shrink-0">
                             <h2 className="text-xl font-primary font-bold text-black mb-1">{plan.title}</h2>
-                            <p className="text-sm font-primary text-gray-600 mb-4">{plan.description}</p>
                             <p className="text-2xl font-primary font-bold text-black">
                                 ₱{plan.price}<span className="text-base font-normal text-gray-600">/month</span>
                             </p>
                         </div>
 
                         {/* Features in two columns */}
-                        <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-2">
+                        <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-2"> {/* incase to add new plan*/}
                             {plan.features.map((feature, i) => (
                                 <div key={i} className="flex items-start gap-2">
                                     <img src={checkIcon} alt="check" className="w-5 h-5 mt-0.5 flex-shrink-0" />
