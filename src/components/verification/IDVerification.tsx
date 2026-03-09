@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import logo from '../../assets/icons/logo.png';
 import type { FarmerSignupData } from '../../lib/validations';
 import CameraCapture from './CameraCapture';
-import IDVerificationSuccessModal from './IDVerificationSuccessModal'; // Changed from SuccessModal
+import IDVerificationSuccessModal from './IDVerificationSuccessModal';
 import IDUploadSection from './IDUploadSection';
 import SelfieCaptureSection from './SelfieCaptureSection';
 import VerificationInfoCard from './VerificationInfoCard';
@@ -97,38 +97,58 @@ export default function IDVerification() {
     setError(null);
   };
 
+  // IMPROVED: More robust name matching with garbage filtering
   const checkNameMatch = (extractedName: string, formData: FarmerSignupData): boolean => {
     if (!extractedName) return false;
     
     const normalize = (str: string) => 
       str.toLowerCase()
-         .replace(/[^a-z\s]/g, '')
+         .replace(/[^a-z\s]/g, ' ')
          .replace(/\s+/g, ' ')
          .trim();
     
     const extracted = normalize(extractedName);
-    const registered = normalize(`${formData.firstName} ${formData.lastName}`);
+    const firstName = normalize(formData.firstName);
+    const lastName = normalize(formData.lastName);
     
-    const extractedWords = extracted.split(' ');
-    const registeredWords = registered.split(' ');
+    // Filter out common OCR garbage/template text from Philippine IDs
+    const garbageWords = [
+      'statistic', 'authority', 'philippine', 'repub', 'publik', 
+      'nasrep', 'kad', 'tisticsal', 'pilipinas', 'filipinas',
+      'pambansa', 'pagkakakilanlan', 'philippines', 'republic',
+      'apelyido', 'pangalan', 'given', 'names', 'last', 'name',
+      'middle', 'gitnang', 'petsa', 'kapanganakan', 'date', 'birth',
+      'tirahan', 'address', 'city', 'zone'
+    ];
     
-    let extractedIndex = 0;
-    let matchedWords = 0;
+    const extractedWords = extracted.split(' ').filter(word => 
+      word.length > 2 && !garbageWords.some(g => word.includes(g))
+    );
     
-    for (const regWord of registeredWords) {
-      const foundIndex = extractedWords.slice(extractedIndex).findIndex(extWord => 
-        extWord.includes(regWord) || 
-        regWord.includes(extWord) ||
-        calculateSimilarity(extWord, regWord) > 0.8
-      );
-      
-      if (foundIndex !== -1) {
-        matchedWords++;
-        extractedIndex += foundIndex + 1;
-      }
-    }
+    // Check if first name appears in any extracted word
+    const firstNameMatch = extractedWords.some(word => 
+      word.includes(firstName) || 
+      firstName.includes(word) ||
+      calculateSimilarity(word, firstName) > 0.7
+    );
     
-    return matchedWords === registeredWords.length;
+    // Check last name
+    const lastNameMatch = extractedWords.some(word => 
+      word.includes(lastName) || 
+      lastName.includes(word) ||
+      calculateSimilarity(word, lastName) > 0.7
+    );
+    
+    // Debug logging
+    console.log('Name matching debug:', {
+      extractedRaw: extractedName,
+      extractedFiltered: extractedWords,
+      lookingFor: { firstName, lastName },
+      matches: { firstNameMatch, lastNameMatch },
+      finalResult: firstNameMatch && lastNameMatch
+    });
+    
+    return firstNameMatch && lastNameMatch;
   };
 
   const calculateSimilarity = (str1: string, str2: string): number => {

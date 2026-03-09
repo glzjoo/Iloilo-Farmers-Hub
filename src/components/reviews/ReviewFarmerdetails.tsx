@@ -61,6 +61,7 @@ export default function ReviewFarmerDetails() {
                     <div className="flex flex-col gap-2">
                         <label className="font-semibold text-black">Appearance:</label>
                         <textarea
+                            placeholder="Type here..."
                             className="w-full h-[100px] bg-white rounded-lg p-4 resize-none outline-none text-black focus:ring-1 focus:ring-[#187A38]"
                         />
                     </div>
