@@ -21,7 +21,6 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [addingToCart, setAddingToCart] = useState<string | null>(null);
 
-    // Fetch products on mount or when category changes
     useEffect(() => {
         const fetchProducts = async () => {
             try {
@@ -38,7 +37,6 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
 
                 setProducts(fetchedProducts);
 
-                // Initialize quantities
                 const initialQuantities: Record<string, number> = {};
                 fetchedProducts.forEach(p => {
                     initialQuantities[p.id] = 1;
@@ -70,7 +68,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     };
 
     const handleProductClick = (productId: string) => {
-        navigate(`/item-details?id=${productId}`);
+        navigate(`/item/${productId}`); // Updated to new URL format
     };
 
     const handleAddToCart = async (e: React.MouseEvent, product: Product) => {
@@ -99,6 +97,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                 image: product.image,
                 farmerId: product.farmerId,
                 farmerName: product.farmerName || 'Unknown Farmer',
+                stock: parseInt(product.stock) || 0, // ADDED: stock is now required
             }, quantity);
 
             alert(`Added ${quantity} ${product.unit} of ${product.name} to cart!`);
@@ -109,7 +108,6 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         }
     };
 
-    // Filter by search query
     const filteredProducts = searchQuery
         ? products.filter(product =>
             product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

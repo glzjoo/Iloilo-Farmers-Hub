@@ -1,4 +1,3 @@
-// App.tsx
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
@@ -63,6 +62,9 @@ function AppLayout() {
                     <Route path="/about" element={<AboutUs />} />
                     <Route path="/subscriptions" element={<Subscriptions />} />
                     <Route path="/become-a-seller" element={<BecomeASeller />} />
+                    {/* CHANGED: Added productId parameter */}
+                    <Route path="/item/:productId" element={<ItemsDetailsPage />} />
+                    {/* Keep old route for backward compatibility, redirect to new format */}
                     <Route path="/item-details" element={<ItemsDetailsPage />} />
                     <Route path="/cart" element={<CartPage />} />
                     <Route path="/messages" element={<MessagesPage />} />

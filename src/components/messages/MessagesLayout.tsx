@@ -430,19 +430,28 @@ const handleSendOrderRequest = async (quantity: number, totalPrice: number) => {
   };
 
   const handleConfirmReceived = async () => {
-    if (!userProfile || !conversationId || !user) return;
+      if (!userProfile || !conversationId || !user) return;
 
-    const senderName = `${userProfile.firstName} ${userProfile.lastName}`;
+      const senderName = `${userProfile.firstName} ${userProfile.lastName}`;
 
-    try {
-      await confirmOrderReceived(
-        senderName,
-        userProfile.profileImage || ''
-      );
-    } catch (error) {
-      console.error('Failed to confirm order:', error);
-      alert('Failed to confirm. Please try again.');
-    }
+      try {
+          await confirmOrderReceived(
+              senderName,
+              userProfile.profileImage || ''
+          );
+          
+          // Store order completion data for review
+          sessionStorage.setItem('pendingReview', JSON.stringify({
+              productId: currentProductContext?.id,
+              farmerId: otherParticipantId,
+              orderId: conversationId, // or activeOrder?.id
+              completedAt: new Date().toISOString()
+          }));
+          
+      } catch (error) {
+          console.error('Failed to confirm order:', error);
+          alert('Failed to confirm. Please try again.');
+      }
   };
 
   const otherParticipant: Farmer | null = useMemo(() => {

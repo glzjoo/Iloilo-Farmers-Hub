@@ -97,7 +97,7 @@ export default function IDVerification() {
     setError(null);
   };
 
-  // IMPROVED: More robust name matching with garbage filtering
+  // More robust name matching with garbage filtering
   const checkNameMatch = (extractedName: string, formData: FarmerSignupData): boolean => {
     if (!extractedName) return false;
     

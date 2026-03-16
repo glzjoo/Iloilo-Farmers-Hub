@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { Product } from '../../types';
-import { getRelatedProducts } from '../../services/shopService';
+import { getRelatedProducts, getProductById } from '../../services/shopService';
 
-export default function RelatedProducts() {
+interface RelatedProductsProps {
+    productId?: string | null;
+}
+
+export default function RelatedProducts({ productId: propProductId }: RelatedProductsProps) {
     const [searchParams] = useSearchParams();
-    const productId = searchParams.get('id');
+    const urlProductId = searchParams.get('id');
+    
+    // Use prop if provided, otherwise fall back to URL query param
+    const productId = propProductId || urlProductId;
+    
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -15,7 +23,6 @@ export default function RelatedProducts() {
 
             try {
                 // First get current product to know its category
-                const { getProductById } = await import('../../services/shopService');
                 const currentProduct = await getProductById(productId);
 
                 if (currentProduct) {
@@ -37,7 +44,7 @@ export default function RelatedProducts() {
     }, [productId]);
 
     if (loading || relatedProducts.length === 0) {
-        return null; // Don't show section if no related products
+        return null;
     }
 
     return (
@@ -49,7 +56,7 @@ export default function RelatedProducts() {
                     {relatedProducts.map((product) => (
                         <a
                             key={product.id}
-                            href={`/item-details?id=${product.id}`}
+                            href={`/item/${product.id}`}  // CHANGED: Use new URL format
                             className="block bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                         >
                             <img
