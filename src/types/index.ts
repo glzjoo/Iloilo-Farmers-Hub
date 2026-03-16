@@ -38,6 +38,9 @@ export interface Farmer {
     farmAddress?: string;
     farmType?: string;
     lastPhotoChange?: Date | { toDate(): Date } | any;
+    //offer count
+    offerCount?: number;       
+    remainingOffers?: number;  
 }
 
 export interface Consumer {
@@ -146,10 +149,52 @@ export interface CartItem {
     farmerId: string;
     farmerName: string;
     addedAt: Date | any;
+    stock?: number;
+    soldCount?: number;
 }
 
 export interface Cart {
     userId: string;
     items: CartItem[];
     updatedAt: Date | any;
+}
+
+// Add these to your existing types/index.ts
+
+export interface Review {
+    id: string;
+    productId: string;
+    farmerId: string;
+    consumerId: string;
+    consumerName: string;
+    consumerAvatar?: string;
+    rating: number; // 1-5 stars
+    quality: string;
+    appearance?: string;
+    comment: string;
+    images?: string[]; // URLs to uploaded images
+    video?: string; // URL to uploaded video
+    createdAt: Date | any;
+    updatedAt?: Date | any;
+    orderId?: string; // Link to the order/conversation for verification
+    verifiedPurchase: boolean; // true if from completed order
+}
+
+export interface ReviewStats {
+    averageRating: number;
+    totalReviews: number;
+    ratingDistribution: {
+        5: number;
+        4: number;
+        3: number;
+        2: number;
+        1: number;
+    };
+}
+
+export interface FarmerReviewSummary {
+    farmerId: string;
+    averageRating: number;
+    totalReviews: number;
+    recentReviews: Review[];
 }

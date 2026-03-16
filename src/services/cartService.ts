@@ -28,7 +28,6 @@ export const getCart = async (userId: string): Promise<CartItem[]> => {
 };
 
 // Add item to cart
-// Add item to cart
 export const addToCart = async (
     userId: string, 
     product: {
@@ -39,6 +38,7 @@ export const addToCart = async (
         image: string;
         farmerId: string;
         farmerName: string;
+        stock: number; // ADDED: stock is required
     }, 
     quantity: number
 ): Promise<void> => {
@@ -57,6 +57,7 @@ export const addToCart = async (
             farmerId: product.farmerId,
             farmerName: product.farmerName,
             addedAt: new Date(), // Use regular Date instead of serverTimestamp
+            stock: product.stock, // ADDED: include stock
         };
         
         if (!cartDoc.exists()) {
@@ -64,7 +65,7 @@ export const addToCart = async (
             const newCart = {
                 userId: userId,
                 items: [newItem],
-                updatedAt: serverTimestamp(), // This is fine - not in an array
+                updatedAt: serverTimestamp(), 
             };
             await setDoc(cartRef, newCart);
         } else {
@@ -93,7 +94,7 @@ export const addToCart = async (
             
             await updateDoc(cartRef, {
                 items: updatedItems,
-                updatedAt: serverTimestamp(), // This is fine - not in an array
+                updatedAt: serverTimestamp(),
             });
         }
     } catch (error) {

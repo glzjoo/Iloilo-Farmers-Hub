@@ -1,18 +1,11 @@
-import itemReviewProfile from '../../assets/images/item-pictures/item-review-profile.jpg';
+import { useState, useEffect } from 'react';
 import Filter from '../../assets/icons/Filter.svg';
+import { getProductReviews, getProductReviewStats } from '../../services/reviewService';
+import type { Review } from '../../types';
 
-const reviews = [
-    {
-        name: 'Erick R. Reymundo',
-        rating: 4.5,
-        date: '26/11/2025',
-        time: '8:42',
-        product: 'Okra – 2kg',
-        quality: 'I think its Good',
-        comment: 'Mukha ok nmn sya, will comment again if masarap tapos e luto.',
-        image: itemReviewProfile,
-    },
-];
+interface ItemReviewProps {
+    productId: string;
+}
 
 function StarRating({ rating }: { rating: number }) {
     const stars = [];
@@ -28,40 +21,197 @@ function StarRating({ rating }: { rating: number }) {
     return <div className="flex gap-0.5">{stars}</div>;
 }
 
-export default function ItemReview() {
+// Simple date formatter without date-fns
+const formatDate = (timestamp: any): string => {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }).replace(/\//g, '/');
+};
+
+const formatTime = (timestamp: any): string => {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+};
+
+export default function ItemReview({ productId }: ItemReviewProps) {
+    const [reviews, setReviews] = useState<Review[]>([]);
+    const [stats, setStats] = useState({ averageRating: 0, totalReviews: 0 });
+    const [loading, setLoading] = useState(true);
+    const [filterRating, setFilterRating] = useState<number | null>(null);
+
+    useEffect(() => {
+        console.log('ItemReview mounted with productId:', productId);
+        
+        const fetchReviews = async () => {
+            if (!productId) {
+                console.log('No productId provided, skipping fetch');
+                setLoading(false);
+                return;
+            }
+
+            try {
+                console.log('Fetching reviews for productId:', productId);
+                const [reviewsData, statsData] = await Promise.all([
+                    getProductReviews(productId, 50),
+                    getProductReviewStats(productId)
+                ]);
+                console.log('Fetched reviews:', reviewsData.length, 'Stats:', statsData);
+                setReviews(reviewsData);
+                setStats(statsData);
+            } catch (error) {
+                console.error('Error fetching reviews:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchReviews();
+    }, [productId]);
+
+    const filteredReviews = filterRating 
+        ? reviews.filter(r => r.rating === filterRating)
+        : reviews;
+
+    if (loading) {
+        return (
+            <section className="w-full py-12">
+                <div className="max-w-4xl mx-auto px-10">
+                    <div className="flex justify-center">
+                        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
     return (
         <section className="w-full py-12">
             <div className="max-w-4xl mx-auto px-10">
+                {/* Stats Header */}
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-primary font-semibold text-black">Reviews</h2>
-                    <button className="flex items-center gap-2 bg-transparent border-none cursor-pointer">
-                        <img src={Filter} className="w-5 h-5" />
-                    </button>
+                    <div>
+                        <h2 className="text-2xl font-primary font-semibold text-black">Reviews</h2>
+                        <p className="text-sm text-gray-500 mt-1">
+                            {stats.averageRating.toFixed(1)} ★ • {stats.totalReviews} reviews
+                        </p>
+                    </div>
+                    <div className="relative group">
+                        <button className="flex items-center gap-2 bg-transparent border-none cursor-pointer">
+                            <img src={Filter} className="w-5 h-5" alt="Filter" />
+                            {filterRating && <span className="text-sm text-primary">{filterRating}★</span>}
+                        </button>
+                        {/* Filter Dropdown */}
+                        <div className="absolute right-0 top-full mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                            <button 
+                                onClick={() => setFilterRating(null)}
+                                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${!filterRating ? 'text-primary font-medium' : ''}`}
+                            >
+                                All
+                            </button>
+                            {[5, 4, 3, 2, 1].map(star => (
+                                <button 
+                                    key={star}
+                                    onClick={() => setFilterRating(star)}
+                                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${filterRating === star ? 'text-primary font-medium' : ''}`}
+                                >
+                                    {star} Stars
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
-                <div className="flex flex-col gap-4">
-                    {reviews.map((review, i) => (
-                        <div key={i} className="bg-gray-100 rounded-xl p-6">
-                            <div className="flex items-center gap-3 mb-1">
-                                <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                    <img src={review.image} alt="Reviewer" className="w-10 h-10 rounded-full object-cover" />
+                {filteredReviews.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                        {filterRating 
+                            ? `No ${filterRating}-star reviews yet`
+                            : 'No reviews yet. Be the first to review!'
+                        }
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-4">
+                        {filteredReviews.map((review) => (
+                            <div key={review.id} className="bg-gray-100 rounded-xl p-6">
+                                <div className="flex items-center gap-3 mb-1">
+                                    <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
+                                        {review.consumerAvatar ? (
+                                            <img 
+                                                src={review.consumerAvatar} 
+                                                alt={review.consumerName} 
+                                                className="w-full h-full object-cover" 
+                                            />
+                                        ) : (
+                                            <span className="text-lg font-bold text-gray-600">
+                                                {review.consumerName.charAt(0)}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-primary font-bold text-black">
+                                            {review.consumerName}
+                                        </h3>
+                                        {review.verifiedPurchase && (
+                                            <span className="text-xs text-green-600 font-medium">
+                                                ✓ Verified Purchase
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
-                                <h3 className="text-lg font-primary font-bold text-black">{review.name}</h3>
-                            </div>
-                            <div className="ml-13 pl-0.5">
-                                <StarRating rating={review.rating} />
-                                <p className="text-sm font-primary text-gray-600 mt-1">
-                                    {review.date} &nbsp; {review.time} &nbsp; | &nbsp; {review.product}
-                                </p>
-                                <div className="flex gap-4 mt-2">
-                                    <span className="text-sm font-primary text-gray-400">Quality:</span>
-                                    <span className="text-sm font-primary text-black">{review.quality}</span>
+                                <div className="ml-13 pl-0.5">
+                                    <StarRating rating={review.rating} />
+                                    <p className="text-sm font-primary text-gray-600 mt-1">
+                                        {formatDate(review.createdAt)} &nbsp; {formatTime(review.createdAt)}
+                                    </p>
+                                    
+                                    {/* Review Images */}
+                                    {review.images && review.images.length > 0 && (
+                                        <div className="flex gap-2 mt-3">
+                                            {review.images.map((img: string, idx: number) => (
+                                                <img 
+                                                    key={idx}
+                                                    src={img} 
+                                                    alt={`Review ${idx + 1}`}
+                                                    className="w-20 h-20 object-cover rounded-lg cursor-pointer hover:opacity-80"
+                                                    onClick={() => window.open(img, '_blank')}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                    
+                                    {/* Video */}
+                                    {review.video && (
+                                        <video 
+                                            src={review.video} 
+                                            controls
+                                            className="w-full max-w-md mt-3 rounded-lg"
+                                        />
+                                    )}
+                                    
+                                    <div className="flex gap-4 mt-3">
+                                        <span className="text-sm font-primary text-gray-400">Quality:</span>
+                                        <span className="text-sm font-primary text-black">{review.quality}</span>
+                                    </div>
+                                    {review.appearance && (
+                                        <div className="flex gap-4 mt-1">
+                                            <span className="text-sm font-primary text-gray-400">Appearance:</span>
+                                            <span className="text-sm font-primary text-black">{review.appearance}</span>
+                                        </div>
+                                    )}
+                                    <p className="text-sm font-primary text-black mt-2">{review.comment}</p>
                                 </div>
-                                <p className="text-sm font-primary text-black mt-2">{review.comment}</p>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </section>
     );
