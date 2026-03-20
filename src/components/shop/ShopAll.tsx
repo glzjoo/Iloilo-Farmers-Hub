@@ -97,7 +97,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                 image: product.image,
                 farmerId: product.farmerId,
                 farmerName: product.farmerName || 'Unknown Farmer',
-                stock: parseInt(product.stock) || 0, // ADDED: stock is now required
+                stock: parseInt(product.stock) || 0, //  stock is now required
             }, quantity);
 
             alert(`Added ${quantity} ${product.unit} of ${product.name} to cart!`);
