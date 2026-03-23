@@ -35,7 +35,12 @@ const calculateTrendingScore = (product: Product): number => {
     return ratingScore + soldScore + reviewScore + recencyScore;
 };
 
-// ✅ MOVED OUTSIDE COMPONENT - pure function, no dependencies
+// Diversity multiplier: prevents single farmer from dominating results
+// First product: 100%, Second: 95%, Third: 90%, etc. (min 70%)
+const getDiversityMultiplier = (sameFarmerCount: number): number => {
+    return Math.max(0.7, 1 - (sameFarmerCount * 0.05));
+};
+
 const isOutOfStock = (stock: string): boolean => {
     const stockMatch = stock.match(/^(\d+)/);
     return stockMatch ? parseInt(stockMatch[1]) === 0 : true;
@@ -78,7 +83,6 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         fetchProducts();
     }, [selectedCategory]);
 
-    // Out of stock products are always at the end
     const displayedProducts = useMemo(() => {
         const filtered = searchQuery
             ? products.filter(product =>
@@ -99,11 +103,38 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
             }
         });
 
-        const sortedInStock = inStock
-            .map(product => ({ product, score: calculateTrendingScore(product) }))
-            .sort((a, b) => b.score - a.score)
-            .map(item => item.product);
+        // Calculate base scores
+        const withBaseScores = inStock.map(product => ({
+            product,
+            baseScore: calculateTrendingScore(product)
+        }));
 
+        // Sort by base score initially
+        withBaseScores.sort((a, b) => b.baseScore - a.baseScore);
+
+        // Apply diversity boost: penalize multiple products from same farmer
+        const farmerProductCount: Record<string, number> = {};
+        const withDiversityScores = withBaseScores.map(item => {
+            const farmerId = item.product.farmerId;
+            const count = farmerProductCount[farmerId] || 0;
+            farmerProductCount[farmerId] = count + 1;
+            
+            const diversityMultiplier = getDiversityMultiplier(count);
+            const finalScore = item.baseScore * diversityMultiplier;
+            
+            return {
+                ...item,
+                finalScore,
+                diversityMultiplier
+            };
+        });
+
+        // Re-sort by final score after diversity adjustment
+        withDiversityScores.sort((a, b) => b.finalScore - a.finalScore);
+
+        const sortedInStock = withDiversityScores.map(item => item.product);
+
+        // Out-of-stock: sort by createdAt (newest first)
         const sortedOutOfStock = outOfStock.sort((a, b) => {
             const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
             const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
@@ -201,9 +232,9 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     return (
         <section className="w-full py-8">
             <div className="max-w-7xl mx-auto px-6">
-                {/* <div className="flex items-center justify-between mb-12">
+                {/*<div className="flex items-center justify-between mb-12">
                     <p className="text-gray-500">{displayedProducts.length} products found</p>
-                </div> */} {/* remove for now, can add back if we want to show count */}
+                </div> */}  {/* remove for now, can add back if we want to show count */}
 
                 {displayedProducts.length === 0 ? (
                     <div className="text-center py-16">
