@@ -140,7 +140,7 @@ export function useMessages(conversationId: string | null | undefined, userId: s
     }
   }, [conversationId, userId]);
 
-  // NEW: sendOrderRequest wrapper
+  // sendOrderRequest wrapper
   const sendOrderRequest = useCallback(async (
     senderName: string,
     senderAvatar: string,
@@ -172,7 +172,7 @@ export function useMessages(conversationId: string | null | undefined, userId: s
     }
   }, [conversationId, userId]);
 
-  // NEW: respondToOrder wrapper
+  // respondToOrder wrapper
   const respondToOrder = useCallback(async (
     messageId: string,
     response: 'accepted' | 'rejected',
@@ -193,7 +193,7 @@ export function useMessages(conversationId: string | null | undefined, userId: s
     }
   }, [conversationId, userId]);
 
-  // NEW: confirmOrderReceived wrapper
+  // confirmOrderReceived wrapper
   const confirmOrderReceived = useCallback(async (
     senderName: string,
     senderAvatar: string

@@ -57,7 +57,7 @@ export default function OfferPriceBubble({
 
   const status = getStatusDisplay();
 
-  // ✅ FIXED: Added flex structure to match MessageBubble alignment
+  //  Added flex structure to match MessageBubble alignment
   return (
     <div className={`flex items-end gap-2 mb-1 ${isSender ? 'flex-row-reverse' : 'flex-row'}`}>
       {/* Avatar placeholder for alignment - matches MessageBubble structure */}

@@ -18,7 +18,7 @@ interface FarmerProductContextProps {
     consumerId?: string;
     conversationId?: string;
     lastAcceptedOfferPrice?: number | null;
-    onSendOrderRequest?: (quantity: number, totalPrice: number) => void;
+    onSendOrderRequest?: (quantity: number, totalPrice: number) => Promise<void>;
 }
 
 export default function FarmerProductContext({ 
@@ -44,11 +44,18 @@ export default function FarmerProductContext({
         }
     };
 
-    const handleConfirmOrder = (quantity: number, totalPrice: number) => {
-        console.log('Confirming order:', { quantity, totalPrice });
-        if (onSendOrderRequest) {
-            onSendOrderRequest(quantity, totalPrice);
+    const handleConfirmOrder = async (quantity: number, totalPrice: number) => {
+    console.log('Confirming order:', { quantity, totalPrice });
+    if (onSendOrderRequest) {
+        try {
+        await onSendOrderRequest(quantity, totalPrice);
+        console.log('Order sent successfully');
+        setShowOrderModal(false); // Close modal on success
+        } catch (error: any) {
+        console.error('Failed to send order:', error);
+        // Error alert is already shown in parent
         }
+    }
     };
 
     // When there's an active offer - show offer UI with Sold button

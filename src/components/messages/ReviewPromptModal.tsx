@@ -1,31 +1,61 @@
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 interface ReviewPromptModalProps {
   isOpen: boolean;
   onClose: () => void;
-  productId: string;
-  farmerId: string;
+  productId?: string;
+  farmerId?: string;
+  orderId?: string; 
 }
 
 export default function ReviewPromptModal({
   isOpen,
   onClose,
-  productId,
-  farmerId,
+  productId: propProductId,
+  farmerId: propFarmerId,
+  orderId: propOrderId,
 }: ReviewPromptModalProps) {
   const navigate = useNavigate();
+  const [reviewData, setReviewData] = useState({
+    productId: propProductId,
+    farmerId: propFarmerId,
+    orderId: propOrderId,
+  });
+
+  // Fallback to sessionStorage if props not provided
+  useEffect(() => {
+    if (!propProductId || !propFarmerId) {
+      const stored = sessionStorage.getItem('pendingReview');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setReviewData({
+          productId: parsed.productId,
+          farmerId: parsed.farmerId,
+          orderId: parsed.orderId,
+        });
+      }
+    }
+  }, [propProductId, propFarmerId, propOrderId]);
 
   if (!isOpen) return null;
 
   const handleReviewNow = () => {
-    // Navigate to review page with state
+    if (!reviewData.productId || !reviewData.farmerId) {
+      console.error('Missing review data');
+      return;
+    }
+
     navigate('/review-farmer', {
       state: {
-        productId,
-        farmerId,
+        productId: reviewData.productId,
+        farmerId: reviewData.farmerId,
+        orderId: reviewData.orderId,  // ← This must match conversationId
         fromOrder: true,
       },
     });
+    
+    sessionStorage.removeItem('pendingReview');
     onClose();
   };
 

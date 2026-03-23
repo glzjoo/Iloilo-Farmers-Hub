@@ -3,18 +3,32 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import type { Product } from '../../types';
 import { getProductById } from '../../services/shopService';
 
-export default function ItemSection() {
+interface ItemSectionProps {
+    productId?: string | null;
+    product?: Product | null;
+}
+
+export default function ItemSection({ productId: propProductId, product: propProduct }: ItemSectionProps) {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const productId = searchParams.get('id');
+    const urlProductId = searchParams.get('id');
+    
+    // Use prop if provided, otherwise fall back to URL query param
+    const productId = propProductId || urlProductId;
 
-    const [product, setProduct] = useState<Product | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [product, setProduct] = useState<Product | null>(propProduct || null);
+    const [loading, setLoading] = useState(!propProduct);
     const [error, setError] = useState('');
-    //    const [selectedImage, setSelectedImage] = useState(0); for carousel, but we only have one image for now
     const [quantity, setQuantity] = useState(1);
 
     useEffect(() => {
+        // If product was passed as prop, don't fetch
+        if (propProduct) {
+            setProduct(propProduct);
+            setLoading(false);
+            return;
+        }
+
         const fetchProduct = async () => {
             if (!productId) {
                 setError('No product selected');
@@ -38,26 +52,29 @@ export default function ItemSection() {
         };
 
         fetchProduct();
-    }, [productId]);
-
-    // For now, we only have one image per product, so the navigation is simplified
-    //    const handlePrev = () => {
-    //        setSelectedImage((prev) => (prev === 0 ? 0 : prev - 1));
-    //    };
-    //
-    //    const handleNext = () => {
-    //        setSelectedImage((prev) => (prev === 0 ? 0 : prev + 1));
-    //   };
+    }, [productId, propProduct]);
 
     const handleMessageSeller = () => {
-        // TODO: Navigate to messaging with this farmer
-        console.log('Message farmer:', product?.farmerId);
-        alert(`Messaging feature coming soon! Farmer: ${product?.farmerName}`);
+        if (!product) return;
+        
+        navigate('/messages', {
+            state: {
+                farmerId: product.farmerId,
+                farmerName: product.farmerName,
+                product: {
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image: product.image,
+                    unit: product.unit,
+                    quantity: quantity 
+                }
+            }
+        });
     };
 
     const handleAddToCart = () => {
         if (!product) return;
-        // TODO: Implement cart functionality
         console.log(`Added ${quantity} ${product.unit} of ${product.name} to cart`);
         alert(`Added ${quantity} ${product.unit} of ${product.name} to cart`);
     };
@@ -88,7 +105,6 @@ export default function ItemSection() {
         );
     }
 
-    // Parse stock value
     const stockMatch = product.stock.match(/^(\d+)/);
     const stockValue = stockMatch ? parseInt(stockMatch[1]) : 0;
     const isOutOfStock = stockValue === 0;
@@ -107,7 +123,6 @@ export default function ItemSection() {
                     </div>
                 </div>
 
-                {/* Product details */}
                 <div className="flex-1">
                     <div className="flex items-baseline gap-4 mb-1">
                         <h1 className="text-3xl font-primary font-bold text-black">{product.name}</h1>
