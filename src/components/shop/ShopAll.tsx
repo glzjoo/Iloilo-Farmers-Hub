@@ -15,28 +15,43 @@ interface ShopAllProps {
 // score = (rating * 0.4) + (log(reviewCount + 1) * 0.2) + (recencyBoost * 0.1) + (log(soldCount + 1) * 0.3)
 // recencyBoost = 0.1 if created within 7 days, then linearly decreases to 0 at 14 days
 
-// Trending Algorithm Score Calculator
+// Trending Algorithm Score Calculator with New Product Boost
 const calculateTrendingScore = (product: Product): number => {
     const ratingScore = (product.rating || 0) * 0.4;
     const soldScore = Math.log10((product.soldCount || 0) + 1) * 0.3;
     const reviewScore = Math.log10((product.reviewCount || 0) + 1) * 0.2;
     
     let recencyScore = 0;
+    let newProductBoost = 0;
+    
     if (product.createdAt) {
         const now = new Date();
         const createdAt = product.createdAt?.toDate?.() || new Date(product.createdAt);
         const daysSinceCreated = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
         
+        // Standard recency: 14-day window (0.1 max)
         if (daysSinceCreated <= 14) {
             recencyScore = 0.1 * (1 - daysSinceCreated / 14);
         }
+        
+        // PRODUCT BOOST: First 7 days get huge visibility boost
+        if (daysSinceCreated <= 7) {
+            newProductBoost = 1.5; // Temporary boost for cold start
+        }
     }
     
-    return ratingScore + soldScore + reviewScore + recencyScore;
+    // Calculate total
+    let totalScore = ratingScore + soldScore + reviewScore + recencyScore + newProductBoost;
+    
+    // Ensure fresh products with zero data get at least 1.5 score (minimum visibility)
+    if (totalScore < 1.5 && newProductBoost > 0) {
+        totalScore = 1.5;
+    }
+    
+    return totalScore;
 };
 
 // Diversity multiplier: prevents single farmer from dominating results
-// First product: 100%, Second: 95%, Third: 90%, etc. (min 70%)
 const getDiversityMultiplier = (sameFarmerCount: number): number => {
     return Math.max(0.7, 1 - (sameFarmerCount * 0.05));
 };
@@ -232,9 +247,9 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     return (
         <section className="w-full py-8">
             <div className="max-w-7xl mx-auto px-6">
-                {/*<div className="flex items-center justify-between mb-12">
+                {/* <div className="flex items-center justify-between mb-12">
                     <p className="text-gray-500">{displayedProducts.length} products found</p>
-                </div> */}  {/* remove for now, can add back if we want to show count */}
+                </div> **/} {/* remove for now, can add back if we want to show count */}
 
                 {displayedProducts.length === 0 ? (
                     <div className="text-center py-16">
