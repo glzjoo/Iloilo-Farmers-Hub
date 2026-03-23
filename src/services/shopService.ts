@@ -115,7 +115,118 @@ export const getRelatedProducts = async (category: string, excludeProductId: str
     }
 };
 
-//  Increment sold count when order is completed
+export const getBestSellers = async (targetCount: number = 15): Promise<Product[]> => {
+    try {
+        // Step 1: Try to get products with sales, sorted by soldCount
+        const soldQuery = query(
+            collection(db, PRODUCTS_COLLECTION),
+            where('status', '==', 'active'),
+            where('soldCount', '>', 0),
+            orderBy('soldCount', 'desc'),
+            orderBy('rating', 'desc'),
+            limit(targetCount)
+        );
+        
+        const soldSnapshot = await getDocs(soldQuery);
+        let products = soldSnapshot.docs.map(convertDocToProduct);
+        
+        // Step 2: If we have less than target, fill with highest-rated products
+        if (products.length < targetCount) {
+            const existingIds = new Set(products.map(p => p.id));
+            const remainingNeeded = targetCount - products.length;
+            
+            const ratedQuery = query(
+                collection(db, PRODUCTS_COLLECTION),
+                where('status', '==', 'active'),
+                orderBy('rating', 'desc'),
+                orderBy('reviewCount', 'desc'),
+                limit(remainingNeeded + 10) // Get extra to account for duplicates
+            );
+            
+            const ratedSnapshot = await getDocs(ratedQuery);
+            const ratedProducts = ratedSnapshot.docs
+                .map(convertDocToProduct)
+                .filter(p => !existingIds.has(p.id) && !isOutOfStock(p.stock));
+            
+            products = [...products, ...ratedProducts].slice(0, targetCount);
+        }
+        
+        // Step 3: fallback - if still not enough, try smaller multiples
+        if (products.length < 5) {
+            // Just return what we have (less than 5 products total)
+            return products;
+        } else if (products.length < 10) {
+            // Return top 5
+            return products.slice(0, 5);
+        } else if (products.length < 15) {
+            // Return top 10
+            return products.slice(0, 10);
+        }
+        
+        return products.slice(0, 15);
+        
+    } catch (error) {
+        console.error('Error fetching best sellers:', error);
+        throw new Error('Failed to fetch best sellers.');
+    }
+};
+
+//  Get New Arrivals (last 14 days) with recency-weighted scoring
+export const getNewArrivals = async (limitCount: number = 4): Promise<Product[]> => {
+    try {
+        // Calculate 14 days ago
+        const fourteenDaysAgo = new Date();
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+        
+        // Get products from last 14 days
+        const q = query(
+            collection(db, PRODUCTS_COLLECTION),
+            where('status', '==', 'active'),
+            where('createdAt', '>=', fourteenDaysAgo),
+            orderBy('createdAt', 'desc'),
+            limit(limitCount * 3) // Get extra for scoring/sorting
+        );
+        
+        const snapshot = await getDocs(q);
+        const products = snapshot.docs.map(convertDocToProduct);
+        
+        // Filter out of stock and calculate recency-weighted score
+        const scoredProducts = products
+            .filter(p => !isOutOfStock(p.stock))
+            .map(product => {
+                const now = new Date();
+                const createdAt = product.createdAt?.toDate?.() || new Date(product.createdAt);
+                const daysSinceCreated = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+                
+                // Recency score: 0-14 days scaled to 0.5-1.0 (50% weight)
+                const recencyScore = 0.5 + (0.5 * (1 - daysSinceCreated / 14));
+                
+                // Other factors (50% weight combined)
+                const ratingScore = (product.rating || 0) / 5 * 0.25; // 25%
+                const soldScore = Math.log10((product.soldCount || 0) + 1) / 2 * 0.15; // 15%
+                const reviewScore = Math.log10((product.reviewCount || 0) + 1) / 2 * 0.10; // 10%
+                
+                const totalScore = recencyScore + ratingScore + soldScore + reviewScore;
+                
+                return { product, score: totalScore };
+            });
+        
+        // Sort by score and return top limitCount
+        scoredProducts.sort((a, b) => b.score - a.score);
+        return scoredProducts.slice(0, limitCount).map(item => item.product);
+        
+    } catch (error) {
+        console.error('Error fetching new arrivals:', error);
+        throw new Error('Failed to fetch new arrivals.');
+    }
+};
+
+const isOutOfStock = (stock: string): boolean => {
+    const stockMatch = stock.match(/^(\d+)/);
+    return stockMatch ? parseInt(stockMatch[1]) === 0 : true;
+};
+
+// Increment sold count (existing function - keep it)
 export const incrementProductSoldCount = async (productId: string, quantity: number = 1): Promise<void> => {
     try {
         const productRef = doc(db, PRODUCTS_COLLECTION, productId);
@@ -123,7 +234,6 @@ export const incrementProductSoldCount = async (productId: string, quantity: num
             soldCount: increment(quantity),
             updatedAt: new Date()
         });
-        console.log(`✅ Incremented soldCount for ${productId} by ${quantity}`);
     } catch (error) {
         console.error('Error incrementing sold count:', error);
         throw new Error('Failed to update product sold count.');
