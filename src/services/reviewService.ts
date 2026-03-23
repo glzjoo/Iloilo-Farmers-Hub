@@ -45,6 +45,8 @@ const convertDocToReview = (doc: any): Review => {
     };
 };
 
+//------------------------------------------CREATE SECTION------------------------------------------
+
 // CREATE - Add a new review
 export const addReview = async (
     reviewData: any, // Changed to any to be flexible
@@ -126,6 +128,8 @@ export const addReview = async (
         throw new Error('Failed to submit review. Please try again.');
     }
 };
+
+//------------------------------------------READ SECTION------------------------------------------
 
 // READ - Get reviews for a product
 export const getProductReviews = async (
@@ -235,6 +239,137 @@ export const getReviewById = async (reviewId: string): Promise<Review | null> =>
     }
 };
 
+// READ - Get recent top-rated reviews (for landing page)
+export const getRecentTopReviews = async (
+    limitCount: number = 3,
+    minRating: number = 5
+): Promise<Review[]> => {
+    try {
+        const q = query(
+            collection(db, REVIEWS_COLLECTION),
+            where('rating', '==', minRating),
+            where('verifiedPurchase', '==', true),
+            orderBy('createdAt', 'desc'),
+            limit(limitCount)
+        );
+        
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(convertDocToReview);
+    } catch (error) {
+        console.error('Error fetching recent top reviews:', error);
+        throw new Error('Failed to load reviews.');
+    }
+};
+
+// READ - Get platform-wide review stats (for landing page)
+export const getPlatformReviewStats = async (): Promise<ReviewStats> => {
+    try {
+        // For efficiency, we'll fetch last 100 reviews to calculate stats
+        // If you have thousands, consider storing pre-calculated stats in a separate doc
+        const q = query(
+            collection(db, REVIEWS_COLLECTION),
+            orderBy('createdAt', 'desc'),
+            limit(100)
+        );
+        
+        const snapshot = await getDocs(q);
+        const reviews = snapshot.docs.map(convertDocToReview);
+        
+        const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+        let totalRating = 0;
+        
+        reviews.forEach(review => {
+            distribution[review.rating as keyof typeof distribution]++;
+            totalRating += review.rating;
+        });
+        
+        const totalReviews = reviews.length;
+        
+        return {
+            averageRating: totalReviews > 0 ? Math.round((totalRating / totalReviews) * 100) / 100 : 0,
+            totalReviews,
+            ratingDistribution: distribution,
+        };
+    } catch (error) {
+        console.error('Error calculating platform stats:', error);
+        return {
+            averageRating: 0,
+            totalReviews: 0,
+            ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+        };
+    }
+};
+
+// READ - Get product names for reviews (helper)
+export const getProductNamesForReviews = async (reviews: Review[]): Promise<Map<string, string>> => {
+    const productIds = [...new Set(reviews.map(r => r.productId))];
+    const productMap = new Map<string, string>();
+    
+    await Promise.all(
+        productIds.map(async (productId) => {
+            try {
+                const productDoc = await getDoc(doc(db, PRODUCTS_COLLECTION, productId));
+                if (productDoc.exists()) {
+                    productMap.set(productId, productDoc.data().name);
+                }
+            } catch (error) {
+                console.error(`Error fetching product ${productId}:`, error);
+            }
+        })
+    );
+    
+    return productMap;
+};
+
+// READ - Get farmer names for reviews (helper)
+export const getFarmerNamesForReviews = async (reviews: Review[]): Promise<Map<string, string>> => {
+    const farmerIds = [...new Set(reviews.map(r => r.farmerId))];
+    const farmerMap = new Map<string, string>();
+    
+    await Promise.all(
+        farmerIds.map(async (farmerId) => {
+            try {
+                const farmerDoc = await getDoc(doc(db, FARMERS_COLLECTION, farmerId));
+                if (farmerDoc.exists()) {
+                    const data = farmerDoc.data();
+                    farmerMap.set(farmerId, data.farmName || `${data.firstName} ${data.lastName}`);
+                }
+            } catch (error) {
+                console.error(`Error fetching farmer ${farmerId}:`, error);
+            }
+        })
+    );
+    
+    return farmerMap;
+};
+
+// READ - Get consumer profiles for reviews (for avatars)
+export const getConsumerProfilesForReviews = async (reviews: Review[]): Promise<Map<string, { name: string; avatar: string }>> => {
+    const consumerIds = [...new Set(reviews.map(r => r.consumerId))];
+    const consumerMap = new Map<string, { name: string; avatar: string }>();
+    
+    await Promise.all(
+        consumerIds.map(async (consumerId) => {
+            try {
+                const consumerDoc = await getDoc(doc(db, 'consumers', consumerId));
+                if (consumerDoc.exists()) {
+                    const data = consumerDoc.data();
+                    consumerMap.set(consumerId, {
+                        name: `${data.firstName} ${data.lastName}`,
+                        avatar: data.profileImage || ''
+                    });
+                }
+            } catch (error) {
+                console.error(`Error fetching consumer ${consumerId}:`, error);
+            }
+        })
+    );
+    
+    return consumerMap;
+};
+
+//------------------------------------------UPDATE SECTION------------------------------------------
+
 // UPDATE - Update an existing review
 export const updateReview = async (
     reviewId: string,
@@ -283,6 +418,8 @@ export const updateReview = async (
     }
 };
 
+//------------------------------------------DELETE SECTION------------------------------------------
+
 // DELETE - Delete a review
 export const deleteReview = async (reviewId: string): Promise<void> => {
     try {
@@ -323,6 +460,8 @@ export const deleteReview = async (reviewId: string): Promise<void> => {
         throw new Error('Failed to delete review.');
     }
 };
+
+//------------------------------------------HELPERS------------------------------------------
 
 // HELPER - Upload review media (images/video)
 const uploadReviewMedia = async (
