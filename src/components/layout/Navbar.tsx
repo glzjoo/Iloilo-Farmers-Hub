@@ -1,12 +1,14 @@
 import logo from '../../assets/icons/logo.png';
 import savedItemsIcon from '../../assets/icons/saved-items.png';
-import languageIcon from '../../assets/icons/language-logo.svg';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import SearchBar from '../Search/SearchBar';
 import HamburgerFilter from './HamburgerFilter';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Navbar() {
     const location = useLocation();
+    const { t } = useTranslation();
     const linkClass = (path: string) =>
         `no-underline text-sm font-semibold transition-colors ${location.pathname === path ? 'text-primary' : 'text-gray-700 hover:text-green-700'
         }`;
@@ -14,11 +16,7 @@ export default function Navbar() {
         <header className="w-full sticky top-0 z-50">
             <nav className="bg-primary w-full">
                 <div className="max-w-7xl mx-auto flex justify-end px-6 pt-2">
-                    <button className="flex items-center gap-1 bg-transparent border-none cursor-pointer text-white">
-                        <img src={languageIcon} className="w-5 h-5 brightness-0 invert" />
-                        <span className="text-xs font-medium">English</span>
-                        <span className="text-xs">▾</span>
-                    </button>
+                    <LanguageSwitcher />
                 </div>
                 <div className="max-w-7xl mx-auto flex items-center justify-between px-6 pb-4 pt-1 gap-4">
                     <Link to="/" className="flex items-center gap-2 text-white no-underline shrink-0">
@@ -35,11 +33,11 @@ export default function Navbar() {
                             </Link>
                         </button>
                         <Link to="/farmer-signup" className="no-underline">
-                            <span className="text-white text-base font-medium ml-1">Sign Up</span>
+                            <span className="text-white text-base font-medium ml-1">{t('sign_up')}</span>
                         </Link>
                         <span className="text-white text-base font-medium">|</span>
                         <Link to="/login" className="no-underline">
-                            <span className="text-white text-base font-medium">Login</span>
+                            <span className="text-white text-base font-medium">{t('login')}</span>
                         </Link>
                     </div>
                 </div>
@@ -52,11 +50,11 @@ export default function Navbar() {
                             <HamburgerFilter />
                         </div>
                     )}
-                    <Link to="/" className={linkClass('/')}>HOME</Link>
-                    <Link to="/shop" className={linkClass('/shop')}>SHOP</Link>
-                    <Link to="/subscriptions" className={linkClass('/subscriptions')}>SUBSCRIPTIONS</Link>
-                    <Link to="/become-a-seller" className={linkClass('/become-a-seller')}>BECOME A SELLER</Link>
-                    <Link to="/about" className={linkClass('/about')}>ABOUT US</Link>
+                    <Link to="/" className={linkClass('/')}>{t('nav_home')}</Link>
+                    <Link to="/shop" className={linkClass('/shop')}>{t('nav_shop')}</Link>
+                    <Link to="/subscriptions" className={linkClass('/subscriptions')}>{t('nav_subscriptions')}</Link>
+                    <Link to="/become-a-seller" className={linkClass('/become-a-seller')}>{t('nav_become_seller')}</Link>
+                    <Link to="/about" className={linkClass('/about')}>{t('nav_about')}</Link>
                 </div>
             </div>
         </header>

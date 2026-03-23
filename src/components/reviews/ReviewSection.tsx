@@ -36,7 +36,6 @@ export default function ReviewSection() {
             <div className="max-w-7xl mx-auto px-10">
                 <div className="flex items-center gap-6 mb-8 border-b border-gray-300 pb-3">
                     <h2 className="text-lg font-bold text-dark cursor-pointer border-b-2 border-black pb-1">Product Reviews</h2>
-                    <h2 className="text-lg font-bold text-gray-400 cursor-pointer">Store Reviews</h2>
                 </div>
                 <div className="flex items-start gap-16">
                     <div className="flex flex-col items-start">
@@ -44,7 +43,6 @@ export default function ReviewSection() {
                         <img src={starsRating} alt="4.58 stars" className="w-28 mt-2 -ml-1" />
                         <p className="text-sm text-gray-400 mt-3">705 reviews</p>
                     </div>
-
                     <div className="flex-1 space-y-3 max-w-md pt-2">
                         {ratingBars.map((bar) => (
                             <div key={bar.stars} className="flex items-center gap-3">
