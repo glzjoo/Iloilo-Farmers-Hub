@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import minus from '../../assets/icons/minus.svg';
 import add from '../../assets/icons/add.svg';
@@ -11,6 +11,35 @@ interface ShopAllProps {
     searchQuery?: string;
     selectedCategory?: string;
 }
+
+// score = (rating * 0.4) + (log(reviewCount + 1) * 0.2) + (recencyBoost * 0.1) + (log(soldCount + 1) * 0.3)
+// recencyBoost = 0.1 if created within 7 days, then linearly decreases to 0 at 14 days
+
+// Trending Algorithm Score Calculator
+const calculateTrendingScore = (product: Product): number => {
+    const ratingScore = (product.rating || 0) * 0.4;
+    const soldScore = Math.log10((product.soldCount || 0) + 1) * 0.3;
+    const reviewScore = Math.log10((product.reviewCount || 0) + 1) * 0.2;
+    
+    let recencyScore = 0;
+    if (product.createdAt) {
+        const now = new Date();
+        const createdAt = product.createdAt?.toDate?.() || new Date(product.createdAt);
+        const daysSinceCreated = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+        
+        if (daysSinceCreated <= 14) {
+            recencyScore = 0.1 * (1 - daysSinceCreated / 14);
+        }
+    }
+    
+    return ratingScore + soldScore + reviewScore + recencyScore;
+};
+
+// ✅ MOVED OUTSIDE COMPONENT - pure function, no dependencies
+const isOutOfStock = (stock: string): boolean => {
+    const stockMatch = stock.match(/^(\d+)/);
+    return stockMatch ? parseInt(stockMatch[1]) === 0 : true;
+};
 
 export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: ShopAllProps) {
     const navigate = useNavigate();
@@ -27,13 +56,9 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                 setLoading(true);
                 setError('');
 
-                let fetchedProducts: Product[];
-
-                if (selectedCategory && selectedCategory !== 'All') {
-                    fetchedProducts = await getProductsByCategory(selectedCategory);
-                } else {
-                    fetchedProducts = await getShopProducts();
-                }
+                const fetchedProducts = selectedCategory && selectedCategory !== 'All'
+                    ? await getProductsByCategory(selectedCategory)
+                    : await getShopProducts();
 
                 setProducts(fetchedProducts);
 
@@ -53,6 +78,41 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         fetchProducts();
     }, [selectedCategory]);
 
+    // Out of stock products are always at the end
+    const displayedProducts = useMemo(() => {
+        const filtered = searchQuery
+            ? products.filter(product =>
+                product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                product.farmerName?.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+            : [...products];
+
+        const inStock: Product[] = [];
+        const outOfStock: Product[] = [];
+        
+        filtered.forEach(product => {
+            if (isOutOfStock(product.stock)) {
+                outOfStock.push(product);
+            } else {
+                inStock.push(product);
+            }
+        });
+
+        const sortedInStock = inStock
+            .map(product => ({ product, score: calculateTrendingScore(product) }))
+            .sort((a, b) => b.score - a.score)
+            .map(item => item.product);
+
+        const sortedOutOfStock = outOfStock.sort((a, b) => {
+            const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
+            const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+            return dateB.getTime() - dateA.getTime();
+        });
+
+        return [...sortedInStock, ...sortedOutOfStock];
+    }, [products, searchQuery]);
+
     const handleIncrement = (productId: string) => {
         setQuantities(prev => ({
             ...prev,
@@ -68,7 +128,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     };
 
     const handleProductClick = (productId: string) => {
-        navigate(`/item/${productId}`); // Updated to new URL format
+        navigate(`/item/${productId}`);
     };
 
     const handleAddToCart = async (e: React.MouseEvent, product: Product) => {
@@ -97,7 +157,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                 image: product.image,
                 farmerId: product.farmerId,
                 farmerName: product.farmerName || 'Unknown Farmer',
-                stock: parseInt(product.stock) || 0, //  stock is now required
+                stock: parseInt(product.stock) || 0,
             }, quantity);
 
             alert(`Added ${quantity} ${product.unit} of ${product.name} to cart!`);
@@ -107,14 +167,6 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
             setAddingToCart(null);
         }
     };
-
-    const filteredProducts = searchQuery
-        ? products.filter(product =>
-            product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.farmerName?.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        : products;
 
     if (loading) {
         return (
@@ -149,11 +201,11 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     return (
         <section className="w-full py-8">
             <div className="max-w-7xl mx-auto px-6">
-                <div className="flex items-center justify-between mb-12">
-                    <p className="text-gray-500">{filteredProducts.length} products found</p>
-                </div>
+                {/* <div className="flex items-center justify-between mb-12">
+                    <p className="text-gray-500">{displayedProducts.length} products found</p>
+                </div> */} {/* remove for now, can add back if we want to show count */}
 
-                {filteredProducts.length === 0 ? (
+                {displayedProducts.length === 0 ? (
                     <div className="text-center py-16">
                         <p className="text-xl font-primary text-gray-400">
                             {searchQuery ? `No products found for "${searchQuery}"` : 'No products available'}
@@ -164,7 +216,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                        {filteredProducts.map((product) => (
+                        {displayedProducts.map((product) => (
                             <div
                                 key={product.id}
                                 className="cursor-pointer group"
@@ -176,19 +228,38 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                                         alt={product.name}
                                         className="w-full h-32 object-cover transition-transform group-hover:scale-105"
                                     />
-                                    {product.stock === '0' || product.stock.startsWith('0') && (
+                                    {isOutOfStock(product.stock) && (
                                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                                             <span className="text-white font-bold">Out of Stock</span>
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="flex items-center justify-between mt-2">
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-sm font-semibold text-gray-900 truncate">{product.name}</h3>
-                                        <p className="text-primary text-xs font-semibold pb-1">₱{product.price.toFixed(2)} / {product.unit}</p>
-                                        <p className="text-xs text-gray-500 truncate">{product.farmerName}</p>
+                                <div className="flex flex-col mt-2">
+                                    <div className="flex items-center justify-between gap-1">
+                                        <h3 className="text-sm font-semibold text-gray-900 truncate flex-1 min-w-0">
+                                            {product.name}
+                                        </h3>
+                                        {product.rating > 0 && (
+                                            <span className="text-xs text-yellow-600 flex-shrink-0">
+                                                ★ {product.rating.toFixed(1)}
+                                            </span>
+                                        )}
                                     </div>
+                                    
+                                    <p className="text-primary text-xs font-semibold mt-0.5">
+                                        ₱{product.price.toFixed(2)} / {product.unit}
+                                    </p>
+                                    
+                                    <p className="text-xs text-gray-500 truncate mt-0.5">
+                                        {product.farmerName}
+                                    </p>
+                                    
+                                    {(product.soldCount || 0) > 0 && (
+                                        <p className="text-xs text-gray-400 mt-0.5">
+                                            {product.soldCount} sold
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="flex items-center gap-1 mt-2">
@@ -198,7 +269,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                                             e.stopPropagation();
                                             handleDecrement(product.id);
                                         }}
-                                        disabled={product.stock === '0' || product.stock.startsWith('0')}
+                                        disabled={isOutOfStock(product.stock)}
                                     >
                                         <img src={minus} alt="Decrease" className="w-7 h-7" />
                                     </button>
@@ -211,7 +282,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                                             e.stopPropagation();
                                             handleIncrement(product.id);
                                         }}
-                                        disabled={product.stock === '0' || product.stock.startsWith('0')}
+                                        disabled={isOutOfStock(product.stock)}
                                     >
                                         <img src={add} alt="Increase" className="w-7 h-7" />
                                     </button>
@@ -220,9 +291,14 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                                 <button
                                     className="w-full bg-primary flex items-center justify-center gap-2 text-white text-sm font-medium px-4 py-2 rounded-2xl border-none cursor-pointer mb-5 mt-2 hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                                     onClick={(e) => handleAddToCart(e, product)}
-                                    disabled={product.stock === '0' || product.stock.startsWith('0') || addingToCart === product.id}
+                                    disabled={isOutOfStock(product.stock) || addingToCart === product.id}
                                 >
-                                    {addingToCart === product.id ? 'Adding...' : (product.stock === '0' || product.stock.startsWith('0') ? 'Out of Stock' : 'Add to Cart')}
+                                    {addingToCart === product.id 
+                                        ? 'Adding...' 
+                                        : isOutOfStock(product.stock) 
+                                            ? 'Out of Stock' 
+                                            : 'Add to Cart'
+                                    }
                                 </button>
                             </div>
                         ))}
