@@ -66,7 +66,9 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
   const [offersLoading, setOffersLoading] = useState(true);
   const [conversationData, setConversationData] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
 
   // Debug: Log messages when they change
   useEffect(() => {
@@ -134,15 +136,58 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
     fetchConversationData();
   }, [conversationId, messages]);
 
+  // Compute derived values BEFORE scroll effects
   const isConsumer = userProfile?.role === 'consumer';
   const hasReachedOfferLimit = totalUserOffers >= MAX_OFFERS_PER_CONSUMER;
   const remainingOffers = Math.max(0, MAX_OFFERS_PER_CONSUMER - totalUserOffers);
 
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+  const activeOrder = useMemo(() => {
+    return messages.find(m =>
+      m.type === 'order_request' && m.orderStatus === 'pending'
+    );
   }, [messages]);
+
+  const currentOrderStatus = useMemo(() => {
+    if (activeOrder) return 'pending';
+    if (conversationData?.orderStatus === 'accepted') return 'accepted';
+    if (conversationData?.orderStatus === 'completed') return 'completed';
+    return null;
+  }, [activeOrder, conversationData]);
+
+  // Scroll to bottom function
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior, block: 'end' });
+      }
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }
+    }, 100);
+  }, []);
+
+  // Trigger scroll when flag is set
+  useEffect(() => {
+    if (shouldScrollToBottom) {
+      scrollToBottom('smooth');
+      setShouldScrollToBottom(false);
+    }
+  }, [shouldScrollToBottom, scrollToBottom]);
+
+  // Scroll on initial load and when messages change
+  useEffect(() => {
+    if (!loading && messages.length > 0) {
+      scrollToBottom('auto');
+      setTimeout(() => scrollToBottom('smooth'), 300);
+    }
+  }, [loading, messages.length, scrollToBottom]);
+
+  // Scroll when order status changes (MakeOfferButton appears/disappears)
+  useEffect(() => {
+    if (currentOrderStatus !== undefined) {
+      setShouldScrollToBottom(true);
+    }
+  }, [currentOrderStatus]);
 
   // Fetch other user's profile
   useEffect(() => {
@@ -274,19 +319,6 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
     return offerMsg?.offerPrice ?? null;
   }, [messages, user?.uid]);
 
-  const activeOrder = useMemo(() => {
-    return messages.find(m =>
-      m.type === 'order_request' && m.orderStatus === 'pending'
-    );
-  }, [messages]);
-
-  const currentOrderStatus = useMemo(() => {
-    if (activeOrder) return 'pending';
-    if (conversationData?.orderStatus === 'accepted') return 'accepted';
-    if (conversationData?.orderStatus === 'completed') return 'completed';
-    return null;
-  }, [activeOrder, conversationData]);
-
   const otherParticipantId = useMemo(() => {
     if (!messages.length || !user) return null;
     const otherMsg = messages.find(m => m.senderId !== user.uid);
@@ -303,6 +335,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
 
     await sendMessage(newMessage.trim(), senderName, userProfile.profileImage || '');
     setNewMessage('');
+    setShouldScrollToBottom(true);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -354,6 +387,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
         type,
         ''
       );
+      setShouldScrollToBottom(true);
     } catch (error) {
       console.error('Upload failed:', error);
       alert('Failed to upload file. Please try again.');
@@ -396,6 +430,7 @@ const handleSendOrderRequest = async (quantity: number, totalPrice: number) => {
       }
     );
     console.log('sendOrderRequest completed successfully');
+    setShouldScrollToBottom(true);
   } catch (error: any) {
       console.error('Failed to send order:', error);
       alert(error.message || 'Failed to send order request. Please try again.');
@@ -417,9 +452,9 @@ const handleSendOrderRequest = async (quantity: number, totalPrice: number) => {
         activeOrder.orderDetails
       );
       console.log('respondToOrder completed successfully');
+      setShouldScrollToBottom(true);
     } catch (error: any) {
       console.error('Failed to respond to order:', error);
-      // Show specific error message for stock issues
       if (error.message?.includes('Insufficient stock')) {
         alert(error.message);
       } else {
@@ -440,14 +475,13 @@ const handleSendOrderRequest = async (quantity: number, totalPrice: number) => {
               userProfile.profileImage || ''
           );
           
-          // Store order completion data for review
           sessionStorage.setItem('pendingReview', JSON.stringify({
               productId: currentProductContext?.id,
               farmerId: otherParticipantId,
-              orderId: conversationId, // or activeOrder?.id
+              orderId: conversationId,
               completedAt: new Date().toISOString()
           }));
-          
+          setShouldScrollToBottom(true);
       } catch (error) {
           console.error('Failed to confirm order:', error);
           alert('Failed to confirm. Please try again.');
@@ -537,7 +571,7 @@ const handleSendOrderRequest = async (quantity: number, totalPrice: number) => {
         />
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-1 bg-white z-10">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-1 bg-white z-10">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -562,7 +596,7 @@ const handleSendOrderRequest = async (quantity: number, totalPrice: number) => {
                 onRespondToOrder={handleRespondToOrder}
               />
             ))}
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} style={{ height: '1px', minHeight: '1px' }} />
           </>
         )}
       </div>
@@ -611,6 +645,7 @@ const handleSendOrderRequest = async (quantity: number, totalPrice: number) => {
             try {
               await sendOfferMessage(senderName, userProfile.profileImage || '', offerPrice);
               setTotalUserOffers(prev => prev + 1);
+              setShouldScrollToBottom(true);
             } catch (error) {
               console.error('Failed to send offer:', error);
               alert('Failed to send offer. Please try again.');

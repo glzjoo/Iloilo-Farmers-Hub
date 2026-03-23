@@ -72,9 +72,10 @@ export interface Product {
     status: 'active' | 'inactive';
     createdAt?: Date | any; // for timestamp
     updatedAt?: Date | any; // for timestamp
+    soldCount?: number;
 }
 
-// Updated for passwordless OTP flow - REMOVED password fields
+// Updated for passwordless OTP flow 
 export interface PendingFarmer {
     tempId: string;
     farmerData: {

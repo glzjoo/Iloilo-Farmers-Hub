@@ -14,7 +14,6 @@ const { getFirestore } = require('firebase-admin/firestore');
 
 const app = express();
 
-// CORS - allow your React app
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true
@@ -27,7 +26,7 @@ const upload = multer({
 });
 
 // ==================== FIREBASE ADMIN SETUP ====================
-// Initialize Firebase Admin for storage access
+
 const serviceAccount = require(path.join(__dirname, process.env.FIREBASE_SERVICE_ACCOUNT || 'firebase-service-account.json'));
 
 initializeApp({
@@ -447,7 +446,7 @@ I BEG YOU. I SWEAR ON MY LIFE. I SWEAR ON MY FAMILY. I SWEAR ON MY DOG. I SWEAR 
 I SWEAR ON THE GRAVE OF MY ANCESTORS. I SWEAR ON THE GRAVE OF MY DESCENDANTS. I SWEAR ON THE GRAVE OF ALL PHILIPPINES. 
 PLEASE DONT CHANGE IT.*/
 
-// IMPROVED: Philippine ID extraction - POSITION BASED ALGORITHM
+// Philippine ID extraction - POSITION BASED ALGORITHM
 function extractPhilippineIDData(text) {
   const data = {
     fullName: null,

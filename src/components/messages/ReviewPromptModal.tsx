@@ -50,12 +50,11 @@ export default function ReviewPromptModal({
       state: {
         productId: reviewData.productId,
         farmerId: reviewData.farmerId,
-        orderId: reviewData.orderId,
+        orderId: reviewData.orderId,  // ← This must match conversationId
         fromOrder: true,
       },
     });
     
-    // Clear session storage
     sessionStorage.removeItem('pendingReview');
     onClose();
   };

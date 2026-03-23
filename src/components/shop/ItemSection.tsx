@@ -55,8 +55,22 @@ export default function ItemSection({ productId: propProductId, product: propPro
     }, [productId, propProduct]);
 
     const handleMessageSeller = () => {
-        console.log('Message farmer:', product?.farmerId);
-        alert(`Messaging feature coming soon! Farmer: ${product?.farmerName}`);
+        if (!product) return;
+        
+        navigate('/messages', {
+            state: {
+                farmerId: product.farmerId,
+                farmerName: product.farmerName,
+                product: {
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image: product.image,
+                    unit: product.unit,
+                    quantity: quantity 
+                }
+            }
+        });
     };
 
     const handleAddToCart = () => {

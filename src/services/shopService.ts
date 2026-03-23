@@ -5,6 +5,9 @@ import {
     where, 
     orderBy, 
     limit,
+    updateDoc,
+    doc,
+    increment,
     type QuerySnapshot,
     type DocumentData
 } from 'firebase/firestore';
@@ -32,6 +35,7 @@ const convertDocToProduct = (doc: DocumentData): Product => {
         status: data.status,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
+        soldCount: data.soldCount || 0, 
     };
 };
 
@@ -95,7 +99,7 @@ export const getRelatedProducts = async (category: string, excludeProductId: str
             collection(db, PRODUCTS_COLLECTION),
             where('status', '==', 'active'),
             where('category', '==', category),
-            limit(limitCount + 1) // Get one extra in case we need to filter out current
+            limit(limitCount + 1)
         );
         
         const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
@@ -107,6 +111,21 @@ export const getRelatedProducts = async (category: string, excludeProductId: str
         return products;
     } catch (error) {
         console.error('Error fetching related products:', error);
-        return []; // Return empty array instead of throwing
+        return [];
+    }
+};
+
+//  Increment sold count when order is completed
+export const incrementProductSoldCount = async (productId: string, quantity: number = 1): Promise<void> => {
+    try {
+        const productRef = doc(db, PRODUCTS_COLLECTION, productId);
+        await updateDoc(productRef, {
+            soldCount: increment(quantity),
+            updatedAt: new Date()
+        });
+        console.log(`✅ Incremented soldCount for ${productId} by ${quantity}`);
+    } catch (error) {
+        console.error('Error incrementing sold count:', error);
+        throw new Error('Failed to update product sold count.');
     }
 };

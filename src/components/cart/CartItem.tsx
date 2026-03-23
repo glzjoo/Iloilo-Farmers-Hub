@@ -9,7 +9,7 @@ interface CartItemProps {
     farmerId: string;
     onQuantityChange: (productId: string, quantity: number) => void;
     onRemove: (productId: string) => void;
-    onMessageSeller: () => void; // Changed from (farmerId: string) => void
+    onMessageSeller: () => void; 
     isUpdating?: boolean;
 }
 
