@@ -264,7 +264,6 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     return (
         <section className="w-full py-8">
             <div className="max-w-7xl mx-auto px-6">
-                {/* Search feedback with right-aligned clear button */}
                 {searchQuery && (
                     <div className="mb-4 flex justify-end">
                         <button
