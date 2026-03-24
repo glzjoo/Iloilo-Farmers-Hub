@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import type { Product } from '../../types';
 import { getProductById } from '../../services/shopService';
+import { useAuth } from '../../context/AuthContext';
+import ActionGuardModal from '../common/ActionGuardModal';
 
 interface ItemSectionProps {
     productId?: string | null;
@@ -11,6 +13,7 @@ interface ItemSectionProps {
 export default function ItemSection({ productId: propProductId, product: propProduct }: ItemSectionProps) {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const { user, userProfile } = useAuth();
     const urlProductId = searchParams.get('id');
     
     // Use prop if provided, otherwise fall back to URL query param
@@ -20,6 +23,10 @@ export default function ItemSection({ productId: propProductId, product: propPro
     const [loading, setLoading] = useState(!propProduct);
     const [error, setError] = useState('');
     const [quantity, setQuantity] = useState(1);
+    
+    // Modal states
+    const [showCartModal, setShowCartModal] = useState(false);
+    const [showMessageModal, setShowMessageModal] = useState(false);
 
     useEffect(() => {
         // If product was passed as prop, don't fetch
@@ -54,7 +61,19 @@ export default function ItemSection({ productId: propProductId, product: propPro
         fetchProduct();
     }, [productId, propProduct]);
 
+    const checkUserRole = (): 'guest' | 'farmer' | 'consumer' => {
+        if (!user || !userProfile) return 'guest';
+        return userProfile.role;
+    };
+
     const handleMessageSeller = () => {
+        const role = checkUserRole();
+        
+        if (role !== 'consumer') {
+            setShowMessageModal(true);
+            return;
+        }
+
         if (!product) return;
         
         navigate('/messages', {
@@ -74,6 +93,13 @@ export default function ItemSection({ productId: propProductId, product: propPro
     };
 
     const handleAddToCart = () => {
+        const role = checkUserRole();
+        
+        if (role !== 'consumer') {
+            setShowCartModal(true);
+            return;
+        }
+
         if (!product) return;
         console.log(`Added ${quantity} ${product.unit} of ${product.name} to cart`);
         alert(`Added ${quantity} ${product.unit} of ${product.name} to cart`);
@@ -198,6 +224,22 @@ export default function ItemSection({ productId: propProductId, product: propPro
                     </div>
                 </div>
             </div>
+
+            {/* Modals for Add to Cart */}
+            <ActionGuardModal
+                isOpen={showCartModal}
+                action="addToCart"
+                userRole={checkUserRole()}
+                onClose={() => setShowCartModal(false)}
+            />
+
+            {/* Modals for Message Seller */}
+            <ActionGuardModal
+                isOpen={showMessageModal}
+                action="messageSeller"
+                userRole={checkUserRole()}
+                onClose={() => setShowMessageModal(false)}
+            />
         </section>
     );
 }

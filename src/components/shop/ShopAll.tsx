@@ -7,6 +7,7 @@ import type { Product } from '../../types';
 import { getShopProducts, getProductsByCategory } from '../../services/shopService';
 import { addToCart } from '../../services/cartService';
 import { useAuth } from '../../context/AuthContext';
+import ActionGuardModal from '../common/ActionGuardModal';
 
 interface ShopAllProps {
     searchQuery?: string;
@@ -70,6 +71,10 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     const [error, setError] = useState('');
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [addingToCart, setAddingToCart] = useState<string | null>(null);
+    
+    // Modal state
+    const [showGuardModal, setShowGuardModal] = useState(false);
+    const [pendingActionProduct, setPendingActionProduct] = useState<Product | null>(null);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -194,17 +199,19 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         navigate(`/item/${productId}`);
     };
 
+    const checkUserRole = (): 'guest' | 'farmer' | 'consumer' => {
+        if (!user || !userProfile) return 'guest';
+        return userProfile.role;
+    };
+
     const handleAddToCart = async (e: React.MouseEvent, product: Product) => {
         e.stopPropagation();
 
-        if (!user) {
-            alert('Please login to add items to cart');
-            navigate('/login');
-            return;
-        }
+        const role = checkUserRole();
 
-        if (userProfile?.role !== 'consumer') {
-            alert('Only consumers can add items to cart');
+        if (role !== 'consumer') {
+            setPendingActionProduct(product);
+            setShowGuardModal(true);
             return;
         }
 
@@ -212,7 +219,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         setAddingToCart(product.id);
 
         try {
-            await addToCart(user.uid, {
+            await addToCart(user!.uid, {
                 id: product.id,
                 name: product.name,
                 price: product.price,
@@ -375,6 +382,17 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                     </div>
                 )}
             </div>
+
+            {/* Action Guard Modal */}
+            <ActionGuardModal
+                isOpen={showGuardModal}
+                action="addToCart"
+                userRole={checkUserRole()}
+                onClose={() => {
+                    setShowGuardModal(false);
+                    setPendingActionProduct(null);
+                }}
+            />
         </section>
     );
 }

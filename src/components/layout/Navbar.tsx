@@ -34,7 +34,7 @@ export default function Navbar() {
                                 <img src={savedItemsIcon} className="w-6 h-6 brightness-0 invert" />
                             </Link>
                         </button>
-                        <Link to="/farmer-signup" className="no-underline">
+                        <Link to="/consumer-signup" className="no-underline">
                             <span className="text-white text-base font-medium ml-1">Sign Up</span>
                         </Link>
                         <span className="text-white text-base font-medium">|</span>
