@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Fuse from 'fuse.js';
 import minus from '../../assets/icons/minus.svg';
 import add from '../../assets/icons/add.svg';
 import type { Product } from '../../types';
@@ -98,14 +99,31 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         fetchProducts();
     }, [selectedCategory]);
 
+    // Initialize Fuse instance for fuzzy search
+    const fuse = useMemo(() => {
+        const fuseOptions = {
+            keys: [
+                { name: 'name', weight: 0.5 },
+                { name: 'category', weight: 0.3 },
+                { name: 'farmerName', weight: 0.2 }
+            ],
+            threshold: 0.4,
+            minMatchCharLength: 2,
+            includeScore: false
+        };
+        return new Fuse(products, fuseOptions);
+    }, [products]);
+
     const displayedProducts = useMemo(() => {
-        const filtered = searchQuery
-            ? products.filter(product =>
-                product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                product.farmerName?.toLowerCase().includes(searchQuery.toLowerCase())
-              )
-            : [...products];
+        let filtered: Product[];
+
+        if (searchQuery) {
+            // Use Fuse.js for fuzzy search
+            const fuseResults = fuse.search(searchQuery);
+            filtered = fuseResults.map(result => result.item);
+        } else {
+            filtered = [...products];
+        }
 
         const inStock: Product[] = [];
         const outOfStock: Product[] = [];
@@ -127,7 +145,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         // Sort by base score initially
         withBaseScores.sort((a, b) => b.baseScore - a.baseScore);
 
-        // Apply diversity boost: penalize multiple products from same farmer
+        // Apply diversity boost
         const farmerProductCount: Record<string, number> = {};
         const withDiversityScores = withBaseScores.map(item => {
             const farmerId = item.product.farmerId;
@@ -144,12 +162,11 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
             };
         });
 
-        // Re-sort by final score after diversity adjustment
+        // Re-sort by final score
         withDiversityScores.sort((a, b) => b.finalScore - a.finalScore);
-
         const sortedInStock = withDiversityScores.map(item => item.product);
 
-        // Out-of-stock: sort by createdAt (newest first)
+        // Out-of-stock: sort by createdAt
         const sortedOutOfStock = outOfStock.sort((a, b) => {
             const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
             const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
@@ -157,7 +174,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         });
 
         return [...sortedInStock, ...sortedOutOfStock];
-    }, [products, searchQuery]);
+    }, [products, searchQuery, fuse]);
 
     const handleIncrement = (productId: string) => {
         setQuantities(prev => ({
@@ -247,9 +264,17 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     return (
         <section className="w-full py-8">
             <div className="max-w-7xl mx-auto px-6">
-                {/* <div className="flex items-center justify-between mb-12">
-                    <p className="text-gray-500">{displayedProducts.length} products found</p>
-                </div> **/} {/* remove for now, can add back if we want to show count */}
+                {/* Search feedback with right-aligned clear button */}
+                {searchQuery && (
+                    <div className="mb-4 flex justify-end">
+                        <button
+                            onClick={() => navigate('/shop')}
+                            className="text-sm text-gray-500 hover:text-primary transition"
+                        >
+                            Show all products
+                        </button>
+                    </div>
+                )}
 
                 {displayedProducts.length === 0 ? (
                     <div className="text-center py-16">

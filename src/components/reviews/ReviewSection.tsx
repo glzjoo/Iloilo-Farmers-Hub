@@ -136,7 +136,6 @@ export default function ReviewSection() {
             <div className="max-w-7xl mx-auto px-10">
                 <div className="flex items-center gap-6 mb-8 border-b border-gray-300 pb-3">
                     <h2 className="text-lg font-bold text-dark cursor-pointer border-b-2 border-black pb-1">Product Reviews</h2>
-                    <h2 className="text-lg font-bold text-gray-400 cursor-pointer hover:text-gray-600 transition-colors">Store Reviews</h2>
                 </div>
                 
                 <div className="flex items-start gap-16">
