@@ -74,7 +74,6 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     
     // Modal state
     const [showGuardModal, setShowGuardModal] = useState(false);
-    const [pendingActionProduct, setPendingActionProduct] = useState<Product | null>(null);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -210,7 +209,6 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         const role = checkUserRole();
 
         if (role !== 'consumer') {
-            setPendingActionProduct(product);
             setShowGuardModal(true);
             return;
         }
@@ -388,10 +386,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                 isOpen={showGuardModal}
                 action="addToCart"
                 userRole={checkUserRole()}
-                onClose={() => {
-                    setShowGuardModal(false);
-                    setPendingActionProduct(null);
-                }}
+                onClose={() => setShowGuardModal(false)}
             />
         </section>
     );
