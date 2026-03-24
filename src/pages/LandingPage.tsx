@@ -9,8 +9,17 @@ export default function LandingPage() {
         <main className="w-full">
             <HeroSection />
             <StatsBar />
-            <BestSellers />
-            <NowAvailable />
+            
+            {/* BestSellers with bottom margin */}
+            <div className="mt-5 mb-5">
+                <BestSellers />
+            </div>
+            
+            {/* NowAvailable with top margin for extra space */}
+            <div className="mt-5">
+                <NowAvailable />
+            </div>
+            
             <ReviewSection />
         </main>
     );
