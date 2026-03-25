@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Fuse from 'fuse.js';
 import minus from '../../assets/icons/minus.svg';
 import add from '../../assets/icons/add.svg';
 import type { Product } from '../../types';
 import { getShopProducts, getProductsByCategory } from '../../services/shopService';
 import { addToCart } from '../../services/cartService';
 import { useAuth } from '../../context/AuthContext';
+import ActionGuardModal from '../common/ActionGuardModal';
 
 interface ShopAllProps {
     searchQuery?: string;
@@ -15,28 +17,43 @@ interface ShopAllProps {
 // score = (rating * 0.4) + (log(reviewCount + 1) * 0.2) + (recencyBoost * 0.1) + (log(soldCount + 1) * 0.3)
 // recencyBoost = 0.1 if created within 7 days, then linearly decreases to 0 at 14 days
 
-// Trending Algorithm Score Calculator
+// Trending Algorithm Score Calculator with New Product Boost
 const calculateTrendingScore = (product: Product): number => {
     const ratingScore = (product.rating || 0) * 0.4;
     const soldScore = Math.log10((product.soldCount || 0) + 1) * 0.3;
     const reviewScore = Math.log10((product.reviewCount || 0) + 1) * 0.2;
     
     let recencyScore = 0;
+    let newProductBoost = 0;
+    
     if (product.createdAt) {
         const now = new Date();
         const createdAt = product.createdAt?.toDate?.() || new Date(product.createdAt);
         const daysSinceCreated = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
         
+        // Standard recency: 14-day window (0.1 max)
         if (daysSinceCreated <= 14) {
             recencyScore = 0.1 * (1 - daysSinceCreated / 14);
         }
+        
+        // PRODUCT BOOST: First 7 days get huge visibility boost
+        if (daysSinceCreated <= 7) {
+            newProductBoost = 1.5; // Temporary boost for cold start
+        }
     }
     
-    return ratingScore + soldScore + reviewScore + recencyScore;
+    // Calculate total
+    let totalScore = ratingScore + soldScore + reviewScore + recencyScore + newProductBoost;
+    
+    // Ensure fresh products with zero data get at least 1.5 score (minimum visibility)
+    if (totalScore < 1.5 && newProductBoost > 0) {
+        totalScore = 1.5;
+    }
+    
+    return totalScore;
 };
 
 // Diversity multiplier: prevents single farmer from dominating results
-// First product: 100%, Second: 95%, Third: 90%, etc. (min 70%)
 const getDiversityMultiplier = (sameFarmerCount: number): number => {
     return Math.max(0.7, 1 - (sameFarmerCount * 0.05));
 };
@@ -54,6 +71,9 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     const [error, setError] = useState('');
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [addingToCart, setAddingToCart] = useState<string | null>(null);
+    
+    // Modal state
+    const [showGuardModal, setShowGuardModal] = useState(false);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -83,14 +103,31 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         fetchProducts();
     }, [selectedCategory]);
 
+    // Initialize Fuse instance for fuzzy search
+    const fuse = useMemo(() => {
+        const fuseOptions = {
+            keys: [
+                { name: 'name', weight: 0.5 },
+                { name: 'category', weight: 0.3 },
+                { name: 'farmerName', weight: 0.2 }
+            ],
+            threshold: 0.4,
+            minMatchCharLength: 2,
+            includeScore: false
+        };
+        return new Fuse(products, fuseOptions);
+    }, [products]);
+
     const displayedProducts = useMemo(() => {
-        const filtered = searchQuery
-            ? products.filter(product =>
-                product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                product.farmerName?.toLowerCase().includes(searchQuery.toLowerCase())
-              )
-            : [...products];
+        let filtered: Product[];
+
+        if (searchQuery) {
+            // Use Fuse.js for fuzzy search
+            const fuseResults = fuse.search(searchQuery);
+            filtered = fuseResults.map(result => result.item);
+        } else {
+            filtered = [...products];
+        }
 
         const inStock: Product[] = [];
         const outOfStock: Product[] = [];
@@ -112,7 +149,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         // Sort by base score initially
         withBaseScores.sort((a, b) => b.baseScore - a.baseScore);
 
-        // Apply diversity boost: penalize multiple products from same farmer
+        // Apply diversity boost
         const farmerProductCount: Record<string, number> = {};
         const withDiversityScores = withBaseScores.map(item => {
             const farmerId = item.product.farmerId;
@@ -129,12 +166,11 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
             };
         });
 
-        // Re-sort by final score after diversity adjustment
+        // Re-sort by final score
         withDiversityScores.sort((a, b) => b.finalScore - a.finalScore);
-
         const sortedInStock = withDiversityScores.map(item => item.product);
 
-        // Out-of-stock: sort by createdAt (newest first)
+        // Out-of-stock: sort by createdAt
         const sortedOutOfStock = outOfStock.sort((a, b) => {
             const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
             const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
@@ -142,7 +178,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         });
 
         return [...sortedInStock, ...sortedOutOfStock];
-    }, [products, searchQuery]);
+    }, [products, searchQuery, fuse]);
 
     const handleIncrement = (productId: string) => {
         setQuantities(prev => ({
@@ -162,17 +198,18 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         navigate(`/item/${productId}`);
     };
 
+    const checkUserRole = (): 'guest' | 'farmer' | 'consumer' => {
+        if (!user || !userProfile) return 'guest';
+        return userProfile.role;
+    };
+
     const handleAddToCart = async (e: React.MouseEvent, product: Product) => {
         e.stopPropagation();
 
-        if (!user) {
-            alert('Please login to add items to cart');
-            navigate('/login');
-            return;
-        }
+        const role = checkUserRole();
 
-        if (userProfile?.role !== 'consumer') {
-            alert('Only consumers can add items to cart');
+        if (role !== 'consumer') {
+            setShowGuardModal(true);
             return;
         }
 
@@ -180,7 +217,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         setAddingToCart(product.id);
 
         try {
-            await addToCart(user.uid, {
+            await addToCart(user!.uid, {
                 id: product.id,
                 name: product.name,
                 price: product.price,
@@ -232,9 +269,16 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     return (
         <section className="w-full py-8">
             <div className="max-w-7xl mx-auto px-6">
-                {/*<div className="flex items-center justify-between mb-12">
-                    <p className="text-gray-500">{displayedProducts.length} products found</p>
-                </div> */}  {/* remove for now, can add back if we want to show count */}
+                {searchQuery && (
+                    <div className="mb-4 flex justify-end">
+                        <button
+                            onClick={() => navigate('/shop')}
+                            className="text-sm text-gray-500 hover:text-primary transition"
+                        >
+                            Show all products
+                        </button>
+                    </div>
+                )}
 
                 {displayedProducts.length === 0 ? (
                     <div className="text-center py-16">
@@ -336,6 +380,14 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                     </div>
                 )}
             </div>
+
+            {/* Action Guard Modal */}
+            <ActionGuardModal
+                isOpen={showGuardModal}
+                action="addToCart"
+                userRole={checkUserRole()}
+                onClose={() => setShowGuardModal(false)}
+            />
         </section>
     );
 }

@@ -40,5 +40,16 @@ export function useSanitizedInput() {
     return digitsOnly.startsWith('09') ? digitsOnly : '09' + digitsOnly.slice(0, 9);
   }, []);
 
-  return { sanitizeName, sanitizeEmail, sanitizePhone, sanitizeFarmName };
+  // Search query sanitization
+  const sanitizeSearch = useCallback((value: string): string => {
+    return value
+      .replace(/[<>\"'&]/g, '')           // Remove HTML/script characters
+      .replace(/[^\w\s\-']/g, '')         // Only allow alphanumeric, spaces, hyphens, apostrophes
+      .replace(/\s{2,}/g, ' ')            // Collapse multiple spaces
+      .trim()
+      .slice(0, 50);                       // Limit to 50 characters
+  }, []);
+
+  return { sanitizeName, sanitizeEmail, sanitizePhone, sanitizeFarmName, sanitizeSearch };
 }
+
