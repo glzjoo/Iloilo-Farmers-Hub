@@ -153,7 +153,6 @@ export default function ReviewSection() {
                         </div>
                         <p className="text-sm text-gray-400 mt-3">{stats.totalReviews} reviews</p>
                     </div>
-
                     <div className="flex-1 space-y-3 max-w-md pt-2">
                         {[5, 4, 3, 2, 1].map((stars) => (
                             <div key={stars} className="flex items-center gap-3">
