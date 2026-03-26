@@ -65,7 +65,7 @@ export default function BestSellers() {
                     </div>
                     <div className="text-center py-8 text-gray-500">
                         <p>No best sellers yet. Check out our shop!</p>
-                        <button 
+                        <button
                             onClick={() => navigate('/shop')}
                             className="mt-2 text-primary hover:underline"
                         >
@@ -86,17 +86,17 @@ export default function BestSellers() {
                         <img src={filter} className="w-5 h-5" alt="Filter" />
                     </button>
                 </div>
-                
+
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                     {products.map((product) => (
-                        <div 
-                            key={product.id} 
+                        <div
+                            key={product.id}
                             className="cursor-pointer group"
                             onClick={() => handleProductClick(product.id)}
                         >
                             <div className="relative overflow-hidden rounded-lg">
-                                <img 
-                                    src={product.image || '/placeholder-product.png'} 
+                                <img
+                                    src={product.image || '/placeholder-product.png'}
                                     alt={product.name}
                                     className="w-full h-32 object-cover transition-transform group-hover:scale-105"
                                 />
@@ -106,7 +106,7 @@ export default function BestSellers() {
                                     </div>
                                 )}
                             </div>
-                            
+
                             <div className="flex items-center justify-between mt-2">
                                 <div className="flex-1 min-w-0">
                                     <h3 className="text-sm font-semibold text-gray-900 truncate">{product.name}</h3>
@@ -118,7 +118,7 @@ export default function BestSellers() {
                                     )}
                                 </div>
                                 <div className="flex items-center gap-1 ml-2">
-                                    <button 
+                                    <button
                                         className="bg-transparent border-none cursor-pointer p-0 hover:scale-110 transition-transform"
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -127,7 +127,7 @@ export default function BestSellers() {
                                     >
                                         <img src={addtocart} alt="Add to cart" className="w-7 h-7" />
                                     </button>
-                                    <button 
+                                    <button
                                         className="bg-transparent border-none cursor-pointer p-0 hover:scale-110 transition-transform"
                                         onClick={(e) => {
                                             e.stopPropagation();
