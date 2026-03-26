@@ -9,7 +9,6 @@ import { useAuth } from '../../context/AuthContext';
 import SearchBar from '../Search/SearchBar';
 import mylisting from '../../assets/icons/mylisting.svg';
 import settingIcon from '../../assets/icons/settings.svg';
-import HamburgerFilter from './HamburgerFilter';
 import LanguageSwitcher from './LanguageSwitcher';
 
 
@@ -161,11 +160,6 @@ export default function NavbarLoggedInFarmer() {
 
             <div className="bg-white border-b border-gray-200 shadow-sm">
                 <div className="max-w-7xl mx-auto relative flex items-center justify-center gap-10 px-6 py-3">
-                    {location.pathname === '/shop' && (
-                        <div className="absolute left-6">
-                            <HamburgerFilter />
-                        </div>
-                    )}
                     <Link to="/" className={linkClass('/')}>{t('nav_home')}</Link>
                     <Link to="/shop" className={linkClass('/shop')}>{t('nav_shop')}</Link>
                     <Link to="/subscriptions" className={linkClass('/subscriptions')}>{t('nav_subscriptions')}</Link>

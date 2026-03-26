@@ -52,7 +52,7 @@ const resources = {
       "no_unread": "Walang di-nabasa na mensahe",
       "my_account": "Aking Account",
       "my_listing": "Aking Listahan",
-      "my_listing_desc": "Tingnan/I-edit ang iyong mga listahan",
+      "my_listing_desc": "Tignan/I-edit ang iyong mga listahan",
       "settings": "Mga Setting",
       "sell": "Magbenta",
 
@@ -69,7 +69,7 @@ const resources = {
       "nav_shop": "MAGBAKAL",
       "nav_subscriptions": "MGA SUBSCRIPTION",
       "nav_become_seller": "MAGBALIGYA",
-      "nav_about": "PARTE SA AMON",
+      "nav_about": "GIKAN SA AMON",
 
       "sign_up": "Mag-sign Up",
       "login": "Mag-login",
@@ -103,7 +103,7 @@ i18n
     lng: savedLanguage,
     fallbackLng: 'en',
     interpolation: {
-      escapeValue: false // React already protects against XSS
+      escapeValue: false
     }
   });
 

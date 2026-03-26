@@ -22,34 +22,34 @@ const calculateTrendingScore = (product: Product): number => {
     const ratingScore = (product.rating || 0) * 0.4;
     const soldScore = Math.log10((product.soldCount || 0) + 1) * 0.3;
     const reviewScore = Math.log10((product.reviewCount || 0) + 1) * 0.2;
-    
+
     let recencyScore = 0;
     let newProductBoost = 0;
-    
+
     if (product.createdAt) {
         const now = new Date();
         const createdAt = product.createdAt?.toDate?.() || new Date(product.createdAt);
         const daysSinceCreated = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-        
+
         // Standard recency: 14-day window (0.1 max)
         if (daysSinceCreated <= 14) {
             recencyScore = 0.1 * (1 - daysSinceCreated / 14);
         }
-        
+
         // PRODUCT BOOST: First 7 days get huge visibility boost
         if (daysSinceCreated <= 7) {
             newProductBoost = 1.5; // Temporary boost for cold start
         }
     }
-    
+
     // Calculate total
     let totalScore = ratingScore + soldScore + reviewScore + recencyScore + newProductBoost;
-    
+
     // Ensure fresh products with zero data get at least 1.5 score (minimum visibility)
     if (totalScore < 1.5 && newProductBoost > 0) {
         totalScore = 1.5;
     }
-    
+
     return totalScore;
 };
 
@@ -71,7 +71,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     const [error, setError] = useState('');
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [addingToCart, setAddingToCart] = useState<string | null>(null);
-    
+
     // Modal state
     const [showGuardModal, setShowGuardModal] = useState(false);
 
@@ -131,7 +131,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
 
         const inStock: Product[] = [];
         const outOfStock: Product[] = [];
-        
+
         filtered.forEach(product => {
             if (isOutOfStock(product.stock)) {
                 outOfStock.push(product);
@@ -155,10 +155,10 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
             const farmerId = item.product.farmerId;
             const count = farmerProductCount[farmerId] || 0;
             farmerProductCount[farmerId] = count + 1;
-            
+
             const diversityMultiplier = getDiversityMultiplier(count);
             const finalScore = item.baseScore * diversityMultiplier;
-            
+
             return {
                 ...item,
                 finalScore,
@@ -267,119 +267,117 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     }
 
     return (
-        <section className="w-full py-8">
-            <div className="max-w-7xl mx-auto px-6">
-                {searchQuery && (
-                    <div className="mb-4 flex justify-end">
-                        <button
-                            onClick={() => navigate('/shop')}
-                            className="text-sm text-gray-500 hover:text-primary transition"
+        <div className="w-full">
+            {searchQuery && (
+                <div className="mb-6 flex justify-end">
+                    <button
+                        onClick={() => navigate('/shop')}
+                        className="text-sm text-gray-500 hover:text-primary transition"
+                    >
+                        Show all products
+                    </button>
+                </div>
+            )}
+
+            {displayedProducts.length === 0 ? (
+                <div className="text-center py-16">
+                    <p className="text-xl font-primary text-gray-400">
+                        {searchQuery ? `No products found for "${searchQuery}"` : 'No products available'}
+                    </p>
+                    <p className="text-sm font-primary text-gray-400 mt-2">
+                        {searchQuery ? 'Try a different search term' : 'Check back later for new listings'}
+                    </p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                    {displayedProducts.map((product) => (
+                        <div
+                            key={product.id}
+                            className="cursor-pointer group"
+                            onClick={() => handleProductClick(product.id)}
                         >
-                            Show all products
-                        </button>
-                    </div>
-                )}
-
-                {displayedProducts.length === 0 ? (
-                    <div className="text-center py-16">
-                        <p className="text-xl font-primary text-gray-400">
-                            {searchQuery ? `No products found for "${searchQuery}"` : 'No products available'}
-                        </p>
-                        <p className="text-sm font-primary text-gray-400 mt-2">
-                            {searchQuery ? 'Try a different search term' : 'Check back later for new listings'}
-                        </p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                        {displayedProducts.map((product) => (
-                            <div
-                                key={product.id}
-                                className="cursor-pointer group"
-                                onClick={() => handleProductClick(product.id)}
-                            >
-                                <div className="relative overflow-hidden rounded-lg">
-                                    <img
-                                        src={product.image || '/placeholder-product.png'}
-                                        alt={product.name}
-                                        className="w-full h-32 object-cover transition-transform group-hover:scale-105"
-                                    />
-                                    {isOutOfStock(product.stock) && (
-                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                            <span className="text-white font-bold">Out of Stock</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="flex flex-col mt-2">
-                                    <div className="flex items-center justify-between gap-1">
-                                        <h3 className="text-sm font-semibold text-gray-900 truncate flex-1 min-w-0">
-                                            {product.name}
-                                        </h3>
-                                        {product.rating > 0 && (
-                                            <span className="text-xs text-yellow-600 flex-shrink-0">
-                                                ★ {product.rating.toFixed(1)}
-                                            </span>
-                                        )}
+                            <div className="relative overflow-hidden rounded-lg">
+                                <img
+                                    src={product.image || '/placeholder-product.png'}
+                                    alt={product.name}
+                                    className="w-full h-32 object-cover transition-transform group-hover:scale-105"
+                                />
+                                {isOutOfStock(product.stock) && (
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                        <span className="text-white font-bold">Out of Stock</span>
                                     </div>
-                                    
-                                    <p className="text-primary text-xs font-semibold mt-0.5">
-                                        ₱{product.price.toFixed(2)} / {product.unit}
-                                    </p>
-                                    
-                                    <p className="text-xs text-gray-500 truncate mt-0.5">
-                                        {product.farmerName}
-                                    </p>
-                                    
-                                    {(product.soldCount || 0) > 0 && (
-                                        <p className="text-xs text-gray-400 mt-0.5">
-                                            {product.soldCount} sold
-                                        </p>
+                                )}
+                            </div>
+
+                            <div className="flex flex-col mt-2">
+                                <div className="flex items-center justify-between gap-1">
+                                    <h3 className="text-sm font-semibold text-gray-900 truncate flex-1 min-w-0">
+                                        {product.name}
+                                    </h3>
+                                    {product.rating > 0 && (
+                                        <span className="text-xs text-yellow-600 flex-shrink-0">
+                                            ★ {product.rating.toFixed(1)}
+                                        </span>
                                     )}
                                 </div>
 
-                                <div className="flex items-center gap-1 mt-2">
-                                    <button
-                                        className="bg-transparent border-none cursor-pointer p-0 disabled:opacity-50"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDecrement(product.id);
-                                        }}
-                                        disabled={isOutOfStock(product.stock)}
-                                    >
-                                        <img src={minus} alt="Decrease" className="w-7 h-7" />
-                                    </button>
-                                    <span className="text-sm font-semibold text-gray-900 w-5 text-center">
-                                        {quantities[product.id] || 1}
-                                    </span>
-                                    <button
-                                        className="bg-transparent border-none cursor-pointer p-0 disabled:opacity-50"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleIncrement(product.id);
-                                        }}
-                                        disabled={isOutOfStock(product.stock)}
-                                    >
-                                        <img src={add} alt="Increase" className="w-7 h-7" />
-                                    </button>
-                                </div>
+                                <p className="text-primary text-xs font-semibold mt-0.5">
+                                    ₱{product.price.toFixed(2)} / {product.unit}
+                                </p>
 
+                                <p className="text-xs text-gray-500 truncate mt-0.5">
+                                    {product.farmerName}
+                                </p>
+
+                                {(product.soldCount || 0) > 0 && (
+                                    <p className="text-xs text-gray-400 mt-0.5">
+                                        {product.soldCount} sold
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="flex items-center gap-1 mt-2">
                                 <button
-                                    className="w-full bg-primary flex items-center justify-center gap-2 text-white text-sm font-medium px-4 py-2 rounded-2xl border-none cursor-pointer mb-5 mt-2 hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                    onClick={(e) => handleAddToCart(e, product)}
-                                    disabled={isOutOfStock(product.stock) || addingToCart === product.id}
+                                    className="bg-transparent border-none cursor-pointer p-0 disabled:opacity-50"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDecrement(product.id);
+                                    }}
+                                    disabled={isOutOfStock(product.stock)}
                                 >
-                                    {addingToCart === product.id 
-                                        ? 'Adding...' 
-                                        : isOutOfStock(product.stock) 
-                                            ? 'Out of Stock' 
-                                            : 'Add to Cart'
-                                    }
+                                    <img src={minus} alt="Decrease" className="w-7 h-7" />
+                                </button>
+                                <span className="text-sm font-semibold text-gray-900 w-5 text-center">
+                                    {quantities[product.id] || 1}
+                                </span>
+                                <button
+                                    className="bg-transparent border-none cursor-pointer p-0 disabled:opacity-50"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleIncrement(product.id);
+                                    }}
+                                    disabled={isOutOfStock(product.stock)}
+                                >
+                                    <img src={add} alt="Increase" className="w-7 h-7" />
                                 </button>
                             </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+
+                            <button
+                                className="w-full bg-primary flex items-center justify-center gap-2 text-white text-sm font-medium px-4 py-2 rounded-2xl border-none cursor-pointer mb-5 mt-2 hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                onClick={(e) => handleAddToCart(e, product)}
+                                disabled={isOutOfStock(product.stock) || addingToCart === product.id}
+                            >
+                                {addingToCart === product.id
+                                    ? 'Adding...'
+                                    : isOutOfStock(product.stock)
+                                        ? 'Out of Stock'
+                                        : 'Add to Cart'
+                                }
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Action Guard Modal */}
             <ActionGuardModal
@@ -388,6 +386,6 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                 userRole={checkUserRole()}
                 onClose={() => setShowGuardModal(false)}
             />
-        </section>
+        </div>
     );
 }
