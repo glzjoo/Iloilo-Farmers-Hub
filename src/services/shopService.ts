@@ -174,46 +174,64 @@ export const getBestSellers = async (targetCount: number = 15): Promise<Product[
 //  Get New Arrivals (last 14 days) with recency-weighted scoring
 export const getNewArrivals = async (limitCount: number = 4): Promise<Product[]> => {
     try {
-        // Calculate 14 days ago
-        const fourteenDaysAgo = new Date();
-        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-        
-        // Get products from last 14 days
+        // Single query using your existing index
         const q = query(
             collection(db, PRODUCTS_COLLECTION),
             where('status', '==', 'active'),
-            where('createdAt', '>=', fourteenDaysAgo),
             orderBy('createdAt', 'desc'),
-            limit(limitCount * 3) // Get extra for scoring/sorting
+            limit(limitCount * 5) // Fetch extra for filtering
         );
         
         const snapshot = await getDocs(q);
-        const products = snapshot.docs.map(convertDocToProduct);
+        const allProducts = snapshot.docs.map(convertDocToProduct);
         
-        // Filter out of stock and calculate recency-weighted score
-        const scoredProducts = products
-            .filter(p => !isOutOfStock(p.stock))
-            .map(product => {
-                const now = new Date();
-                const createdAt = product.createdAt?.toDate?.() || new Date(product.createdAt);
-                const daysSinceCreated = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-                
-                // Recency score: 0-14 days scaled to 0.5-1.0 (50% weight)
-                const recencyScore = 0.5 + (0.5 * (1 - daysSinceCreated / 14));
-                
-                // Other factors (50% weight combined)
-                const ratingScore = (product.rating || 0) / 5 * 0.25; // 25%
-                const soldScore = Math.log10((product.soldCount || 0) + 1) / 2 * 0.15; // 15%
-                const reviewScore = Math.log10((product.reviewCount || 0) + 1) / 2 * 0.10; // 10%
-                
-                const totalScore = recencyScore + ratingScore + soldScore + reviewScore;
-                
-                return { product, score: totalScore };
+        const now = new Date();
+        const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+        const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        
+        // Filter out of stock first
+        let candidates = allProducts.filter(p => !isOutOfStock(p.stock));
+        
+        // Try 14 days
+        let filtered = candidates.filter(p => {
+            const createdAt = p.createdAt?.toDate?.() || new Date(p.createdAt);
+            return createdAt >= fourteenDaysAgo;
+        });
+        
+        let usedFallback = false;
+        
+        // Extend to 90 days if needed
+        if (filtered.length < limitCount) {
+            filtered = candidates.filter(p => {
+                const createdAt = p.createdAt?.toDate?.() || new Date(p.createdAt);
+                return createdAt >= ninetyDaysAgo;
             });
+            usedFallback = true;
+            console.log('Extended to 90 days:', filtered.length, 'products');
+        }
         
-        // Sort by score and return top limitCount
-        scoredProducts.sort((a, b) => b.score - a.score);
-        return scoredProducts.slice(0, limitCount).map(item => item.product);
+        // Final fallback: use newest available
+        if (filtered.length === 0) {
+            filtered = candidates;
+            usedFallback = true;
+            console.log('Using all available products:', filtered.length);
+        }
+        
+        // Score and rank
+        const scored = filtered.map(p => {
+            const createdAt = p.createdAt?.toDate?.() || new Date(p.createdAt);
+            const daysOld = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+            
+            const recencyScore = Math.max(0, 1 - (daysOld / (usedFallback ? 90 : 14))) * 0.5;
+            const ratingScore = (p.rating || 0) / 5 * 0.25;
+            const soldScore = Math.log10((p.soldCount || 0) + 1) / 2 * 0.15;
+            const reviewScore = Math.log10((p.reviewCount || 0) + 1) / 2 * 0.10;
+            
+            return { product: p, score: recencyScore + ratingScore + soldScore + reviewScore };
+        });
+        
+        scored.sort((a, b) => b.score - a.score);
+        return scored.slice(0, limitCount).map(i => i.product);
         
     } catch (error) {
         console.error('Error fetching new arrivals:', error);
