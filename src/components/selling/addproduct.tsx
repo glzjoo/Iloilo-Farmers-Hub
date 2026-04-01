@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import AddProductImage from "./addproductimage";
+import AddProductImage from "./AddProductImage";
 import { useAuth } from "../../context/AuthContext";
 import { addProduct } from "../../services/productService";
 import type { Product } from "../../types";

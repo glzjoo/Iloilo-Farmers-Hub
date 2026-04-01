@@ -4,53 +4,37 @@ import Fuse from 'fuse.js';
 import minus from '../../assets/icons/minus.svg';
 import add from '../../assets/icons/add.svg';
 import type { Product } from '../../types';
-import { getShopProducts, getProductsByCategory } from '../../services/shopService';
+import { 
+    getProducts,
+    type ProductQueryOptions 
+} from '../../services/shopService';
 import { addToCart } from '../../services/cartService';
 import { useAuth } from '../../context/AuthContext';
 import ActionGuardModal from '../common/ActionGuardModal';
 
 interface ShopAllProps {
     searchQuery?: string;
-    selectedCategory?: string;
+    queryOptions?: ProductQueryOptions;
 }
 
-// score = (rating * 0.4) + (log(reviewCount + 1) * 0.2) + (recencyBoost * 0.1) + (log(soldCount + 1) * 0.3)
-// recencyBoost = 0.1 if created within 7 days, then linearly decreases to 0 at 14 days
-
-// Trending Algorithm Score Calculator with New Product Boost
+// Trending Algorithm Score Calculator
+// Applied only for 'newest' sort to ensure diverse, quality new arrivals
 const calculateTrendingScore = (product: Product): number => {
     const ratingScore = (product.rating || 0) * 0.4;
     const soldScore = Math.log10((product.soldCount || 0) + 1) * 0.3;
     const reviewScore = Math.log10((product.reviewCount || 0) + 1) * 0.2;
 
     let recencyScore = 0;
-    let newProductBoost = 0;
-
     if (product.createdAt) {
         const now = new Date();
         const createdAt = product.createdAt?.toDate?.() || new Date(product.createdAt);
         const daysSinceCreated = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-
-        // Standard recency: 14-day window (0.1 max)
         if (daysSinceCreated <= 14) {
             recencyScore = 0.1 * (1 - daysSinceCreated / 14);
         }
-
-        // PRODUCT BOOST: First 7 days get huge visibility boost
-        if (daysSinceCreated <= 7) {
-            newProductBoost = 1.5; // Temporary boost for cold start
-        }
     }
 
-    // Calculate total
-    let totalScore = ratingScore + soldScore + reviewScore + recencyScore + newProductBoost;
-
-    // Ensure fresh products with zero data get at least 1.5 score (minimum visibility)
-    if (totalScore < 1.5 && newProductBoost > 0) {
-        totalScore = 1.5;
-    }
-
-    return totalScore;
+    return ratingScore + soldScore + reviewScore + recencyScore;
 };
 
 // Diversity multiplier: prevents single farmer from dominating results
@@ -63,7 +47,10 @@ const isOutOfStock = (stock: string): boolean => {
     return stockMatch ? parseInt(stockMatch[1]) === 0 : true;
 };
 
-export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: ShopAllProps) {
+export default function ShopAll({ 
+    searchQuery = '', 
+    queryOptions = { sortBy: 'newest', limit: 100 }
+}: ShopAllProps) {
     const navigate = useNavigate();
     const { user, userProfile } = useAuth();
     const [products, setProducts] = useState<Product[]>([]);
@@ -71,29 +58,39 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     const [error, setError] = useState('');
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [addingToCart, setAddingToCart] = useState<string | null>(null);
-
-    // Modal state
     const [showGuardModal, setShowGuardModal] = useState(false);
 
+    // Fetch products when queryOptions change
     useEffect(() => {
         const fetchProducts = async () => {
             try {
                 setLoading(true);
                 setError('');
 
-                const fetchedProducts = selectedCategory && selectedCategory !== 'All'
-                    ? await getProductsByCategory(selectedCategory)
-                    : await getShopProducts();
+                console.log('Fetching products with options:', queryOptions);
+                const fetchedProducts = await getProducts(queryOptions);
+                
+                // Client-side price filtering (if range specified)
+                let filtered = fetchedProducts;
+                if (queryOptions.minPrice !== undefined || queryOptions.maxPrice !== undefined) {
+                    filtered = filtered.filter(p => {
+                        if (queryOptions.minPrice !== undefined && p.price < queryOptions.minPrice) return false;
+                        if (queryOptions.maxPrice !== undefined && p.price > queryOptions.maxPrice) return false;
+                        return true;
+                    });
+                }
+                
+                setProducts(filtered);
 
-                setProducts(fetchedProducts);
-
+                // Initialize quantities
                 const initialQuantities: Record<string, number> = {};
-                fetchedProducts.forEach(p => {
+                filtered.forEach(p => {
                     initialQuantities[p.id] = 1;
                 });
                 setQuantities(initialQuantities);
 
             } catch (err: any) {
+                console.error('Error fetching products:', err);
                 setError(err.message || 'Failed to fetch products');
             } finally {
                 setLoading(false);
@@ -101,7 +98,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         };
 
         fetchProducts();
-    }, [selectedCategory]);
+    }, [queryOptions]);
 
     // Initialize Fuse instance for fuzzy search
     const fuse = useMemo(() => {
@@ -118,17 +115,19 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         return new Fuse(products, fuseOptions);
     }, [products]);
 
+    // Process and display products
     const displayedProducts = useMemo(() => {
         let filtered: Product[];
 
+        // 1. Apply search if exists (Fuse.js fuzzy search)
         if (searchQuery) {
-            // Use Fuse.js for fuzzy search
             const fuseResults = fuse.search(searchQuery);
             filtered = fuseResults.map(result => result.item);
         } else {
             filtered = [...products];
         }
 
+        // 2. Split by stock status (in stock first)
         const inStock: Product[] = [];
         const outOfStock: Product[] = [];
 
@@ -140,45 +139,49 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
             }
         });
 
-        // Calculate base scores
-        const withBaseScores = inStock.map(product => ({
-            product,
-            baseScore: calculateTrendingScore(product)
-        }));
+        // 3. Apply trending algorithm ONLY for 'newest' sort (discovery mode)
+        // For other sorts (rating, price), respect Firestore ordering
+        if (!queryOptions.sortBy || queryOptions.sortBy === 'newest') {
+            // Calculate base scores
+            const withBaseScores = inStock.map(product => ({
+                product,
+                baseScore: calculateTrendingScore(product)
+            }));
 
-        // Sort by base score initially
-        withBaseScores.sort((a, b) => b.baseScore - a.baseScore);
+            // Sort by base score
+            withBaseScores.sort((a, b) => b.baseScore - a.baseScore);
 
-        // Apply diversity boost
-        const farmerProductCount: Record<string, number> = {};
-        const withDiversityScores = withBaseScores.map(item => {
-            const farmerId = item.product.farmerId;
-            const count = farmerProductCount[farmerId] || 0;
-            farmerProductCount[farmerId] = count + 1;
+            // Apply diversity boost to prevent farmer domination
+            const farmerProductCount: Record<string, number> = {};
+            const withDiversityScores = withBaseScores.map(item => {
+                const farmerId = item.product.farmerId;
+                const count = farmerProductCount[farmerId] || 0;
+                farmerProductCount[farmerId] = count + 1;
+                const diversityMultiplier = getDiversityMultiplier(count);
+                const finalScore = item.baseScore * diversityMultiplier;
 
-            const diversityMultiplier = getDiversityMultiplier(count);
-            const finalScore = item.baseScore * diversityMultiplier;
+                return { ...item, finalScore };
+            });
 
-            return {
-                ...item,
-                finalScore,
-                diversityMultiplier
-            };
-        });
+            // Re-sort by final diversity-adjusted score
+            withDiversityScores.sort((a, b) => b.finalScore - a.finalScore);
+            const sortedInStock = withDiversityScores.map(item => item.product);
 
-        // Re-sort by final score
-        withDiversityScores.sort((a, b) => b.finalScore - a.finalScore);
-        const sortedInStock = withDiversityScores.map(item => item.product);
+            // Sort out-of-stock by date (newest first)
+            const sortedOutOfStock = outOfStock.sort((a, b) => {
+                const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
+                const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+                return dateB.getTime() - dateA.getTime();
+            });
 
-        // Out-of-stock: sort by createdAt
-        const sortedOutOfStock = outOfStock.sort((a, b) => {
-            const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
-            const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
-            return dateB.getTime() - dateA.getTime();
-        });
+            return [...sortedInStock, ...sortedOutOfStock];
+        }
 
-        return [...sortedInStock, ...sortedOutOfStock];
-    }, [products, searchQuery, fuse]);
+        // For rating/price sorts: Firestore already sorted, just separate stock status
+        // In-stock items first (maintaining their sort order), then out-of-stock
+        return [...inStock, ...outOfStock];
+
+    }, [products, searchQuery, fuse, queryOptions.sortBy]);
 
     const handleIncrement = (productId: string) => {
         setQuantities(prev => ({
@@ -276,6 +279,29 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
                     >
                         Show all products
                     </button>
+                </div>
+            )}
+
+            {/* Show active filters summary */}
+            {(queryOptions.categories?.length || queryOptions.sortBy !== 'newest' || queryOptions.minPrice !== undefined) && (
+                <div className="mb-4 p-3 bg-green-50 rounded-lg text-sm text-green-800">
+                    <span className="font-semibold">Active filters:</span>
+                    {queryOptions.categories && queryOptions.categories.length > 0 && (
+                        <span className="ml-2 px-2 py-1 bg-green-100 rounded-full">
+                            {queryOptions.categories.join(', ')}
+                        </span>
+                    )}
+                    {queryOptions.sortBy && queryOptions.sortBy !== 'newest' && (
+                        <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-full capitalize">
+                            Sort: {queryOptions.sortBy.replace('-', ' ')}
+                        </span>
+                    )}
+                    {queryOptions.minPrice !== undefined && (
+                        <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-800 rounded-full">
+                            ₱{queryOptions.minPrice}{queryOptions.maxPrice ? ` - ₱${queryOptions.maxPrice}` : '+'}
+                        </span>
+                    )}
+                    <span className="ml-2 text-gray-500">({displayedProducts.length} products)</span>
                 </div>
             )}
 
