@@ -65,7 +65,8 @@ export default function SidebarFilter({
         <aside className="w-full h-full bg-white border-r border-gray-100 pr-4">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
-                    <img src={filter} className="w-5 h-5" />
+                    {/* FIXED: Added alt attribute for accessibility */}
+                    <img src={filter} className="w-5 h-5" alt="Filter" />
                     Filters
                 </h2>
                 {hasFilters && (
@@ -78,7 +79,7 @@ export default function SidebarFilter({
                 )}
             </div>
 
-            {/* Sort by - NOW SEPARATE FROM PRICE */}
+            {/* Sort by */}
             <div className="border-b border-gray-200 pb-5 mb-5">
                 <h3 className="text-[13px] font-semibold text-gray-800 mb-4 uppercase tracking-wider">
                     Sort By
@@ -131,7 +132,7 @@ export default function SidebarFilter({
                 </div>
             </div>
 
-            {/* Price Range Slider/Inputs */}
+            {/* Price Range */}
             <div className="pb-5">
                 <h3 className="text-[13px] font-semibold text-gray-800 mb-4 uppercase tracking-wider">
                     Price Range (₱)

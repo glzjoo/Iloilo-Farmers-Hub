@@ -18,7 +18,6 @@ interface ShopAllProps {
 }
 
 // Trending Algorithm Score Calculator
-// Applied only for 'newest' sort to ensure diverse, quality new arrivals
 const calculateTrendingScore = (product: Product): number => {
     const ratingScore = (product.rating || 0) * 0.4;
     const soldScore = Math.log10((product.soldCount || 0) + 1) * 0.3;
@@ -28,16 +27,18 @@ const calculateTrendingScore = (product: Product): number => {
     if (product.createdAt) {
         const now = new Date();
         const createdAt = product.createdAt?.toDate?.() || new Date(product.createdAt);
-        const daysSinceCreated = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-        if (daysSinceCreated <= 14) {
-            recencyScore = 0.1 * (1 - daysSinceCreated / 14);
+        // Guard against invalid date
+        if (!isNaN(createdAt.getTime())) {
+            const daysSinceCreated = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+            if (daysSinceCreated <= 14) {
+                recencyScore = 0.1 * (1 - daysSinceCreated / 14);
+            }
         }
     }
 
     return ratingScore + soldScore + reviewScore + recencyScore;
 };
 
-// Diversity multiplier: prevents single farmer from dominating results
 const getDiversityMultiplier = (sameFarmerCount: number): number => {
     return Math.max(0.7, 1 - (sameFarmerCount * 0.05));
 };
@@ -59,6 +60,17 @@ export default function ShopAll({
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [addingToCart, setAddingToCart] = useState<string | null>(null);
     const [showGuardModal, setShowGuardModal] = useState(false);
+
+    // FIXED: Use stable string reference for dependency array to prevent infinite re-fetching
+    const queryOptionsKey = useMemo(() => {
+        return JSON.stringify({
+            categories: queryOptions.categories?.sort().join(','),
+            sortBy: queryOptions.sortBy,
+            minPrice: queryOptions.minPrice,
+            maxPrice: queryOptions.maxPrice,
+            limit: queryOptions.limit
+        });
+    }, [queryOptions]);
 
     // Fetch products when queryOptions change
     useEffect(() => {
@@ -98,7 +110,7 @@ export default function ShopAll({
         };
 
         fetchProducts();
-    }, [queryOptions]);
+    }, [queryOptionsKey]); // FIXED: Use stable key instead of object reference
 
     // Initialize Fuse instance for fuzzy search
     const fuse = useMemo(() => {
@@ -140,18 +152,14 @@ export default function ShopAll({
         });
 
         // 3. Apply trending algorithm ONLY for 'newest' sort (discovery mode)
-        // For other sorts (rating, price), respect Firestore ordering
         if (!queryOptions.sortBy || queryOptions.sortBy === 'newest') {
-            // Calculate base scores
             const withBaseScores = inStock.map(product => ({
                 product,
                 baseScore: calculateTrendingScore(product)
             }));
 
-            // Sort by base score
             withBaseScores.sort((a, b) => b.baseScore - a.baseScore);
 
-            // Apply diversity boost to prevent farmer domination
             const farmerProductCount: Record<string, number> = {};
             const withDiversityScores = withBaseScores.map(item => {
                 const farmerId = item.product.farmerId;
@@ -163,22 +171,23 @@ export default function ShopAll({
                 return { ...item, finalScore };
             });
 
-            // Re-sort by final diversity-adjusted score
             withDiversityScores.sort((a, b) => b.finalScore - a.finalScore);
             const sortedInStock = withDiversityScores.map(item => item.product);
 
-            // Sort out-of-stock by date (newest first)
-            const sortedOutOfStock = outOfStock.sort((a, b) => {
+            // FIXED: Don't mutate original array - create copy before sorting
+            const sortedOutOfStock = [...outOfStock].sort((a, b) => {
                 const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
                 const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
-                return dateB.getTime() - dateA.getTime();
+                // Guard against invalid dates
+                const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+                const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+                return timeB - timeA;
             });
 
             return [...sortedInStock, ...sortedOutOfStock];
         }
 
         // For rating/price sorts: Firestore already sorted, just separate stock status
-        // In-stock items first (maintaining their sort order), then out-of-stock
         return [...inStock, ...outOfStock];
 
     }, [products, searchQuery, fuse, queryOptions.sortBy]);
@@ -269,6 +278,13 @@ export default function ShopAll({
         );
     }
 
+    // FIXED: Determine if filters are actually active (not just default values)
+    const hasActiveFilters = 
+        (queryOptions.categories && queryOptions.categories.length > 0) || 
+        (queryOptions.sortBy && queryOptions.sortBy !== 'newest') || 
+        queryOptions.minPrice !== undefined || 
+        queryOptions.maxPrice !== undefined;
+
     return (
         <div className="w-full">
             {searchQuery && (
@@ -282,8 +298,8 @@ export default function ShopAll({
                 </div>
             )}
 
-            {/* Show active filters summary */}
-            {(queryOptions.categories?.length || queryOptions.sortBy !== 'newest' || queryOptions.minPrice !== undefined) && (
+            {/* FIXED: Only show banner when filters are actually active (not default 'newest') */}
+            {hasActiveFilters && (
                 <div className="mb-4 p-3 bg-green-50 rounded-lg text-sm text-green-800">
                     <span className="font-semibold">Active filters:</span>
                     {queryOptions.categories && queryOptions.categories.length > 0 && (
@@ -296,9 +312,9 @@ export default function ShopAll({
                             Sort: {queryOptions.sortBy.replace('-', ' ')}
                         </span>
                     )}
-                    {queryOptions.minPrice !== undefined && (
+                    {(queryOptions.minPrice !== undefined || queryOptions.maxPrice !== undefined) && (
                         <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-800 rounded-full">
-                            ₱{queryOptions.minPrice}{queryOptions.maxPrice ? ` - ₱${queryOptions.maxPrice}` : '+'}
+                            ₱{queryOptions.minPrice ?? '0'} - ₱{queryOptions.maxPrice ?? '∞'}
                         </span>
                     )}
                     <span className="ml-2 text-gray-500">({displayedProducts.length} products)</span>
@@ -405,7 +421,6 @@ export default function ShopAll({
                 </div>
             )}
 
-            {/* Action Guard Modal */}
             <ActionGuardModal
                 isOpen={showGuardModal}
                 action="addToCart"
