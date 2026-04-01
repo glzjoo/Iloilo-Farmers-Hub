@@ -36,16 +36,32 @@ export default function Shop() {
     // UI state
     const [activeTopCategory, setActiveTopCategory] = useState<string>('All');
     const [sidebarCategories, setSidebarCategories] = useState<string[]>([]);
-    const [sortBy, setSortBy] = useState<string>('trending'); // Default to trending
+    const [sortBy, setSortBy] = useState<string>('trending');
     const [priceRange, setPriceRange] = useState<{ min: number; max: number } | null>(null);
-    const [trendingItems, setTrendingItems] = useState<{id: string; name: string; image?: string}[]>([]);
+    const [trendingItems, setTrendingItems] = useState<{id: string; name: string; image: string}[]>([]);
+    // FIXED: Add loading and error states for trending fetch
+    const [trendingLoading, setTrendingLoading] = useState(false);
+    const [trendingError, setTrendingError] = useState<string | null>(null);
 
-    // Fetch trending items on mount
+    // Fetch trending items on mount with error handling
     useEffect(() => {
         const fetchTrending = async () => {
-            const items = await getTrendingItems(4);
-            setTrendingItems(items);
+            try {
+                setTrendingLoading(true);
+                setTrendingError(null);
+                
+                const items = await getTrendingItems(4);
+                setTrendingItems(items);
+            } catch (err) {
+                console.error('Failed to fetch trending items:', err);
+                setTrendingError('Failed to load trending items');
+                // Keep empty array as fallback
+                setTrendingItems([]);
+            } finally {
+                setTrendingLoading(false);
+            }
         };
+        
         fetchTrending();
     }, []);
 
@@ -137,11 +153,16 @@ export default function Shop() {
                         trendingItems={trendingItems}
                         onTrendingClick={handleTrendingClick}
                     />
+                    {/* FIXED: Show error if trending failed */}
+                    {trendingError && (
+                        <div className="mt-2 p-2 bg-red-50 text-red-600 text-xs rounded">
+                            {trendingError}
+                        </div>
+                    )}
                 </div>
                 
                 {/* Main Content */}
                 <div className="flex-1 min-w-0">
-
                     {/* Top Category Buttons */}
                     <div className="flex flex-wrap justify-center gap-2 mb-6">
                         {CATEGORIES.map(category => (

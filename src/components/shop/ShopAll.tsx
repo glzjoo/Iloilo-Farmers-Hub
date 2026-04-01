@@ -322,29 +322,6 @@ export default function ShopAll({
                 </div>
             )}
 
-            {/* Show active filters summary - only when NOT default */}
-            {hasActiveFilters && (
-                <div className="mb-4 p-3 bg-green-50 rounded-lg text-sm text-green-800">
-                    <span className="font-semibold">Active filters:</span>
-                    {queryOptions.categories && queryOptions.categories.length > 0 && (
-                        <span className="ml-2 px-2 py-1 bg-green-100 rounded-full">
-                            {queryOptions.categories.join(', ')}
-                        </span>
-                    )}
-                    {queryOptions.sortBy && queryOptions.sortBy !== 'trending' && (
-                        <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-full capitalize">
-                            Sort: {queryOptions.sortBy.replace('-', ' ')}
-                        </span>
-                    )}
-                    {(queryOptions.minPrice !== undefined || queryOptions.maxPrice !== undefined) && (
-                        <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-800 rounded-full">
-                            ₱{queryOptions.minPrice ?? '0'} - ₱{queryOptions.maxPrice ?? '∞'}
-                        </span>
-                    )}
-                    <span className="ml-2 text-gray-500">({displayedProducts.length} products)</span>
-                </div>
-            )}
-
             {displayedProducts.length === 0 ? (
                 <div className="text-center py-16">
                     <p className="text-xl font-primary text-gray-400">
