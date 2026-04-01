@@ -10,6 +10,8 @@ interface SidebarFilterProps {
     onPriceChange: (min: number, max: number) => void;
     onClear: () => void;
     hasFilters: boolean;
+    trendingItems?: { id: string; name: string; image?: string }[];
+    onTrendingClick?: (productId: string) => void;
 }
 
 const categoryOptions = [
@@ -23,6 +25,7 @@ const categoryOptions = [
 ] as const;
 
 const sortOptions = [
+    { label: 'Trending', value: 'trending' },
     { label: 'Newest', value: 'newest' },
     { label: 'Rating', value: 'rating' },
     { label: 'Price: Low to High', value: 'price-asc' },
@@ -37,12 +40,13 @@ export default function SidebarFilter({
     priceRange,
     onPriceChange,
     onClear,
-    hasFilters
+    hasFilters,
+    trendingItems = [],
+    onTrendingClick
 }: SidebarFilterProps) {
     const [localPriceMin, setLocalPriceMin] = useState(priceRange?.min?.toString() || '');
     const [localPriceMax, setLocalPriceMax] = useState(priceRange?.max?.toString() || '');
 
-    // Sync local state when props change
     useEffect(() => {
         setLocalPriceMin(priceRange?.min?.toString() || '');
         setLocalPriceMax(priceRange?.max?.toString() || '');
@@ -65,7 +69,6 @@ export default function SidebarFilter({
         <aside className="w-full h-full bg-white border-r border-gray-100 pr-4">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
-                    {/* FIXED: Added alt attribute for accessibility */}
                     <img src={filter} className="w-5 h-5" alt="Filter" />
                     Filters
                 </h2>
@@ -78,6 +81,40 @@ export default function SidebarFilter({
                     </button>
                 )}
             </div>
+
+            {/* Trending - Dynamic clickable items */}
+            {trendingItems.length > 0 && (
+                <div className="border-b border-gray-200 pb-5 mb-5">
+                    <h3 className="text-[13px] font-semibold text-gray-800 mb-4 uppercase tracking-wider flex items-center gap-2">
+                        <span className="text-red-500">🔥</span> Trending Now
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                        {trendingItems.map((item) => (
+                            <button
+                                key={item.id}
+                                onClick={() => onTrendingClick?.(item.id)}
+                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors text-left group"
+                            >
+                                {item.image ? (
+                                    <img 
+                                        src={item.image} 
+                                        alt={item.name}
+                                        className="w-10 h-10 rounded object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-10 h-10 rounded bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
+                                        No img
+                                    </div>
+                                )}
+                                <span className="text-sm text-gray-700 group-hover:text-primary font-medium truncate">
+                                    {item.name}
+                                </span>
+                                <span className="ml-auto text-red-500 text-xs">→</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Sort by */}
             <div className="border-b border-gray-200 pb-5 mb-5">

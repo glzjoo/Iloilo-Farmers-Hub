@@ -17,7 +17,7 @@ interface ShopAllProps {
     queryOptions?: ProductQueryOptions;
 }
 
-// Trending Algorithm Score Calculator
+// Trending Algorithm Score Calculator - FULL ALGORITHM
 const calculateTrendingScore = (product: Product): number => {
     const ratingScore = (product.rating || 0) * 0.4;
     const soldScore = Math.log10((product.soldCount || 0) + 1) * 0.3;
@@ -39,6 +39,7 @@ const calculateTrendingScore = (product: Product): number => {
     return ratingScore + soldScore + reviewScore + recencyScore;
 };
 
+// Diversity multiplier: prevents single farmer from dominating results
 const getDiversityMultiplier = (sameFarmerCount: number): number => {
     return Math.max(0.7, 1 - (sameFarmerCount * 0.05));
 };
@@ -50,7 +51,7 @@ const isOutOfStock = (stock: string): boolean => {
 
 export default function ShopAll({ 
     searchQuery = '', 
-    queryOptions = { sortBy: 'newest', limit: 100 }
+    queryOptions = { sortBy: 'trending', limit: 100 }
 }: ShopAllProps) {
     const navigate = useNavigate();
     const { user, userProfile } = useAuth();
@@ -61,7 +62,7 @@ export default function ShopAll({
     const [addingToCart, setAddingToCart] = useState<string | null>(null);
     const [showGuardModal, setShowGuardModal] = useState(false);
 
-    // FIXED: Use stable string reference for dependency array to prevent infinite re-fetching
+    // Stable dependency key to prevent infinite re-fetching
     const queryOptionsKey = useMemo(() => {
         return JSON.stringify({
             categories: queryOptions.categories?.sort().join(','),
@@ -110,7 +111,7 @@ export default function ShopAll({
         };
 
         fetchProducts();
-    }, [queryOptionsKey]); // FIXED: Use stable key instead of object reference
+    }, [queryOptionsKey]);
 
     // Initialize Fuse instance for fuzzy search
     const fuse = useMemo(() => {
@@ -151,15 +152,38 @@ export default function ShopAll({
             }
         });
 
-        // 3. Apply trending algorithm ONLY for 'newest' sort (discovery mode)
-        if (!queryOptions.sortBy || queryOptions.sortBy === 'newest') {
+        // 3. Apply algorithms based on sort type
+        if (queryOptions.sortBy === 'newest') {
+            // Pure date sort - NO algorithm
+            const sortedInStock = [...inStock].sort((a, b) => {
+                const dateA = a.createdAt?.toDate?.() || new Date(0);
+                const dateB = b.createdAt?.toDate?.() || new Date(0);
+                const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+                const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+                return timeB - timeA;
+            });
+            
+            const sortedOutOfStock = [...outOfStock].sort((a, b) => {
+                const dateA = a.createdAt?.toDate?.() || new Date(0);
+                const dateB = b.createdAt?.toDate?.() || new Date(0);
+                const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+                const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+                return timeB - timeA;
+            });
+            
+            return [...sortedInStock, ...sortedOutOfStock];
+        } 
+        else if (queryOptions.sortBy === 'trending' || !queryOptions.sortBy) {
+            // FULL TRENDING ALGORITHM with diversity (DEFAULT behavior)
             const withBaseScores = inStock.map(product => ({
                 product,
                 baseScore: calculateTrendingScore(product)
             }));
 
+            // Sort by base score
             withBaseScores.sort((a, b) => b.baseScore - a.baseScore);
 
+            // Apply diversity boost to prevent farmer domination
             const farmerProductCount: Record<string, number> = {};
             const withDiversityScores = withBaseScores.map(item => {
                 const farmerId = item.product.farmerId;
@@ -171,14 +195,14 @@ export default function ShopAll({
                 return { ...item, finalScore };
             });
 
+            // Re-sort by final diversity-adjusted score
             withDiversityScores.sort((a, b) => b.finalScore - a.finalScore);
             const sortedInStock = withDiversityScores.map(item => item.product);
 
-            // FIXED: Don't mutate original array - create copy before sorting
+            // Sort out-of-stock by date (newest first)
             const sortedOutOfStock = [...outOfStock].sort((a, b) => {
-                const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
-                const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
-                // Guard against invalid dates
+                const dateA = a.createdAt?.toDate?.() || new Date(0);
+                const dateB = b.createdAt?.toDate?.() || new Date(0);
                 const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
                 const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
                 return timeB - timeA;
@@ -278,10 +302,10 @@ export default function ShopAll({
         );
     }
 
-    // FIXED: Determine if filters are actually active (not just default values)
+    // Determine if filters are actually active (not just default 'trending')
     const hasActiveFilters = 
         (queryOptions.categories && queryOptions.categories.length > 0) || 
-        (queryOptions.sortBy && queryOptions.sortBy !== 'newest') || 
+        (queryOptions.sortBy && queryOptions.sortBy !== 'trending') || 
         queryOptions.minPrice !== undefined || 
         queryOptions.maxPrice !== undefined;
 
@@ -298,7 +322,7 @@ export default function ShopAll({
                 </div>
             )}
 
-            {/* FIXED: Only show banner when filters are actually active (not default 'newest') */}
+            {/* Show active filters summary - only when NOT default */}
             {hasActiveFilters && (
                 <div className="mb-4 p-3 bg-green-50 rounded-lg text-sm text-green-800">
                     <span className="font-semibold">Active filters:</span>
@@ -307,7 +331,7 @@ export default function ShopAll({
                             {queryOptions.categories.join(', ')}
                         </span>
                     )}
-                    {queryOptions.sortBy && queryOptions.sortBy !== 'newest' && (
+                    {queryOptions.sortBy && queryOptions.sortBy !== 'trending' && (
                         <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-full capitalize">
                             Sort: {queryOptions.sortBy.replace('-', ' ')}
                         </span>
