@@ -26,6 +26,8 @@ import ConsumerAccountPage from './pages/ConsumerAccountPage';
 import FarmerAccountSettingPage from './pages/FarmerAccountSetting';
 import ConsumerAccountSettingPage from './pages/ConsumerAccountSetting';
 import ReviewFarmer from './pages/ReviewFarmer';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
 
 // Pages that should not have footer and should be full viewport height
 const FULL_HEIGHT_PAGES = ['/messages'];
@@ -35,6 +37,7 @@ function AppLayout() {
     const location = useLocation();
 
     const isFullHeightPage = FULL_HEIGHT_PAGES.includes(location.pathname);
+    const isAdminPage = location.pathname.startsWith('/admin');
 
     const getNavbar = () => {
         if (!isLoggedIn) {
@@ -52,7 +55,7 @@ function AppLayout() {
 
     return (
         <div className={`flex flex-col ${isFullHeightPage ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
-            {getNavbar()}
+            {!isAdminPage && getNavbar()}
 
             {/* Main content area */}
             <div className={`flex-1 flex flex-col ${isFullHeightPage ? 'min-h-0 overflow-hidden' : ''}`}>
@@ -83,11 +86,13 @@ function AppLayout() {
                     <Route path="/farmer-account-setting" element={<FarmerAccountSettingPage />} />
                     <Route path="/consumer-account-setting" element={<ConsumerAccountSettingPage />} />
                     <Route path="/review-farmer" element={<ReviewFarmer />} />
+                    <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 </Routes>
             </div>
 
-            {/* Only show footer if not a full-height page */}
-            {!isFullHeightPage && <Footer />}
+            {/* Only show footer if not a full-height or admin page */}
+            {!isFullHeightPage && !isAdminPage && <Footer />}
         </div>
     );
 }
