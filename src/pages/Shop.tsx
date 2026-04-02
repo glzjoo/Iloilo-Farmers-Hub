@@ -13,11 +13,12 @@ export default function Shop() {
 
     return (
         <div className="w-full pb-10 mt-10 mb-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-start gap-4 md:gap-8 mb">
-                {/* Left Sidebar Filter */}
-                <div className="w-[220px] lg:w-[250px] flex-shrink-0 hidden md:block">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-start gap-4 md:gap-8">
+                {/* Left Sidebar */}
+                <div className="w-[220px] lg:w-[250px] flex-shrink-0 hidden md:block sticky top-28 self-start">
                     <SidebarFilter />
                 </div>
+
                 {/* Right Content */}
                 <div className="flex-1 min-w-0">
                     {/* Category Filter */}

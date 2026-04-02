@@ -1,4 +1,5 @@
 import filter from '../../assets/icons/filter.svg';
+import { useEffect, useState } from 'react';
 
 const trendingItems = ['avocado', 'bananas', 'rice', 'chicken'];
 const sortOptions = ['Rating', 'Newest'];
@@ -14,8 +15,10 @@ const categoryOptions = [
 const priceOptions = ['High-Low', 'Low-High'];
 
 export default function SidebarFilter() {
+
+
     return (
-        <aside className="w-full h-full bg-white border-r border-gray-100 pr-4">
+        <aside className={`w-full h-full bg-white border-r border-gray-100 pr-4`}>
             <h2 className="text-sm font-bold text-gray-800 mb-6 uppercase tracking-wider flex items-center gap-2">
                 <img src={filter} className="w-5 h-5" />
                 Search Filter
