@@ -1,5 +1,6 @@
 export interface Report {
     id: string;
+    firestoreId?: string;
     type: 'Scam' | 'Harassment' | 'Spam' | 'Fraud' | 'Other';
     reportedUser: string;
     reportedUserId: string;
@@ -10,6 +11,7 @@ export interface Report {
     reason: string;
     status: 'Pending' | 'Warning' | 'Suspended' | 'Permanently Banned' | 'Resolved';
     date: string;
+    conversationId?: string;
 }
 
 export function getStatusBadge(status: Report['status']) {

@@ -164,7 +164,7 @@ export default function AdminReports({
                                                             Suspend
                                                         </button>
                                                     )}
-                                                    {(report.status === 'Suspended' || report.status === 'Warning') && (
+                                                    {(report.status === 'Suspended' || report.status === 'Warning' || report.status === 'Permanently Banned') && (
                                                         <button
                                                             onClick={() => onReactivate(report.id)}
                                                             className="px-2.5 py-1 bg-green-600 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-green-700 transition-colors"

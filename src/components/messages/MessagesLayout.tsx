@@ -16,6 +16,7 @@ import { getProductById } from '../../services/productService';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import MakeOfferButton from './MakeOfferButton';
+import { submitReport } from '../../services/reportService';
 
 interface MessagesLayoutProps {
   conversationId: string | null;
@@ -54,7 +55,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
     respondToOrder,
     confirmOrderReceived,
   } = useMessages(conversationId, user?.uid);
-  
+
   const [newMessage, setNewMessage] = useState('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -69,6 +70,9 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
+  const [showReportMenu, setShowReportMenu] = useState(false);
+  const [reportType, setReportType] = useState<string | null>(null);
+  const [reportDetails, setReportDetails] = useState('');
 
   // Debug: Log messages when they change
   useEffect(() => {
@@ -404,34 +408,34 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
     fileInputRef.current?.click();
   };
 
-const handleSendOrderRequest = async (quantity: number, totalPrice: number) => {
-  console.log('handleSendOrderRequest called with:', { quantity, totalPrice });
-  
-  if (!userProfile || !conversationId || !currentProductContext) {
-    console.error('Missing required data:', { userProfile, conversationId, currentProductContext });
-    return;
-  }
+  const handleSendOrderRequest = async (quantity: number, totalPrice: number) => {
+    console.log('handleSendOrderRequest called with:', { quantity, totalPrice });
 
-  const senderName = userProfile.farmName || `${userProfile.firstName} ${userProfile.lastName}`;
+    if (!userProfile || !conversationId || !currentProductContext) {
+      console.error('Missing required data:', { userProfile, conversationId, currentProductContext });
+      return;
+    }
 
-  try {
-    console.log('About to call sendOrderRequest from hook');
-    await sendOrderRequest(
-      senderName,
-      userProfile.profileImage || '',
-      {
-        productId: currentProductContext.id,
-        productName: currentProductContext.name,
-        productImage: currentProductContext.image,
-        pricePerUnit: latestReceivedOfferPrice || currentProductContext.price,
-        quantity,
-        totalPrice,
-        unit: currentProductContext.unit,
-      }
-    );
-    console.log('sendOrderRequest completed successfully');
-    setShouldScrollToBottom(true);
-  } catch (error: any) {
+    const senderName = userProfile.farmName || `${userProfile.firstName} ${userProfile.lastName}`;
+
+    try {
+      console.log('About to call sendOrderRequest from hook');
+      await sendOrderRequest(
+        senderName,
+        userProfile.profileImage || '',
+        {
+          productId: currentProductContext.id,
+          productName: currentProductContext.name,
+          productImage: currentProductContext.image,
+          pricePerUnit: latestReceivedOfferPrice || currentProductContext.price,
+          quantity,
+          totalPrice,
+          unit: currentProductContext.unit,
+        }
+      );
+      console.log('sendOrderRequest completed successfully');
+      setShouldScrollToBottom(true);
+    } catch (error: any) {
       console.error('Failed to send order:', error);
       alert(error.message || 'Failed to send order request. Please try again.');
     }
@@ -439,7 +443,7 @@ const handleSendOrderRequest = async (quantity: number, totalPrice: number) => {
 
   const handleRespondToOrder = async (messageId: string, response: 'accepted' | 'rejected') => {
     console.log('handleRespondToOrder called:', { messageId, response });
-    
+
     if (!conversationId || !activeOrder?.orderDetails || !user) {
       console.error('Missing required data:', { conversationId, activeOrder, user });
       return;
@@ -465,27 +469,27 @@ const handleSendOrderRequest = async (quantity: number, totalPrice: number) => {
   };
 
   const handleConfirmReceived = async () => {
-      if (!userProfile || !conversationId || !user) return;
+    if (!userProfile || !conversationId || !user) return;
 
-      const senderName = `${userProfile.firstName} ${userProfile.lastName}`;
+    const senderName = `${userProfile.firstName} ${userProfile.lastName}`;
 
-      try {
-          await confirmOrderReceived(
-              senderName,
-              userProfile.profileImage || ''
-          );
-          
-          sessionStorage.setItem('pendingReview', JSON.stringify({
-              productId: currentProductContext?.id,
-              farmerId: otherParticipantId,
-              orderId: conversationId,
-              completedAt: new Date().toISOString()
-          }));
-          setShouldScrollToBottom(true);
-      } catch (error) {
-          console.error('Failed to confirm order:', error);
-          alert('Failed to confirm. Please try again.');
-      }
+    try {
+      await confirmOrderReceived(
+        senderName,
+        userProfile.profileImage || ''
+      );
+
+      sessionStorage.setItem('pendingReview', JSON.stringify({
+        productId: currentProductContext?.id,
+        farmerId: otherParticipantId,
+        orderId: conversationId,
+        completedAt: new Date().toISOString()
+      }));
+      setShouldScrollToBottom(true);
+    } catch (error) {
+      console.error('Failed to confirm order:', error);
+      alert('Failed to confirm. Please try again.');
+    }
   };
 
   const otherParticipant: Farmer | null = useMemo(() => {
@@ -550,12 +554,103 @@ const handleSendOrderRequest = async (quantity: number, totalPrice: number) => {
           user={participantData}
           loading={profileLoading}
         />
+        {/* Spacer to push report button to the right */}
+        <div className="flex-1" />
+        {/* Report Button */}
+        <div className="relative">
+          <button
+            onClick={() => setShowReportMenu(!showReportMenu)}
+            className="w-20 h-10 bg-red-500 flex items-center justify-center cursor-pointer text-white rounded-lg"
+            title="Report User"
+          >
+            Report
+          </button>
+          {showReportMenu && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={() => { setShowReportMenu(false); setReportType(null); setReportDetails(''); }} />
+              <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-40 overflow-hidden">
+                <div className="px-4 py-2.5 bg-red-500 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-white">Report this user</p>
+                    <p className="text-[10px] text-red-100">{reportType ? 'Provide details' : 'Select a reason'}</p>
+                  </div>
+                  <button
+                    onClick={() => { setShowReportMenu(false); setReportType(null); setReportDetails(''); }}
+                    className="text-white/80 hover:text-white bg-transparent border-none cursor-pointer text-lg leading-none"
+                  >✕</button>
+                </div>
+
+                {!reportType ? (
+                  // Step 1: Select reason
+                  <div className="py-1">
+                    {['Scam / Fraud', 'Harassment', 'Spam', 'Inappropriate Content', 'Other'].map((reason) => (
+                      <button
+                        key={reason}
+                        onClick={() => setReportType(reason)}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors bg-transparent border-none cursor-pointer"
+                      >
+                        {reason}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  // Step 2: Add details
+                  <div className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">{reportType}</span>
+                      <button
+                        onClick={() => setReportType(null)}
+                        className="text-xs text-gray-400 hover:text-gray-600 bg-transparent border-none cursor-pointer underline"
+                      >Change</button>
+                    </div>
+                    <textarea
+                      value={reportDetails}
+                      onChange={(e) => setReportDetails(e.target.value)}
+                      placeholder="Describe what happened (optional)..."
+                      rows={3}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400 placeholder:text-gray-400"
+                    />
+                    <button
+                      onClick={async () => {
+                        if (!user || !userProfile || !participantData) return;
+                        try {
+                          const reporterName = userProfile.farmName || `${userProfile.firstName} ${userProfile.lastName}`;
+                          const reportedName = participantData.farmName || `${participantData.firstName} ${participantData.lastName}`;
+                          await submitReport({
+                            type: reportType as any,
+                            reportedUser: reportedName,
+                            reportedUserId: otherParticipantId || '',
+                            role: participantData.role === 'farmer' ? 'Seller' : 'Consumer',
+                            reportedBy: reporterName,
+                            reportedById: user.uid,
+                            reason: reportDetails || reportType || '',
+                            conversationId: conversationId || '',
+                          });
+                          alert('Report submitted successfully! The admin will review it.');
+                        } catch (error) {
+                          console.error('Failed to submit report:', error);
+                          alert('Failed to submit report. Please try again.');
+                        }
+                        setShowReportMenu(false);
+                        setReportType(null);
+                        setReportDetails('');
+                      }}
+                      className="w-full mt-3 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg border-none cursor-pointer hover:bg-red-600 transition-colors"
+                    >
+                      Submit Report
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {userProfile?.role === 'farmer' && currentProductContext && (
         <FarmerProductContext
           product={currentProductContext}
-          offerPrice={latestReceivedOfferPrice} 
+          offerPrice={latestReceivedOfferPrice}
           consumerId={otherParticipantId || ''}
           conversationId={conversationId}
           lastAcceptedOfferPrice={latestReceivedOfferPrice ?? null}

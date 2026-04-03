@@ -12,6 +12,7 @@ import { doc, setDoc, getDoc, serverTimestamp, deleteDoc, updateDoc } from 'fire
 import { auth, db } from '../lib/firebase';
 import type { UserProfile, Consumer, Farmer } from '../types';
 import type { ConsumerSignupData, FarmerSignupData } from '../lib/validations';
+import SuspensionNoticeModal from '../components/admin/SuspensionNoticeModal';
 
 // Extended profile that combines auth + role-specific data
 interface ExtendedUserProfile extends UserProfile {
@@ -72,6 +73,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<ExtendedUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [suspensionInfo, setSuspensionInfo] = useState<{
+    type: 'temporary' | 'permanent';
+    suspendedUntil?: Date | null;
+  } | null>(null);
   
   // Store reCAPTCHA verifier
   const recaptchaVerifierRef = useRef<ApplicationVerifier | null>(null);
@@ -123,6 +128,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
             const baseProfile = userDoc.data() as UserProfile;
+
+            // Check if user is suspended
+            const userData = userDoc.data();
+            if (userData.suspended) {
+              const suspensionType = userData.suspensionType || 'temporary';
+              const suspendedUntil = userData.suspendedUntil?.toDate?.();
+              
+              // For temporary suspensions, check if the suspension has expired
+              if (suspensionType === 'temporary' && suspendedUntil && new Date() > suspendedUntil) {
+                // Suspension expired — allow login (auto-unsuspend handled elsewhere)
+              } else {
+                // Still suspended — force sign out
+                await signOut(auth);
+                setUser(null);
+                setUserProfile(null);
+                setLoading(false);
+
+                setSuspensionInfo({
+                  type: suspensionType,
+                  suspendedUntil: suspendedUntil || null,
+                });
+                return;
+              }
+            }
+
             const completeProfile = await fetchCompleteProfile(firebaseUser, baseProfile);
             setUserProfile(completeProfile);
           }
@@ -592,6 +622,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={value}>
       {children}
+      {suspensionInfo && (
+        <SuspensionNoticeModal
+          type={suspensionInfo.type}
+          suspendedUntil={suspensionInfo.suspendedUntil}
+          onClose={() => setSuspensionInfo(null)}
+        />
+      )}
     </AuthContext.Provider>
   );
 }
