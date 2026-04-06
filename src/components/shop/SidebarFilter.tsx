@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import filter from '../../assets/icons/filter.svg';
+import { useEffect, useState } from 'react';
 
 interface SidebarFilterProps {
     categories: string[];

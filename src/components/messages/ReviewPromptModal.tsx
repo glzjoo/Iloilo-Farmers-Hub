@@ -6,7 +6,7 @@ interface ReviewPromptModalProps {
   onClose: () => void;
   productId?: string;
   farmerId?: string;
-  orderId?: string; 
+  orderId?: string;
 }
 
 export default function ReviewPromptModal({
@@ -54,7 +54,7 @@ export default function ReviewPromptModal({
         fromOrder: true,
       },
     });
-    
+
     sessionStorage.removeItem('pendingReview');
     onClose();
   };
@@ -65,8 +65,8 @@ export default function ReviewPromptModal({
   };
 
   return (
-    <div 
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" 
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
       onClick={onClose}
     >
       <div
@@ -75,17 +75,17 @@ export default function ReviewPromptModal({
       >
         {/* Success Icon */}
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg 
-            className="w-8 h-8 text-green-600" 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            className="w-8 h-8 text-green-600"
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M5 13l4 4L19 7" 
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 13l4 4L19 7"
             />
           </svg>
         </div>
@@ -93,7 +93,7 @@ export default function ReviewPromptModal({
         <h3 className="text-xl font-bold text-gray-900 mb-2">
           Order Received!
         </h3>
-        
+
         <p className="text-gray-600 mb-6 text-sm leading-relaxed">
           Have a moment to share your experience? Your feedback helps other buyers and supports local farmers.
         </p>
@@ -105,7 +105,7 @@ export default function ReviewPromptModal({
           >
             Review Now!
           </button>
-          
+
           <button
             onClick={handleMaybeLater}
             className="w-full py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200"

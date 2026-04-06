@@ -39,8 +39,8 @@ export interface Farmer {
     farmType?: string;
     lastPhotoChange?: Date | { toDate(): Date } | any;
     //offer count
-    offerCount?: number;       
-    remainingOffers?: number;  
+    offerCount?: number;
+    remainingOffers?: number;
 }
 
 export interface Consumer {
@@ -56,6 +56,10 @@ export interface Consumer {
     lastPhotoChange?: Date | { toDate(): Date } | any;
 }
 
+export interface Admin {
+    username: string;
+    password: string;
+}
 export interface Product {
     id: string;
     name: string;

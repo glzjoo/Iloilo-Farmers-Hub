@@ -64,6 +64,7 @@ src/
 ## Team
 
 - **Branch:** `gly` — Front-end development
+- **Branch:** `reyna` — Back-end development
 
 ## License
 
