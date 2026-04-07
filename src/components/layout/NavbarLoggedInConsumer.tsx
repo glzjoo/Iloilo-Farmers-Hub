@@ -1,20 +1,21 @@
 import logo from '../../assets/icons/logo.png';
-import languageIcon from '../../assets/icons/language-logo.svg';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import messagesIcon from '../../assets/icons/messages.svg';
 import logOutIcon from '../../assets/icons/log-out.svg';
 import cartIcon from '../../assets/icons/saved-items.png';
 import { useAuth } from '../../context/AuthContext';
 import SearchBar from '../Search/SearchBar';
-import HamburgerFilter from './HamburgerFilter';
 import settingIcon from '../../assets/icons/settings.svg';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function NavbarLoggedInConsumer() {
     const [showDropdown, setShowDropdown] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
     const { user, userProfile, logout, loading } = useAuth();
+    const { t } = useTranslation();
 
     const linkClass = (path: string) =>
         `no-underline text-sm font-semibold transition-colors ${location.pathname === path ? 'text-primary' : 'text-gray-700 hover:text-green-700'}`;
@@ -45,11 +46,7 @@ export default function NavbarLoggedInConsumer() {
         <header className="w-full sticky top-0 z-50">
             <nav className="bg-primary w-full">
                 <div className="max-w-7xl mx-auto flex justify-end px-6 pt-2">
-                    <button className="flex items-center gap-1 bg-transparent border-none cursor-pointer text-white">
-                        <img src={languageIcon} className="w-5 h-5 brightness-0 invert" />
-                        <span className="text-xs font-medium">English</span>
-                        <span className="text-xs">▾</span>
-                    </button>
+                    <LanguageSwitcher />
                 </div>
 
                 <div className="max-w-7xl mx-auto flex items-center justify-between px-6 pb-4 pt-1 gap-4">
@@ -112,16 +109,16 @@ export default function NavbarLoggedInConsumer() {
                                         <Link to="/messages" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
                                             <img src={messagesIcon} className="w-7 h-7" />
                                             <div>
-                                                <p className="text-base font-bold text-black">Messages</p>
-                                                <p className="text-xs text-gray-400">No unread messages</p>
+                                                <p className="text-base font-bold text-black">{t('messages')}</p>
+                                                <p className="text-xs text-gray-400">{t('no_unread')}</p>
                                             </div>
                                         </Link>
 
-                                        {/* Settings for consumer. to implementpa */}
+                                        {/* Settings */}
                                         <Link to="/consumer-account-setting" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
                                             <img src={settingIcon} className="w-7 h-7" />
                                             <div>
-                                                <p className="text-base font-bold text-black">Settings</p>
+                                                <p className="text-base font-bold text-black">{t('settings')}</p>
                                             </div>
                                         </Link>
 
@@ -131,8 +128,8 @@ export default function NavbarLoggedInConsumer() {
                                         >
                                             <img src={logOutIcon} className="w-7 h-7" />
                                             <div>
-                                                <p className="text-base font-bold text-red-500">Log out</p>
-                                                <p className="text-xs text-red-400">Sign out of your account</p>
+                                                <p className="text-base font-bold text-red-500">{t('log_out')}</p>
+                                                <p className="text-xs text-red-400">{t('log_out_desc')}</p>
                                             </div>
                                         </button>
                                     </div>
@@ -146,16 +143,11 @@ export default function NavbarLoggedInConsumer() {
             {/* Consumer navigation */}
             <div className="bg-white border-b border-gray-200 shadow-sm">
                 <div className="max-w-7xl mx-auto relative flex items-center justify-center gap-10 px-6 py-3">
-                    {location.pathname === '/shop' && (
-                        <div className="absolute left-6">
-                            <HamburgerFilter />
-                        </div>
-                    )}
-                    <Link to="/" className={linkClass('/')}>HOME</Link>
-                    <Link to="/shop" className={linkClass('/shop')}>SHOP</Link>
-                    <Link to="/subscriptions" className={linkClass('/subscriptions')}>SUBSCRIPTIONS</Link>
-                    <Link to="/become-a-seller" className={linkClass('/become-a-seller')}>BECOME A SELLER</Link>
-                    <Link to="/about" className={linkClass('/about')}>ABOUT US</Link>
+                    <Link to="/" className={linkClass('/')}>{t('nav_home')}</Link>
+                    <Link to="/shop" className={linkClass('/shop')}>{t('nav_shop')}</Link>
+                    <Link to="/subscriptions" className={linkClass('/subscriptions')}>{t('nav_subscriptions')}</Link>
+                    <Link to="/become-a-seller" className={linkClass('/become-a-seller')}>{t('nav_become_seller')}</Link>
+                    <Link to="/about" className={linkClass('/about')}>{t('nav_about')}</Link>
                 </div>
             </div>
         </header>

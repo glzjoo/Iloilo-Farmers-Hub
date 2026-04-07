@@ -1,42 +1,45 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Fuse from 'fuse.js';
 import minus from '../../assets/icons/minus.svg';
 import add from '../../assets/icons/add.svg';
 import type { Product } from '../../types';
-import { getShopProducts, getProductsByCategory } from '../../services/shopService';
+import { 
+    getProducts,
+    type ProductQueryOptions 
+} from '../../services/shopService';
 import { addToCart } from '../../services/cartService';
 import { useAuth } from '../../context/AuthContext';
+import ActionGuardModal from '../common/ActionGuardModal';
 
 interface ShopAllProps {
     searchQuery?: string;
-    selectedCategory?: string;
+    queryOptions?: ProductQueryOptions;
 }
 
-// score = (rating * 0.4) + (log(reviewCount + 1) * 0.2) + (recencyBoost * 0.1) + (log(soldCount + 1) * 0.3)
-// recencyBoost = 0.1 if created within 7 days, then linearly decreases to 0 at 14 days
-
-// Trending Algorithm Score Calculator
+// Trending Algorithm Score Calculator - FULL ALGORITHM
 const calculateTrendingScore = (product: Product): number => {
     const ratingScore = (product.rating || 0) * 0.4;
     const soldScore = Math.log10((product.soldCount || 0) + 1) * 0.3;
     const reviewScore = Math.log10((product.reviewCount || 0) + 1) * 0.2;
-    
+
     let recencyScore = 0;
     if (product.createdAt) {
         const now = new Date();
         const createdAt = product.createdAt?.toDate?.() || new Date(product.createdAt);
-        const daysSinceCreated = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-        
-        if (daysSinceCreated <= 14) {
-            recencyScore = 0.1 * (1 - daysSinceCreated / 14);
+        // Guard against invalid date
+        if (!isNaN(createdAt.getTime())) {
+            const daysSinceCreated = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+            if (daysSinceCreated <= 14) {
+                recencyScore = 0.1 * (1 - daysSinceCreated / 14);
+            }
         }
     }
-    
+
     return ratingScore + soldScore + reviewScore + recencyScore;
 };
 
 // Diversity multiplier: prevents single farmer from dominating results
-// First product: 100%, Second: 95%, Third: 90%, etc. (min 70%)
 const getDiversityMultiplier = (sameFarmerCount: number): number => {
     return Math.max(0.7, 1 - (sameFarmerCount * 0.05));
 };
@@ -46,7 +49,10 @@ const isOutOfStock = (stock: string): boolean => {
     return stockMatch ? parseInt(stockMatch[1]) === 0 : true;
 };
 
-export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: ShopAllProps) {
+export default function ShopAll({ 
+    searchQuery = '', 
+    queryOptions = { sortBy: 'trending', limit: 100 }
+}: ShopAllProps) {
     const navigate = useNavigate();
     const { user, userProfile } = useAuth();
     const [products, setProducts] = useState<Product[]>([]);
@@ -54,26 +60,50 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
     const [error, setError] = useState('');
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [addingToCart, setAddingToCart] = useState<string | null>(null);
+    const [showGuardModal, setShowGuardModal] = useState(false);
 
+    // Stable dependency key to prevent infinite re-fetching
+    const queryOptionsKey = useMemo(() => {
+        return JSON.stringify({
+            categories: queryOptions.categories?.sort().join(','),
+            sortBy: queryOptions.sortBy,
+            minPrice: queryOptions.minPrice,
+            maxPrice: queryOptions.maxPrice,
+            limit: queryOptions.limit
+        });
+    }, [queryOptions]);
+
+    // Fetch products when queryOptions change
     useEffect(() => {
         const fetchProducts = async () => {
             try {
                 setLoading(true);
                 setError('');
 
-                const fetchedProducts = selectedCategory && selectedCategory !== 'All'
-                    ? await getProductsByCategory(selectedCategory)
-                    : await getShopProducts();
+                console.log('Fetching products with options:', queryOptions);
+                const fetchedProducts = await getProducts(queryOptions);
+                
+                // Client-side price filtering (if range specified)
+                let filtered = fetchedProducts;
+                if (queryOptions.minPrice !== undefined || queryOptions.maxPrice !== undefined) {
+                    filtered = filtered.filter(p => {
+                        if (queryOptions.minPrice !== undefined && p.price < queryOptions.minPrice) return false;
+                        if (queryOptions.maxPrice !== undefined && p.price > queryOptions.maxPrice) return false;
+                        return true;
+                    });
+                }
+                
+                setProducts(filtered);
 
-                setProducts(fetchedProducts);
-
+                // Initialize quantities
                 const initialQuantities: Record<string, number> = {};
-                fetchedProducts.forEach(p => {
+                filtered.forEach(p => {
                     initialQuantities[p.id] = 1;
                 });
                 setQuantities(initialQuantities);
 
             } catch (err: any) {
+                console.error('Error fetching products:', err);
                 setError(err.message || 'Failed to fetch products');
             } finally {
                 setLoading(false);
@@ -81,20 +111,39 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         };
 
         fetchProducts();
-    }, [selectedCategory]);
+    }, [queryOptionsKey]);
 
+    // Initialize Fuse instance for fuzzy search
+    const fuse = useMemo(() => {
+        const fuseOptions = {
+            keys: [
+                { name: 'name', weight: 0.5 },
+                { name: 'category', weight: 0.3 },
+                { name: 'farmerName', weight: 0.2 }
+            ],
+            threshold: 0.4,
+            minMatchCharLength: 2,
+            includeScore: false
+        };
+        return new Fuse(products, fuseOptions);
+    }, [products]);
+
+    // Process and display products
     const displayedProducts = useMemo(() => {
-        const filtered = searchQuery
-            ? products.filter(product =>
-                product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                product.farmerName?.toLowerCase().includes(searchQuery.toLowerCase())
-              )
-            : [...products];
+        let filtered: Product[];
 
+        // 1. Apply search if exists (Fuse.js fuzzy search)
+        if (searchQuery) {
+            const fuseResults = fuse.search(searchQuery);
+            filtered = fuseResults.map(result => result.item);
+        } else {
+            filtered = [...products];
+        }
+
+        // 2. Split by stock status (in stock first)
         const inStock: Product[] = [];
         const outOfStock: Product[] = [];
-        
+
         filtered.forEach(product => {
             if (isOutOfStock(product.stock)) {
                 outOfStock.push(product);
@@ -103,46 +152,69 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
             }
         });
 
-        // Calculate base scores
-        const withBaseScores = inStock.map(product => ({
-            product,
-            baseScore: calculateTrendingScore(product)
-        }));
-
-        // Sort by base score initially
-        withBaseScores.sort((a, b) => b.baseScore - a.baseScore);
-
-        // Apply diversity boost: penalize multiple products from same farmer
-        const farmerProductCount: Record<string, number> = {};
-        const withDiversityScores = withBaseScores.map(item => {
-            const farmerId = item.product.farmerId;
-            const count = farmerProductCount[farmerId] || 0;
-            farmerProductCount[farmerId] = count + 1;
+        // 3. Apply algorithms based on sort type
+        if (queryOptions.sortBy === 'newest') {
+            // Pure date sort - NO algorithm
+            const sortedInStock = [...inStock].sort((a, b) => {
+                const dateA = a.createdAt?.toDate?.() || new Date(0);
+                const dateB = b.createdAt?.toDate?.() || new Date(0);
+                const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+                const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+                return timeB - timeA;
+            });
             
-            const diversityMultiplier = getDiversityMultiplier(count);
-            const finalScore = item.baseScore * diversityMultiplier;
+            const sortedOutOfStock = [...outOfStock].sort((a, b) => {
+                const dateA = a.createdAt?.toDate?.() || new Date(0);
+                const dateB = b.createdAt?.toDate?.() || new Date(0);
+                const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+                const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+                return timeB - timeA;
+            });
             
-            return {
-                ...item,
-                finalScore,
-                diversityMultiplier
-            };
-        });
+            return [...sortedInStock, ...sortedOutOfStock];
+        } 
+        else if (queryOptions.sortBy === 'trending' || !queryOptions.sortBy) {
+            // FULL TRENDING ALGORITHM with diversity (DEFAULT behavior)
+            const withBaseScores = inStock.map(product => ({
+                product,
+                baseScore: calculateTrendingScore(product)
+            }));
 
-        // Re-sort by final score after diversity adjustment
-        withDiversityScores.sort((a, b) => b.finalScore - a.finalScore);
+            // Sort by base score
+            withBaseScores.sort((a, b) => b.baseScore - a.baseScore);
 
-        const sortedInStock = withDiversityScores.map(item => item.product);
+            // Apply diversity boost to prevent farmer domination
+            const farmerProductCount: Record<string, number> = {};
+            const withDiversityScores = withBaseScores.map(item => {
+                const farmerId = item.product.farmerId;
+                const count = farmerProductCount[farmerId] || 0;
+                farmerProductCount[farmerId] = count + 1;
+                const diversityMultiplier = getDiversityMultiplier(count);
+                const finalScore = item.baseScore * diversityMultiplier;
 
-        // Out-of-stock: sort by createdAt (newest first)
-        const sortedOutOfStock = outOfStock.sort((a, b) => {
-            const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
-            const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
-            return dateB.getTime() - dateA.getTime();
-        });
+                return { ...item, finalScore };
+            });
 
-        return [...sortedInStock, ...sortedOutOfStock];
-    }, [products, searchQuery]);
+            // Re-sort by final diversity-adjusted score
+            withDiversityScores.sort((a, b) => b.finalScore - a.finalScore);
+            const sortedInStock = withDiversityScores.map(item => item.product);
+
+            // Sort out-of-stock by date (newest first)
+            const sortedOutOfStock = [...outOfStock].sort((a, b) => {
+                const dateA = a.createdAt?.toDate?.() || new Date(0);
+                const dateB = b.createdAt?.toDate?.() || new Date(0);
+                const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+                const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+                return timeB - timeA;
+            });
+
+            return [...sortedInStock, ...sortedOutOfStock];
+        }
+
+        // For rating/price sorts: Firestore already sorted, just separate stock status
+        return [...inStock, ...outOfStock];
+
+    }, [products, searchQuery, fuse, queryOptions.sortBy]);
 
     const handleIncrement = (productId: string) => {
         setQuantities(prev => ({
@@ -162,17 +234,18 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         navigate(`/item/${productId}`);
     };
 
+    const checkUserRole = (): 'guest' | 'farmer' | 'consumer' => {
+        if (!user || !userProfile) return 'guest';
+        return userProfile.role;
+    };
+
     const handleAddToCart = async (e: React.MouseEvent, product: Product) => {
         e.stopPropagation();
 
-        if (!user) {
-            alert('Please login to add items to cart');
-            navigate('/login');
-            return;
-        }
+        const role = checkUserRole();
 
-        if (userProfile?.role !== 'consumer') {
-            alert('Only consumers can add items to cart');
+        if (role !== 'consumer') {
+            setShowGuardModal(true);
             return;
         }
 
@@ -180,7 +253,7 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         setAddingToCart(product.id);
 
         try {
-            await addToCart(user.uid, {
+            await addToCart(user!.uid, {
                 id: product.id,
                 name: product.name,
                 price: product.price,
@@ -229,113 +302,132 @@ export default function ShopAll({ searchQuery = '', selectedCategory = 'All' }: 
         );
     }
 
+    // Determine if filters are actually active (not just default 'trending')
+    const hasActiveFilters = 
+        (queryOptions.categories && queryOptions.categories.length > 0) || 
+        (queryOptions.sortBy && queryOptions.sortBy !== 'trending') || 
+        queryOptions.minPrice !== undefined || 
+        queryOptions.maxPrice !== undefined;
+
     return (
-        <section className="w-full py-8">
-            <div className="max-w-7xl mx-auto px-6">
-                {/*<div className="flex items-center justify-between mb-12">
-                    <p className="text-gray-500">{displayedProducts.length} products found</p>
-                </div> */}  {/* remove for now, can add back if we want to show count */}
+        <div className="w-full">
+            {searchQuery && (
+                <div className="mb-6 flex justify-end">
+                    <button
+                        onClick={() => navigate('/shop')}
+                        className="text-sm text-gray-500 hover:text-primary transition"
+                    >
+                        Show all products
+                    </button>
+                </div>
+            )}
 
-                {displayedProducts.length === 0 ? (
-                    <div className="text-center py-16">
-                        <p className="text-xl font-primary text-gray-400">
-                            {searchQuery ? `No products found for "${searchQuery}"` : 'No products available'}
-                        </p>
-                        <p className="text-sm font-primary text-gray-400 mt-2">
-                            {searchQuery ? 'Try a different search term' : 'Check back later for new listings'}
-                        </p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                        {displayedProducts.map((product) => (
-                            <div
-                                key={product.id}
-                                className="cursor-pointer group"
-                                onClick={() => handleProductClick(product.id)}
-                            >
-                                <div className="relative overflow-hidden rounded-lg">
-                                    <img
-                                        src={product.image || '/placeholder-product.png'}
-                                        alt={product.name}
-                                        className="w-full h-32 object-cover transition-transform group-hover:scale-105"
-                                    />
-                                    {isOutOfStock(product.stock) && (
-                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                            <span className="text-white font-bold">Out of Stock</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="flex flex-col mt-2">
-                                    <div className="flex items-center justify-between gap-1">
-                                        <h3 className="text-sm font-semibold text-gray-900 truncate flex-1 min-w-0">
-                                            {product.name}
-                                        </h3>
-                                        {product.rating > 0 && (
-                                            <span className="text-xs text-yellow-600 flex-shrink-0">
-                                                ★ {product.rating.toFixed(1)}
-                                            </span>
-                                        )}
+            {displayedProducts.length === 0 ? (
+                <div className="text-center py-16">
+                    <p className="text-xl font-primary text-gray-400">
+                        {searchQuery ? `No products found for "${searchQuery}"` : 'No products available'}
+                    </p>
+                    <p className="text-sm font-primary text-gray-400 mt-2">
+                        {searchQuery ? 'Try a different search term' : 'Check back later for new listings'}
+                    </p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                    {displayedProducts.map((product) => (
+                        <div
+                            key={product.id}
+                            className="cursor-pointer group"
+                            onClick={() => handleProductClick(product.id)}
+                        >
+                            <div className="relative overflow-hidden rounded-lg">
+                                <img
+                                    src={product.image || '/placeholder-product.png'}
+                                    alt={product.name}
+                                    className="w-full h-32 object-cover transition-transform group-hover:scale-105"
+                                />
+                                {isOutOfStock(product.stock) && (
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                        <span className="text-white font-bold">Out of Stock</span>
                                     </div>
-                                    
-                                    <p className="text-primary text-xs font-semibold mt-0.5">
-                                        ₱{product.price.toFixed(2)} / {product.unit}
-                                    </p>
-                                    
-                                    <p className="text-xs text-gray-500 truncate mt-0.5">
-                                        {product.farmerName}
-                                    </p>
-                                    
-                                    {(product.soldCount || 0) > 0 && (
-                                        <p className="text-xs text-gray-400 mt-0.5">
-                                            {product.soldCount} sold
-                                        </p>
+                                )}
+                            </div>
+
+                            <div className="flex flex-col mt-2">
+                                <div className="flex items-center justify-between gap-1">
+                                    <h3 className="text-sm font-semibold text-gray-900 truncate flex-1 min-w-0">
+                                        {product.name}
+                                    </h3>
+                                    {product.rating > 0 && (
+                                        <span className="text-xs text-yellow-600 flex-shrink-0">
+                                            ★ {product.rating.toFixed(1)}
+                                        </span>
                                     )}
                                 </div>
 
-                                <div className="flex items-center gap-1 mt-2">
-                                    <button
-                                        className="bg-transparent border-none cursor-pointer p-0 disabled:opacity-50"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDecrement(product.id);
-                                        }}
-                                        disabled={isOutOfStock(product.stock)}
-                                    >
-                                        <img src={minus} alt="Decrease" className="w-7 h-7" />
-                                    </button>
-                                    <span className="text-sm font-semibold text-gray-900 w-5 text-center">
-                                        {quantities[product.id] || 1}
-                                    </span>
-                                    <button
-                                        className="bg-transparent border-none cursor-pointer p-0 disabled:opacity-50"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleIncrement(product.id);
-                                        }}
-                                        disabled={isOutOfStock(product.stock)}
-                                    >
-                                        <img src={add} alt="Increase" className="w-7 h-7" />
-                                    </button>
-                                </div>
+                                <p className="text-primary text-xs font-semibold mt-0.5">
+                                    ₱{product.price.toFixed(2)} / {product.unit}
+                                </p>
 
+                                <p className="text-xs text-gray-500 truncate mt-0.5">
+                                    {product.farmerName}
+                                </p>
+
+                                {(product.soldCount || 0) > 0 && (
+                                    <p className="text-xs text-gray-400 mt-0.5">
+                                        {product.soldCount} sold
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="flex items-center gap-1 mt-2">
                                 <button
-                                    className="w-full bg-primary flex items-center justify-center gap-2 text-white text-sm font-medium px-4 py-2 rounded-2xl border-none cursor-pointer mb-5 mt-2 hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                    onClick={(e) => handleAddToCart(e, product)}
-                                    disabled={isOutOfStock(product.stock) || addingToCart === product.id}
+                                    className="bg-transparent border-none cursor-pointer p-0 disabled:opacity-50"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDecrement(product.id);
+                                    }}
+                                    disabled={isOutOfStock(product.stock)}
                                 >
-                                    {addingToCart === product.id 
-                                        ? 'Adding...' 
-                                        : isOutOfStock(product.stock) 
-                                            ? 'Out of Stock' 
-                                            : 'Add to Cart'
-                                    }
+                                    <img src={minus} alt="Decrease" className="w-7 h-7" />
+                                </button>
+                                <span className="text-sm font-semibold text-gray-900 w-5 text-center">
+                                    {quantities[product.id] || 1}
+                                </span>
+                                <button
+                                    className="bg-transparent border-none cursor-pointer p-0 disabled:opacity-50"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleIncrement(product.id);
+                                    }}
+                                    disabled={isOutOfStock(product.stock)}
+                                >
+                                    <img src={add} alt="Increase" className="w-7 h-7" />
                                 </button>
                             </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </section>
+
+                            <button
+                                className="w-full bg-primary flex items-center justify-center gap-2 text-white text-sm font-medium px-4 py-2 rounded-2xl border-none cursor-pointer mb-5 mt-2 hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                onClick={(e) => handleAddToCart(e, product)}
+                                disabled={isOutOfStock(product.stock) || addingToCart === product.id}
+                            >
+                                {addingToCart === product.id
+                                    ? 'Adding...'
+                                    : isOutOfStock(product.stock)
+                                        ? 'Out of Stock'
+                                        : 'Add to Cart'
+                                }
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <ActionGuardModal
+                isOpen={showGuardModal}
+                action="addToCart"
+                userRole={checkUserRole()}
+                onClose={() => setShowGuardModal(false)}
+            />
+        </div>
     );
 }

@@ -39,8 +39,8 @@ export interface Farmer {
     farmType?: string;
     lastPhotoChange?: Date | { toDate(): Date } | any;
     //offer count
-    offerCount?: number;       
-    remainingOffers?: number;  
+    offerCount?: number;
+    remainingOffers?: number;
 }
 
 export interface Consumer {
@@ -56,6 +56,10 @@ export interface Consumer {
     lastPhotoChange?: Date | { toDate(): Date } | any;
 }
 
+export interface Admin {
+    username: string;
+    password: string;
+}
 export interface Product {
     id: string;
     name: string;
@@ -198,4 +202,24 @@ export interface FarmerReviewSummary {
     averageRating: number;
     totalReviews: number;
     recentReviews: Review[];
+}
+
+export interface FarmLocation {
+  province: string;
+  city: string;
+  barangay: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  accuracy: 'gps' | 'manual_pin' | 'barangay_centroid';
+}
+
+// Extended Farmer interface with location
+export interface FarmerWithLocation extends Farmer {
+  farmLocation?: FarmLocation;
+  farmAddressDetails?: string;
+  locationGeohash?: string; // For Firestore geo queries
+  locationUpdatedAt?: Date;
+  nextLocationUpdateAt?: Date; // 3-month cooldown
 }

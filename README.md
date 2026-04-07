@@ -63,10 +63,8 @@ src/
 
 ## Team
 
-- Glaiza Mae Salvaloza - Developer
-- Ray Jane Andrada -  Developer
-- April Beatrice Sanda - UI/UX
-- Rizza Mia Abogadil - UI/UX
+- **Branch:** `gly` — Front-end development
+- **Branch:** `rey` — Back-end development
 
 ## License
 

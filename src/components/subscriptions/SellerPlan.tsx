@@ -34,7 +34,6 @@ export default function SellerPlan() {
                                 ₱{plan.price}<span className="text-base font-normal text-gray-600">/month</span>
                             </p>
                         </div>
-
                         {/* Features in two columns */}
                         <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-2"> {/* incase to add new plan*/}
                             {plan.features.map((feature, i) => (
@@ -44,7 +43,6 @@ export default function SellerPlan() {
                                 </div>
                             ))}
                         </div>
-
                         {/*Button */}
                         <div className="flex items-center self-center">
                             <button className="bg-primary text-white text-sm font-medium px-6 py-2.5 rounded-md cursor-pointer border-none whitespace-nowrap">

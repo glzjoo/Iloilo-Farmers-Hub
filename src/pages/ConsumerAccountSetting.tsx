@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import settingIcon from '../assets/icons/account-settings.svg';
 import accountIcon from '../assets/icons/account-icon.svg';
-import EditProfileFarmer from '../components/settings/EditProfileFarmer';
-import SecuritySettingFarmer from '../components/settings/SecuritySettingFarmer';
+import EditProfileConsumer from '../components/settings/EditProfileConsumer';
+import SecuritySettingConsumer from '../components/settings/SecuritySettingFarmer';
 
 export default function ConsumerAccountSetting() {
     const [activeTab, setActiveTab] = useState<'edit-profile' | 'security'>('edit-profile');
@@ -48,8 +48,8 @@ export default function ConsumerAccountSetting() {
                 </div>
 
                 <div key={activeTab} className="flex-1 animate-tab-fade-in">
-                    {activeTab === 'edit-profile' && <EditProfileFarmer />}
-                    {activeTab === 'security' && <SecuritySettingFarmer />}
+                    {activeTab === 'edit-profile' && <EditProfileConsumer />}
+                    {activeTab === 'security' && <SecuritySettingConsumer />}
                 </div>
             </div>
         </section>
