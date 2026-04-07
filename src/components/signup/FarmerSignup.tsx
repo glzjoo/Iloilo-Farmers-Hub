@@ -264,7 +264,7 @@ export default function FarmerSignup() {
             />
             {farmLocation?.coordinates && (
               <p className="mt-2 text-sm text-green-600 font-primary">
-                ✅ Location set: {farmLocation.barangay}, {farmLocation.city} 
+                Location set: {farmLocation.barangay}, {farmLocation.city} 
                 ({farmLocation.coordinates.lat.toFixed(4)}, {farmLocation.coordinates.lng.toFixed(4)})
                 {farmLocation.accuracy === 'gps' && ' • GPS'}
                 {farmLocation.accuracy === 'manual_pin' && ' • Manual pin'}

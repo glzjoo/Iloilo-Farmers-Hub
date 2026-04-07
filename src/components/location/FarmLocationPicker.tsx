@@ -337,7 +337,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
           />
           <p className="text-xs text-gray-500 font-primary">
             {markerPosition 
-              ? `✅ Pin placed (${pinSource === 'gps' ? 'GPS' : 'manual'}). Drag to adjust.` 
+              ? ` Pin placed (${pinSource === 'gps' ? 'GPS' : 'manual'}). Drag to adjust.` 
               : '💡 Tip: Click on map to place pin at exact farm entrance'}
           </p>
         </div>
