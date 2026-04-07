@@ -43,13 +43,12 @@ export default function FarmerSignup() {
 
   const farmLocation = watch('farmLocation');
 
-  const onSubmit = async (data: FarmerSignupData) => {
+  const onSubmit = handleSubmit(async (data) => {
     console.log('=== BUTTON CLICKED / FORM SUBMITTED ===');
     setIsLoading(true);
     setFirebaseError(null);
 
     try {
-      // Use custom farm type text if "Other" was selected
       const submitData: FarmerSignupData = {
         ...data,
         farmType: data.farmType === 'Other' && customFarmType.trim()
@@ -76,7 +75,7 @@ export default function FarmerSignup() {
     } finally {
       setIsLoading(false);
     }
-  };
+  });
 
   const handleClear = () => {
     reset();
@@ -90,7 +89,6 @@ export default function FarmerSignup() {
       : `${baseClass} border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary`;
   };
 
-  // Debug log on every render
   console.log('=== RENDER ===', {
     isLoading,
     formErrors: errors,
@@ -102,7 +100,6 @@ export default function FarmerSignup() {
   return (
     <section className="flex items-center justify-center py-16 px-4">
       <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-10">
-        {/* Header */}
         <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
           <div className="flex items-center gap-3">
             <img src={logo} className="w-11 h-11 rounded-full object-cover" alt="Logo" />
@@ -111,25 +108,19 @@ export default function FarmerSignup() {
           <SignupToggle />
         </div>
 
-        {/* Firebase Error Display */}
         {firebaseError && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-600 text-sm font-primary">{firebaseError}</p>
           </div>
         )}
 
-        {/* Info Banner - UPDATED for OTP */}
         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-blue-700 text-sm font-primary">
             <span className="font-bold">Next Steps:</span> 1) Verify your identity with ID + selfie, 2) We'll send OTP to your phone to create your account. <span className="font-semibold">No password needed!</span>
           </p>
         </div>
 
-        {/* Form */}
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="grid grid-cols-2 gap-x-8 gap-y-5"
-        >
+        <form onSubmit={onSubmit} className="grid grid-cols-2 gap-x-8 gap-y-5">
           {/* First Name */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
@@ -252,7 +243,7 @@ export default function FarmerSignup() {
             )}
           </div>
 
-          {/* Farm Location Picker - REPLACES old farmAddress text field */}
+          {/* Farm Location Picker */}
           <div className="col-span-2">
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
               Farm Location <span className="text-red-500">*</span>
@@ -271,15 +262,18 @@ export default function FarmerSignup() {
                 />
               )}
             />
-            {farmLocation && (
+            {farmLocation?.coordinates && (
               <p className="mt-2 text-sm text-green-600 font-primary">
                 ✅ Location set: {farmLocation.barangay}, {farmLocation.city} 
                 ({farmLocation.coordinates.lat.toFixed(4)}, {farmLocation.coordinates.lng.toFixed(4)})
+                {farmLocation.accuracy === 'gps' && ' • GPS'}
+                {farmLocation.accuracy === 'manual_pin' && ' • Manual pin'}
+                {farmLocation.accuracy === 'barangay_centroid' && ' • Barangay center'}
               </p>
             )}
           </div>
 
-          {/* Optional: Additional Address Details */}
+          {/* Additional Address Details */}
           <div className="col-span-2">
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
               Additional Address Details <span className="text-gray-400 text-xs italic">(Optional)</span>
@@ -408,7 +402,6 @@ export default function FarmerSignup() {
             <button
               type="submit"
               disabled={isLoading}
-              onClick={() => console.log('Button onClick fired')}
               className="px-10 py-2.5 rounded-full border-none bg-primary text-white font-primary font-bold cursor-pointer hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-lg transition-colors flex items-center gap-2"
             >
               {isLoading ? (

@@ -2,10 +2,10 @@ import fs from 'fs';
 
 const OUTPUT_PATH = './src/data/iloilo-barangays.json';
 const PROVINCE_CODE = '063000000';
-const TARGET_MUNICIPALITIES = ['Oton', 'Pavia', 'San Miguel', 'Iloilo City'];
+const TARGET_MUNICIPALITIES = ['Oton', 'Pavia', 'San Miguel'];
 
 const headers = {
-  'User-Agent': 'IloiloFarmersHub-Thesis/1.0 (your-email@school.edu)'
+  'User-Agent': 'IloiloFarmersHub-Thesis/1.0 (your-email@school.edu)' // to be replaced with actual contact info for responsible use
 };
 
 // Manual coordinates for known problematic barangays (backup data)

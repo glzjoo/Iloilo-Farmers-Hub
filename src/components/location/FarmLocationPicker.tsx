@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import iloiloData from '../../data/iloilo-barangays.json';
 
-// Move this OUTSIDE the component to prevent reloads
 const GOOGLE_MAPS_LIBRARIES: ("places" | "marker" | "geometry" | "drawing" | "visualization")[] = ['places', 'marker'];
 
 const mapContainerStyle = {
@@ -16,7 +15,6 @@ const defaultCenter = {
   lng: 122.5621,
 };
 
-// Export the interface so it can be used by other components
 export interface FarmLocation {
   province: string;
   city: string;
@@ -44,14 +42,12 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedBarangay, setSelectedBarangay] = useState<string>('');
   const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [pinSource, setPinSource] = useState<'gps' | 'manual_pin' | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string>('');
 
-  // Refs for AdvancedMarkerElement
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
-
-  // Use ref to track if we've already notified parent to prevent infinite loop
   const lastNotifiedLocation = useRef<string>('');
 
   const cities = iloiloData.cities;
@@ -59,7 +55,6 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
     ? cities.find(c => c.name === selectedCity)?.barangays || []
     : [];
 
-  // Get coordinates from barangay centroid or current marker
   const getCurrentCoordinates = useCallback(() => {
     if (markerPosition) return markerPosition;
     
@@ -79,7 +74,6 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
     return null;
   }, [markerPosition, selectedBarangay, selectedCity, cities]);
 
-  // Update parent when selection changes - FIXED: Prevent infinite loop
   useEffect(() => {
     if (selectedCity && selectedBarangay) {
       const coords = getCurrentCoordinates();
@@ -89,33 +83,27 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
           city: selectedCity,
           barangay: selectedBarangay,
           coordinates: coords,
-          accuracy: markerPosition ? 'manual_pin' : 'barangay_centroid',
+          accuracy: markerPosition ? (pinSource ?? 'manual_pin') : 'barangay_centroid',
         };
         
-        // Create a signature of current state to compare
-        const locationSignature = `${selectedProvince}-${selectedCity}-${selectedBarangay}-${coords.lat}-${coords.lng}-${markerPosition ? 'pin' : 'centroid'}`;
+        const locationSignature = `${selectedProvince}-${selectedCity}-${selectedBarangay}-${coords.lat}-${coords.lng}-${markerPosition ? (pinSource ?? 'manual') : 'centroid'}`;
         
-        // Only notify if something actually changed
         if (locationSignature !== lastNotifiedLocation.current) {
           lastNotifiedLocation.current = locationSignature;
           onChange(locationData);
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCity, selectedBarangay, markerPosition]);
+  }, [selectedCity, selectedBarangay, markerPosition, pinSource]);
 
-  // Create or update AdvancedMarkerElement when position changes
   useEffect(() => {
     if (!mapRef.current || !isLoaded) return;
 
-    // Remove existing marker
     if (markerRef.current) {
       markerRef.current.map = null;
       markerRef.current = null;
     }
 
-    // Create new marker if position exists
     if (markerPosition) {
       const { AdvancedMarkerElement } = google.maps.marker;
       
@@ -126,18 +114,17 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
         gmpDraggable: true,
       });
 
-      // Handle drag end
       markerRef.current.addListener('dragend', () => {
         const position = markerRef.current?.position;
         if (position) {
           const lat = typeof position.lat === 'function' ? position.lat() : position.lat;
           const lng = typeof position.lng === 'function' ? position.lng() : position.lng;
           setMarkerPosition({ lat, lng });
+          setPinSource('manual_pin');
         }
       });
     }
 
-    // Cleanup
     return () => {
       if (markerRef.current) {
         markerRef.current.map = null;
@@ -145,7 +132,6 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
     };
   }, [markerPosition, isLoaded]);
 
-  // Handle GPS location
   const handleUseGPS = () => {
     setIsLocating(true);
     setLocationError('');
@@ -160,6 +146,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
       (position) => {
         const { latitude, longitude } = position.coords;
         setMarkerPosition({ lat: latitude, lng: longitude });
+        setPinSource('gps');
         setIsLocating(false);
       },
       (err) => {
@@ -186,17 +173,16 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
     );
   };
 
-  // Handle map click
   const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
     if (e.latLng) {
       setMarkerPosition({
         lat: e.latLng.lat(),
         lng: e.latLng.lng(),
       });
+      setPinSource('manual_pin');
     }
   }, []);
 
-  // Map center based on selection
   const getMapCenter = useCallback(() => {
     if (markerPosition) return markerPosition;
     
@@ -216,9 +202,6 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
     return defaultCenter;
   }, [markerPosition, selectedBarangay, selectedCity, cities]);
 
-  const mapCenter = getMapCenter();
-
-  // Store map reference when loaded
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
   }, []);
@@ -233,16 +216,13 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
 
   return (
     <div className="space-y-4">
-      {/* Warning Banner */}
       <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
         <p className="text-yellow-800 text-sm font-primary">
           <span className="font-bold">⚠️ Important:</span> You can only update your farm location every 3 months. Please ensure this is accurate.
         </p>
       </div>
 
-      {/* 3-Column Layout: Province | City | Barangay */}
       <div className="grid grid-cols-3 gap-4">
-        {/* Province (Fixed) */}
         <div>
           <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
             Province
@@ -255,7 +235,6 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
           />
         </div>
 
-        {/* City/Municipality Dropdown */}
         <div>
           <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
             City/Municipality <span className="text-red-500">*</span>
@@ -266,6 +245,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
               setSelectedCity(e.target.value);
               setSelectedBarangay('');
               setMarkerPosition(null);
+              setPinSource(null);
               lastNotifiedLocation.current = '';
             }}
             className={`w-full border rounded-lg px-4 py-2.5 text-sm font-primary outline-none transition-colors ${
@@ -281,7 +261,6 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
           </select>
         </div>
 
-        {/* Barangay Dropdown */}
         <div>
           <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
             Barangay <span className="text-red-500">*</span>
@@ -291,6 +270,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
             onChange={(e) => {
               setSelectedBarangay(e.target.value);
               setMarkerPosition(null);
+              setPinSource(null);
               lastNotifiedLocation.current = '';
             }}
             disabled={!selectedCity}
@@ -310,7 +290,6 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
         </div>
       </div>
 
-      {/* GPS Button */}
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -337,17 +316,15 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
         </span>
       </div>
 
-      {/* Location Error */}
       {locationError && (
         <p className="text-xs text-red-500 font-primary">{locationError}</p>
       )}
 
-      {/* Map */}
       {selectedCity && selectedBarangay && (
         <div className="space-y-2">
           <GoogleMap
             mapContainerStyle={mapContainerStyle}
-            center={mapCenter}
+            center={getMapCenter()}
             zoom={15}
             onClick={handleMapClick}
             onLoad={onMapLoad}
@@ -355,18 +332,17 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
               streetViewControl: false,
               mapTypeControl: false,
               fullscreenControl: false,
-              mapId: 'DEMO_MAP_ID', // Required for AdvancedMarkerElement
+              mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID',
             }}
           />
           <p className="text-xs text-gray-500 font-primary">
             {markerPosition 
-              ? '✅ Pin placed. Drag to adjust exact farm location.' 
+              ? `✅ Pin placed (${pinSource === 'gps' ? 'GPS' : 'manual'}). Drag to adjust.` 
               : '💡 Tip: Click on map to place pin at exact farm entrance'}
           </p>
         </div>
       )}
 
-      {/* Validation Error */}
       {error && (
         <p className="text-xs text-red-500 font-primary flex items-center gap-1">
           <span>⚠</span> {error}

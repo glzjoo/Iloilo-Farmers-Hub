@@ -535,7 +535,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         : null;
 
       // UPDATED: Build address from location
-      const displayAddress = `${data.farmLocation.barangay}, ${data.farmLocation.city}, ${data.farmLocation.province}`;
+      const displayAddress = data.farmLocation
+        ? `${data.farmLocation.barangay}, ${data.farmLocation.city}, ${data.farmLocation.province}`
+        : 'Address not provided';
 
       const farmerData: FarmerWithLocation = {
         uid: firebaseUser.uid,
@@ -547,14 +549,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         cardAddress: verificationData.extractedAddress || displayAddress,
         profileImage: '',
         createdAt: new Date(),
-        // NEW LOCATION FIELDS
         farmName: data.farmName,
         farmType: data.farmType,
-        farmLocation: data.farmLocation,
+        farmLocation: data.farmLocation, // Will be undefined if not provided
         farmAddressDetails: data.farmAddressDetails || '',
-        locationGeohash: geohash,
-        locationUpdatedAt: new Date(),
-        nextLocationUpdateAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 3 months
+        locationGeohash: geohash, // Will be null if no coordinates
+        locationUpdatedAt: data.farmLocation ? new Date() : undefined,
+        nextLocationUpdateAt: data.farmLocation ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) : undefined,
       };
 
       const sanitize = (val: any) => val === undefined ? null : val;
