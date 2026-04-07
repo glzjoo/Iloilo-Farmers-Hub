@@ -1,12 +1,12 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
-import { 
-  onAuthStateChanged, 
+import {
+  onAuthStateChanged,
   signOut,
   signInWithPhoneNumber,
   updateProfile,
   type User as FirebaseUser,
   type ConfirmationResult,
-  type ApplicationVerifier 
+  type ApplicationVerifier
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp, deleteDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
@@ -21,9 +21,9 @@ interface ExtendedUserProfile extends UserProfile {
   profileImage?: string;
   phoneNo?: string;
   // Farmer-specific fields
-  farmName?: string; 
-  farmType?: string; 
-  verificationStatus?: string; 
+  farmName?: string;
+  farmType?: string;
+  verificationStatus?: string;
   // Consumer-specific fields
   interest?: string;
   address?: string;
@@ -34,22 +34,22 @@ interface AuthContextType {
   userProfile: ExtendedUserProfile | null;
   loading: boolean;
   isLoggedIn: boolean;
-  
+
   // OTP Flow
   sendOTP: (phoneNo: string) => Promise<ConfirmationResult>;
   verifyOTP: (confirmation: ConfirmationResult, otp: string) => Promise<FirebaseUser>;
-  
+
   logout: () => Promise<void>;
-  
+
   // Signup (passwordless OTP flow)
   signUpConsumer: (data: ConsumerSignupData, confirmation: ConfirmationResult, otp: string) => Promise<void>;
-  
+
   // Farmer signup flow (3-step: form -> ID verification -> OTP)
   prepareFarmerSignup: (data: FarmerSignupData) => Promise<string>;
   storeVerificationData: (tempId: string, verificationData: VerificationData) => Promise<void>;
   completeFarmerSignup: (tempId: string, confirmation: ConfirmationResult, otp: string) => Promise<void>;
   getPendingFarmerData: (tempId: string) => Promise<FarmerSignupData | null>;
-  
+
   refreshProfile: () => Promise<void>;
 }
 
@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     type: 'temporary' | 'permanent';
     suspendedUntil?: Date | null;
   } | null>(null);
-  
+
   // Store reCAPTCHA verifier
   const recaptchaVerifierRef = useRef<ApplicationVerifier | null>(null);
 
@@ -131,14 +131,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error fetching role-specific profile:', error);
     }
-    
+
     return baseProfile;
   };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
-      
+
       if (firebaseUser) {
         try {
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
@@ -150,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (userData.suspended) {
               const suspensionType = userData.suspensionType || 'temporary';
               const suspendedUntil = userData.suspendedUntil?.toDate?.();
-              
+
               // For temporary suspensions, check if the suspension has expired
               if (suspensionType === 'temporary' && suspendedUntil && new Date() > suspendedUntil) {
                 // Suspension expired — allow login (auto-unsuspend handled elsewhere)
@@ -178,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUserProfile(null);
       }
-      
+
       setLoading(false);
     });
 
@@ -193,7 +193,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshProfile = async () => {
     if (!user) return;
-    
+
     try {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
@@ -208,79 +208,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   // Send OTP to phone number
- const sendOTP = async (phoneNo: string): Promise<ConfirmationResult> => {
-  let normalizedPhone = '';
-  
-  try {
-    // Normalize phone first
-    normalizedPhone = phoneNo.replace(/\s/g, '');
-    if (normalizedPhone.startsWith('0')) {
-      normalizedPhone = '+63' + normalizedPhone.substring(1);
-    }
-    if (!normalizedPhone.startsWith('+')) {
-      normalizedPhone = '+' + normalizedPhone;
-    }
+  const sendOTP = async (phoneNo: string): Promise<ConfirmationResult> => {
+    let normalizedPhone = '';
 
-    console.log('=== SEND OTP DEBUG ===');
-    console.log('1. Phone normalized:', normalizedPhone);
-    console.log('2. Auth exists:', !!auth);
-
-    // Check if reCAPTCHA container exists
-    let container = document.getElementById('recaptcha-container');
-    if (!container) {
-      container = document.createElement('div');
-      container.id = 'recaptcha-container';
-      document.body.appendChild(container);
-      console.log('3. Created reCAPTCHA container');
-    }
-
-    // Reset the ref (don't try to clear, just create new)
-    recaptchaVerifierRef.current = null;
-
-    // Import and create reCAPTCHA
-    console.log('4. Importing RecaptchaVerifier...');
-    const { RecaptchaVerifier } = await import('firebase/auth');
-    
-    console.log('5. Creating RecaptchaVerifier with auth:', auth);
-    console.log('6. Auth app name:', auth?.app?.name);
-    
-    recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      size: 'invisible',
-      callback: (response: any) => {
-        console.log('reCAPTCHA verified:', response);
-      },
-      'expired-callback': () => {
-        console.log('reCAPTCHA expired');
+    try {
+      // Normalize phone first
+      normalizedPhone = phoneNo.replace(/\s/g, '');
+      if (normalizedPhone.startsWith('0')) {
+        normalizedPhone = '+63' + normalizedPhone.substring(1);
       }
-    });
+      if (!normalizedPhone.startsWith('+')) {
+        normalizedPhone = '+' + normalizedPhone;
+      }
 
-    console.log('7. RecaptchaVerifier created:', !!recaptchaVerifierRef.current);
+      console.log('=== SEND OTP DEBUG ===');
+      console.log('1. Phone normalized:', normalizedPhone);
+      console.log('2. Auth exists:', !!auth);
 
-    console.log('8. Calling signInWithPhoneNumber...');
-    console.log('   - auth:', auth);
-    console.log('   - phone:', normalizedPhone);
-    console.log('   - verifier:', recaptchaVerifierRef.current);
+      // Check if reCAPTCHA container exists
+      let container = document.getElementById('recaptcha-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'recaptcha-container';
+        document.body.appendChild(container);
+        console.log('3. Created reCAPTCHA container');
+      }
 
-    const confirmationResult = await signInWithPhoneNumber(
-      auth,
-      normalizedPhone,
-      recaptchaVerifierRef.current
-    );
+      // Reset the ref (don't try to clear, just create new)
+      recaptchaVerifierRef.current = null;
 
-    console.log('9. OTP sent successfully!');
-    return confirmationResult;
-    
-  } catch (error: any) {
-    console.error('=== SEND OTP FAILED ===');
-    console.error('Error code:', error.code);
-    console.error('Error message:', error.message);
-    console.error('Stack:', error.stack);
-    
-    recaptchaVerifierRef.current = null;
-    
-    throw new Error(`Failed to send OTP: ${error.message}`);
-  }
-};
+      // Import and create reCAPTCHA
+      console.log('4. Importing RecaptchaVerifier...');
+      const { RecaptchaVerifier } = await import('firebase/auth');
+
+      console.log('5. Creating RecaptchaVerifier with auth:', auth);
+      console.log('6. Auth app name:', auth?.app?.name);
+
+      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+        callback: (response: any) => {
+          console.log('reCAPTCHA verified:', response);
+        },
+        'expired-callback': () => {
+          console.log('reCAPTCHA expired');
+        }
+      });
+
+      console.log('7. RecaptchaVerifier created:', !!recaptchaVerifierRef.current);
+
+      console.log('8. Calling signInWithPhoneNumber...');
+      console.log('   - auth:', auth);
+      console.log('   - phone:', normalizedPhone);
+      console.log('   - verifier:', recaptchaVerifierRef.current);
+
+      const confirmationResult = await signInWithPhoneNumber(
+        auth,
+        normalizedPhone,
+        recaptchaVerifierRef.current
+      );
+
+      console.log('9. OTP sent successfully!');
+      return confirmationResult;
+
+    } catch (error: any) {
+      console.error('=== SEND OTP FAILED ===');
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      console.error('Stack:', error.stack);
+
+      recaptchaVerifierRef.current = null;
+
+      throw new Error(`Failed to send OTP: ${error.message}`);
+    }
+  };
 
   // Verify OTP and return the user (for chaining with account creation)
   const verifyOTP = async (confirmation: ConfirmationResult, otp: string): Promise<FirebaseUser> => {
@@ -289,12 +289,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return result.user;
     } catch (error: any) {
       console.error('Verify OTP error:', error);
-      
+
       const errorMessages: Record<string, string> = {
         'auth/invalid-verification-code': 'Invalid OTP. Please check and try again.',
         'auth/code-expired': 'OTP has expired. Please request a new one.',
       };
-      
+
       throw new Error(errorMessages[error.code] || 'Failed to verify OTP. Please try again.');
     }
   };
@@ -308,7 +308,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Step 1: Verify OTP (this creates the Firebase Auth user)
       const firebaseUser = await verifyOTP(confirmation, otp);
-      
+
       if (!firebaseUser) {
         throw new Error('Failed to create account. Please try again.');
       }
@@ -361,7 +361,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     } catch (error: any) {
       console.error('Consumer signup error:', error);
-      
+
       // Cleanup if needed
       if (auth.currentUser) {
         try {
@@ -380,7 +380,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Simple timestamp + random ID (works in all browsers)
       const tempId = `farmer_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-      
+
       console.log('Generated tempId:', tempId);
 
       // UPDATED: Include new location fields
@@ -404,11 +404,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       console.log('Saving to Firestore...', pendingData);
-      
+
       // Store in Firestore
       const docRef = doc(db, 'pendingFarmers', tempId);
       await setDoc(docRef, pendingData);
-      
+
       console.log('Firestore save successful');
 
       // Also store in sessionStorage as backup
@@ -425,7 +425,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       return tempId;
-      
+
     } catch (error: any) {
       console.error('=== prepareFarmerSignup FAILED ===', error);
       console.error('Error code:', error.code);
@@ -439,7 +439,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const pendingRef = doc(db, 'pendingFarmers', tempId);
       const pendingDoc = await getDoc(pendingRef);
-      
+
       if (!pendingDoc.exists()) {
         throw new Error('Signup session not found. Please start over.');
       }
@@ -495,7 +495,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ): Promise<void> => {
     try {
       const pendingDoc = await getDoc(doc(db, 'pendingFarmers', tempId));
-      
+
       if (!pendingDoc.exists()) {
         throw new Error('Signup session expired. Please start over.');
       }
@@ -507,7 +507,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Step 1: Verify OTP (creates Firebase Auth account)
       const result = await confirmation.confirm(otp);
       const firebaseUser = result.user;
-      
+
       if (!firebaseUser) {
         throw new Error('Failed to create account. Please try again.');
       }
@@ -530,7 +530,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Generate geohash for location-based queries
       const geofireCommon = await import('geofire-common');
-      const geohash = data.farmLocation?.coordinates 
+      const geohash = data.farmLocation?.coordinates
         ? geofireCommon.geohashForLocation([data.farmLocation.coordinates.lat, data.farmLocation.coordinates.lng])
         : null;
 
@@ -617,7 +617,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('=== Complete farmer signup error ===', error);
       console.error('Error code:', error.code);
       console.error('Error message:', error.message);
-      
+
       // Don't delete auth user here - let the user retry or contact support
       throw error;
     }

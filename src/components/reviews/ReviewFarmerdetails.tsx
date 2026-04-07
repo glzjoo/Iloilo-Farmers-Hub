@@ -26,23 +26,23 @@ export default function ReviewFarmerDetails() {
     const navigate = useNavigate();
     const location = useLocation();
     const { user, userProfile } = useAuth();
-    
+
     const { productId, farmerId, orderId, fromOrder } = (location.state as LocationState) || {};
-    
+
     const [rating, setRating] = useState(0);
-    const [quality, setQuality] = useState('');
-    const [appearance, setAppearance] = useState('');
+    const [quality, setQuality] = useState(0);
+    const [appearance, setAppearance] = useState(0);
     const [comment, setComment] = useState('');
     const [images, setImages] = useState<File[]>([]);
     const [video, setVideo] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
-    
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
-        
+
         for (const file of files) {
             const isImage = file.type.startsWith('image/');
             const isVideo = file.type.startsWith('video/');
@@ -65,7 +65,7 @@ export default function ReviewFarmerDetails() {
                 setVideo(file);
             }
         }
-        
+
         // Reset input
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
@@ -93,8 +93,8 @@ export default function ReviewFarmerDetails() {
             return;
         }
 
-        if (!quality.trim()) {
-            setError('Please provide quality feedback');
+        if (quality === 0) {
+            setError('Please rate the quality');
             return;
         }
 
@@ -114,8 +114,8 @@ export default function ReviewFarmerDetails() {
                 consumerName: `${userProfile.firstName} ${userProfile.lastName}`,
                 consumerAvatar: userProfile.profileImage || '',
                 rating,
-                quality: quality.trim(),
-                appearance: appearance.trim(),
+                quality: quality > 0 ? `${quality}/5` : '',
+                appearance: appearance > 0 ? `${appearance}/5` : '',
                 comment: comment.trim(),
                 verifiedPurchase: fromOrder || false,
             };
@@ -127,7 +127,7 @@ export default function ReviewFarmerDetails() {
             console.log('Submitting review with data:', reviewData);
 
             await addReview(reviewData, images, video);
-            
+
             if (fromOrder) {
                 navigate('/messages');
             } else {
@@ -148,7 +148,7 @@ export default function ReviewFarmerDetails() {
                     {error}
                 </div>
             )}
-            
+
             <div className="flex flex-col flex-1 pl-2">
                 <p className="font-semibold text-lg text-black mb-4">Rate Farmer</p>
                 <div className="flex gap-2 mb-8">
@@ -160,20 +160,21 @@ export default function ReviewFarmerDetails() {
                         />
                     ))}
                 </div>
-                
+
+
                 {/* Combined Media Upload Section */}
                 <p className="font-medium text-black mb-4">
                     Add photos or video ({totalMediaCount}/6)
                 </p>
-                
+
                 {/* Selected Media Preview */}
                 <div className="flex gap-3 flex-wrap mb-4">
                     {/* Images */}
                     {images.map((img, idx) => (
                         <div key={`img-${idx}`} className="relative w-20 h-20">
-                            <img 
-                                src={URL.createObjectURL(img)} 
-                                alt="" 
+                            <img
+                                src={URL.createObjectURL(img)}
+                                alt=""
                                 className="w-full h-full object-cover rounded-lg"
                             />
                             <button
@@ -184,12 +185,12 @@ export default function ReviewFarmerDetails() {
                             </button>
                         </div>
                     ))}
-                    
+
                     {/* Video */}
                     {video && (
                         <div className="relative w-28 h-20">
-                            <video 
-                                src={URL.createObjectURL(video)} 
+                            <video
+                                src={URL.createObjectURL(video)}
                                 className="w-full h-full object-cover rounded-lg"
                             />
                             <span className="absolute bottom-1 left-1 text-[10px] bg-black/70 text-white px-1.5 py-0.5 rounded">
@@ -203,10 +204,10 @@ export default function ReviewFarmerDetails() {
                             </button>
                         </div>
                     )}
-                    
+
                     {/* Single Add Button */}
                     {totalMediaCount < 6 && (
-                        <button 
+                        <button
                             onClick={() => fileInputRef.current?.click()}
                             className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-[#187A38] hover:border-primary hover:bg-green-50 transition-colors"
                         >
@@ -215,7 +216,7 @@ export default function ReviewFarmerDetails() {
                         </button>
                     )}
                 </div>
-                
+
                 <input
                     type="file"
                     ref={fileInputRef}
@@ -224,7 +225,7 @@ export default function ReviewFarmerDetails() {
                     multiple
                     className="hidden"
                 />
-                
+
                 <p className="text-xs text-gray-500 mb-6">
                     Max 5 images + 1 video. Video max 50MB.
                 </p>
@@ -240,22 +241,28 @@ export default function ReviewFarmerDetails() {
                 <div className="flex flex-col gap-6">
                     <div className="flex flex-col gap-2">
                         <label className="font-semibold text-black">Quality:</label>
-                        <textarea
-                            value={quality}
-                            onChange={(e) => setQuality(e.target.value.slice(0, 100))}
-                            placeholder="How was the quality of the product? (e.g., Fresh, ripe, good size)"
-                            className="w-full h-[100px] bg-white border border-gray-300 rounded-lg p-4 resize-none outline-none text-black focus:ring-1 focus:ring-[#187A38]"
-                        />
+                        <div className="flex gap-1.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <StarIcon
+                                    key={`quality-${star}`}
+                                    filled={quality >= star}
+                                    onClick={() => setQuality(star)}
+                                />
+                            ))}
+                        </div>
                     </div>
 
                     <div className="flex flex-col gap-2">
                         <label className="font-semibold text-black">Appearance:</label>
-                        <textarea
-                            value={appearance}
-                            onChange={(e) => setAppearance(e.target.value.slice(0, 100))}
-                            placeholder="How did the product look? (e.g., No bruises, vibrant color)"
-                            className="w-full h-[100px] bg-white border border-gray-300 rounded-lg p-4 resize-none outline-none text-black focus:ring-1 focus:ring-[#187A38]"
-                        />
+                        <div className="flex gap-1.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <StarIcon
+                                    key={`appearance-${star}`}
+                                    filled={appearance >= star}
+                                    onClick={() => setAppearance(star)}
+                                />
+                            ))}
+                        </div>
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -268,8 +275,8 @@ export default function ReviewFarmerDetails() {
                         />
                     </div>
                 </div>
-                
-                <button 
+
+                <button
                     onClick={handleSubmit}
                     disabled={isSubmitting || rating === 0}
                     className="w-full h-12 bg-[#187A38] rounded-md text-white font-semibold mt-6 hover:bg-green-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
