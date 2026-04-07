@@ -4,6 +4,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import logo from '../../assets/icons/logo.png';
 import SignupToggle from './SignupToggle';
+import FarmLocationPicker from '../location/FarmLocationPicker';
 import { farmerSignupSchema, type FarmerSignupData } from '../../lib/validations';
 import { useAuth } from '../../context/AuthContext';
 import { useSanitizedInput } from '../../hooks/useSanitizedInput';
@@ -23,6 +24,7 @@ export default function FarmerSignup() {
     formState: { errors },
     reset,
     trigger,
+    watch,
   } = useForm<FarmerSignupData>({
     resolver: zodResolver(farmerSignupSchema),
     mode: 'onChange',
@@ -31,12 +33,15 @@ export default function FarmerSignup() {
       lastName: '',
       email: '',
       farmName: '',
-      farmAddress: '',
+      farmLocation: undefined,
+      farmAddressDetails: '',
       phoneNo: '',
       farmType: 'Rice',
       agreeToTerms: false,
     },
   });
+
+  const farmLocation = watch('farmLocation');
 
   const onSubmit = async (data: FarmerSignupData) => {
     console.log('=== BUTTON CLICKED / FORM SUBMITTED ===');
@@ -45,12 +50,13 @@ export default function FarmerSignup() {
 
     try {
       // Use custom farm type text if "Other" was selected
-      const submitData = {
+      const submitData: FarmerSignupData = {
         ...data,
         farmType: data.farmType === 'Other' && customFarmType.trim()
           ? customFarmType.trim() as any
           : data.farmType,
       };
+      
       console.log('Calling prepareFarmerSignup with data:', submitData);
       const tempId = await prepareFarmerSignup(submitData);
       console.log('Got tempId, navigating...', tempId);
@@ -58,7 +64,7 @@ export default function FarmerSignup() {
       navigate('/id-verification', {
         state: {
           tempId,
-          farmerData: data,
+          farmerData: submitData,
           userType: 'farmer'
         }
       });
@@ -89,7 +95,8 @@ export default function FarmerSignup() {
     isLoading,
     formErrors: errors,
     errorCount: Object.keys(errors).length,
-    isValid: Object.keys(errors).length === 0
+    isValid: Object.keys(errors).length === 0,
+    farmLocation,
   });
 
   return (
@@ -120,10 +127,7 @@ export default function FarmerSignup() {
 
         {/* Form */}
         <form
-          onSubmit={(e) => {
-            console.log('Form submit event triggered');
-            handleSubmit(onSubmit)(e);
-          }}
+          onSubmit={handleSubmit(onSubmit)}
           className="grid grid-cols-2 gap-x-8 gap-y-5"
         >
           {/* First Name */}
@@ -248,19 +252,47 @@ export default function FarmerSignup() {
             )}
           </div>
 
-          {/* Farm Address */}
+          {/* Farm Location Picker - REPLACES old farmAddress text field */}
           <div className="col-span-2">
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Farm Address <span className="text-red-500">*</span>
+              Farm Location <span className="text-red-500">*</span>
+            </label>
+            <Controller
+              name="farmLocation"
+              control={control}
+              render={({ field }) => (
+                <FarmLocationPicker
+                  value={field.value || null}
+                  onChange={(location) => {
+                    field.onChange(location);
+                    trigger('farmLocation');
+                  }}
+                  error={errors.farmLocation?.message}
+                />
+              )}
+            />
+            {farmLocation && (
+              <p className="mt-2 text-sm text-green-600 font-primary">
+                ✅ Location set: {farmLocation.barangay}, {farmLocation.city} 
+                ({farmLocation.coordinates.lat.toFixed(4)}, {farmLocation.coordinates.lng.toFixed(4)})
+              </p>
+            )}
+          </div>
+
+          {/* Optional: Additional Address Details */}
+          <div className="col-span-2">
+            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
+              Additional Address Details <span className="text-gray-400 text-xs italic">(Optional)</span>
+              <span className="text-xs text-gray-500 font-normal block">Street name, landmark, or specific directions</span>
             </label>
             <input
-              {...register('farmAddress')}
+              {...register('farmAddressDetails')}
               type="text"
-              placeholder="Enter your complete farm address"
-              className={getInputClass('farmAddress')}
+              placeholder="e.g., Near Oton Public Market, along the highway"
+              className={getInputClass('farmAddressDetails')}
             />
-            {errors.farmAddress && (
-              <p className="mt-1 text-xs text-red-500 font-primary">{errors.farmAddress.message}</p>
+            {errors.farmAddressDetails && (
+              <p className="mt-1 text-xs text-red-500 font-primary">{errors.farmAddressDetails.message}</p>
             )}
           </div>
 
@@ -344,7 +376,7 @@ export default function FarmerSignup() {
             )}
           </div>
 
-          {/* Terms - FIXED: Added register */}
+          {/* Terms */}
           <div className="col-span-2 flex items-start gap-2 mt-2 p-3 bg-gray-50 rounded-lg">
             <input
               {...register('agreeToTerms')}
@@ -362,7 +394,7 @@ export default function FarmerSignup() {
             <p className="col-span-2 text-xs text-red-500 font-primary">{errors.agreeToTerms.message}</p>
           )}
 
-          {/* Buttons - Full Width */}
+          {/* Buttons */}
           <div className="col-span-2 flex items-center justify-between mt-6">
             <button
               type="button"

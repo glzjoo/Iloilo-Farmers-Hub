@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@react-google-maps/api": "^2.20.8",
     "firebase": "^12.9.0",
     "fuse.js": "^7.1.0",
+    "geofire-common": "^6.0.0",
     "i18next": "^25.10.10",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

@@ -4,7 +4,21 @@ const nameRegex = /^[a-zA-Z\s'-]+$/;
 const farmNameRegex = /^[a-zA-Z0-9\s&'-]+$/;
 const phoneRegex = /^(09\d{9}|\+63\d{10})$/;
 
-// Consumer signup schema - PASSWORDLESS
+// Location schema
+export const locationSchema = z.object({
+  province: z.string().min(1, 'Province is required'),
+  city: z.string().min(1, 'City is required'),
+  barangay: z.string().min(1, 'Barangay is required'),
+  coordinates: z.object({
+    lat: z.number(),
+    lng: z.number(),
+  }),
+  accuracy: z.enum(['gps', 'manual_pin', 'barangay_centroid']),
+});
+
+export type FarmLocation = z.infer<typeof locationSchema>;
+
+// Consumer signup schema - PASSWORDLESS (unchanged)
 export const consumerSignupSchema = z.object({
   firstName: z
     .string()
@@ -45,7 +59,7 @@ export const consumerSignupSchema = z.object({
 
 export type ConsumerSignupData = z.infer<typeof consumerSignupSchema>;
 
-// Farmer signup schema - PASSWORDLESS
+// UPDATED: Farmer signup schema with location
 export const farmerSignupSchema = z.object({
   firstName: z
     .string()
@@ -73,11 +87,15 @@ export const farmerSignupSchema = z.object({
     .regex(farmNameRegex, 'Farm name can only contain letters, numbers, spaces, &, hyphens, and apostrophes')
     .transform((val) => val.trim()),
   
-  farmAddress: z
+  // REQUIRED: Farm location with coordinates
+  farmLocation: locationSchema,
+  
+  // OPTIONAL: Additional address details (can be undefined)
+  farmAddressDetails: z
     .string()
-    .min(5, 'Please enter a complete farm address')
-    .max(200, 'Farm address is too long')
-    .transform((val) => val.trim()),
+    .max(200, 'Address details too long')
+    .optional()
+    .or(z.literal('')),
   
   phoneNo: z
     .string()
@@ -93,7 +111,7 @@ export const farmerSignupSchema = z.object({
 
 export type FarmerSignupData = z.infer<typeof farmerSignupSchema>;
 
-// OTP validation schemas
+// OTP validation schemas (unchanged)
 export const phoneSchema = z.object({
   phoneNo: z.string().regex(phoneRegex, 'e.g., 09123456789'),
 });
