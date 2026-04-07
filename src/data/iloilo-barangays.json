@@ -1,0 +1,466 @@
+{
+  "province": {
+    "name": "Iloilo",
+    "psgcCode": "063000000"
+  },
+  "cities": [
+    {
+      "name": "Oton",
+      "psgcCode": "063034000",
+      "barangays": [
+        {
+          "name": "Abilay Norte",
+          "psgcCode": "063034001",
+          "centroid": {
+            "lat": 10.744577,
+            "lng": 122.4920457
+          }
+        },
+        {
+          "name": "Abilay Sur",
+          "psgcCode": "063034002",
+          "centroid": {
+            "lat": 10.7253122,
+            "lng": 122.4951091
+          }
+        },
+        {
+          "name": "Alegre",
+          "psgcCode": "063034003",
+          "centroid": {
+            "lat": 10.6862539,
+            "lng": 122.4910934
+          }
+        },
+        {
+          "name": "Batuan Ilaya",
+          "psgcCode": "063034005",
+          "centroid": {
+            "lat": 10.7366199,
+            "lng": 122.4294332
+          }
+        },
+        {
+          "name": "Bita Norte",
+          "psgcCode": "063034006",
+          "centroid": {
+            "lat": 10.7461849,
+            "lng": 122.472259
+          }
+        },
+        {
+          "name": "Bita Sur",
+          "psgcCode": "063034007",
+          "centroid": {
+            "lat": 10.7326971,
+            "lng": 122.4789827
+          }
+        },
+        {
+          "name": "Botong",
+          "psgcCode": "063034008",
+          "centroid": {
+            "lat": 10.685581,
+            "lng": 122.4382692
+          }
+        },
+        {
+          "name": "Buray",
+          "psgcCode": "063034009",
+          "centroid": {
+            "lat": 10.705614,
+            "lng": 122.4682105
+          }
+        },
+        {
+          "name": "Cabanbanan",
+          "psgcCode": "063034010",
+          "centroid": {
+            "lat": 10.6824885,
+            "lng": 122.424899
+          }
+        },
+        {
+          "name": "Cadinglian",
+          "psgcCode": "063034013",
+          "centroid": {
+            "lat": 10.7388796,
+            "lng": 122.4377593
+          }
+        },
+        {
+          "name": "Cagbang",
+          "psgcCode": "063034014",
+          "centroid": {
+            "lat": 10.6993547,
+            "lng": 122.502056
+          }
+        },
+        {
+          "name": "Calam-isan",
+          "psgcCode": "063034015",
+          "centroid": {
+            "lat": 10.7095213,
+            "lng": 122.4416639
+          }
+        },
+        {
+          "name": "Galang",
+          "psgcCode": "063034016",
+          "centroid": {
+            "lat": 10.7257363,
+            "lng": 122.4460106
+          }
+        },
+        {
+          "name": "Lambuyao",
+          "psgcCode": "063034017",
+          "centroid": {
+            "lat": 10.7083824,
+            "lng": 122.491896
+          }
+        },
+        {
+          "name": "Mambog",
+          "psgcCode": "063034018",
+          "centroid": {
+            "lat": 10.7330475,
+            "lng": 122.4844985
+          }
+        },
+        {
+          "name": "Pakiad",
+          "psgcCode": "063034019",
+          "centroid": {
+            "lat": 10.7113872,
+            "lng": 122.5165899
+          }
+        },
+        {
+          "name": "Poblacion East",
+          "psgcCode": "063034020",
+          "centroid": {
+            "lat": 10.6895763,
+            "lng": 122.4814172
+          }
+        },
+        {
+          "name": "Poblacion North",
+          "psgcCode": "063034021",
+          "centroid": {
+            "lat": 10.6909163,
+            "lng": 122.4825754
+          }
+        },
+        {
+          "name": "Poblacion South",
+          "psgcCode": "063034022",
+          "centroid": {
+            "lat": 10.6902679,
+            "lng": 122.472475
+          }
+        },
+        {
+          "name": "Poblacion West",
+          "psgcCode": "063034023",
+          "centroid": {
+            "lat": 10.6950015,
+            "lng": 122.4714021
+          }
+        },
+        {
+          "name": "Rizal",
+          "psgcCode": "063034025",
+          "centroid": {
+            "lat": 10.7607164,
+            "lng": 122.4487192
+          }
+        },
+        {
+          "name": "Salngan",
+          "psgcCode": "063034026",
+          "centroid": {
+            "lat": 10.7198962,
+            "lng": 122.4407106
+          }
+        },
+        {
+          "name": "Sambaludan",
+          "psgcCode": "063034027",
+          "centroid": {
+            "lat": 10.7075731,
+            "lng": 122.4300878
+          }
+        },
+        {
+          "name": "San Antonio",
+          "psgcCode": "063034028",
+          "centroid": {
+            "lat": 10.6949107,
+            "lng": 122.4819978
+          }
+        },
+        {
+          "name": "San Nicolas",
+          "psgcCode": "063034029",
+          "centroid": {
+            "lat": 10.6906612,
+            "lng": 122.4949837
+          }
+        },
+        {
+          "name": "Santa Clara",
+          "psgcCode": "063034030",
+          "centroid": {
+            "lat": 10.7672782,
+            "lng": 122.4397016
+          }
+        },
+        {
+          "name": "Santa Monica",
+          "psgcCode": "063034031",
+          "centroid": {
+            "lat": 10.7371398,
+            "lng": 122.4499751
+          }
+        },
+        {
+          "name": "Santa Rita",
+          "psgcCode": "063034032",
+          "centroid": {
+            "lat": 10.7207346,
+            "lng": 122.4575524
+          }
+        },
+        {
+          "name": "Tagbac Norte",
+          "psgcCode": "063034035",
+          "centroid": {
+            "lat": 10.7259244,
+            "lng": 122.4681721
+          }
+        },
+        {
+          "name": "Tagbac Sur",
+          "psgcCode": "063034036",
+          "centroid": {
+            "lat": 10.7185458,
+            "lng": 122.4771339
+          }
+        },
+        {
+          "name": "Trapiche",
+          "psgcCode": "063034037",
+          "centroid": {
+            "lat": 10.6885218,
+            "lng": 122.4484058
+          }
+        },
+        {
+          "name": "Tuburan",
+          "psgcCode": "063034038",
+          "centroid": {
+            "lat": 10.7227843,
+            "lng": 122.4863704
+          }
+        },
+        {
+          "name": "Turog-Turog",
+          "psgcCode": "063034039",
+          "centroid": {
+            "lat": 10.7472163,
+            "lng": 122.4280124
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pavia",
+      "psgcCode": "063036000",
+      "barangays": [
+        {
+          "name": "Aganan",
+          "psgcCode": "063036001",
+          "centroid": {
+            "lat": 10.7693566,
+            "lng": 122.5336997
+          }
+        },
+        {
+          "name": "Amparo",
+          "psgcCode": "063036002",
+          "centroid": {
+            "lat": 10.7757898,
+            "lng": 122.5242605
+          }
+        },
+        {
+          "name": "Anilao",
+          "psgcCode": "063036003",
+          "centroid": {
+            "lat": 10.7649202,
+            "lng": 122.5453703
+          }
+        },
+        {
+          "name": "Balabag",
+          "psgcCode": "063036004",
+          "centroid": {
+            "lat": 10.7673032,
+            "lng": 122.5198928
+          }
+        },
+        {
+          "name": "Cabugao Norte",
+          "psgcCode": "063036009",
+          "centroid": {
+            "lat": 10.7865319,
+            "lng": 122.5453012
+          }
+        },
+        {
+          "name": "Cabugao Sur",
+          "psgcCode": "063036010",
+          "centroid": {
+            "lat": 10.7850191,
+            "lng": 122.5369019
+          }
+        },
+        {
+          "name": "Jibao-an",
+          "psgcCode": "063036011",
+          "centroid": {
+            "lat": 10.7525185,
+            "lng": 122.5118934
+          }
+        },
+        {
+          "name": "Mali-ao",
+          "psgcCode": "063036012",
+          "centroid": {
+            "lat": 10.7754301,
+            "lng": 122.5360558
+          }
+        },
+        {
+          "name": "Pagsanga-an",
+          "psgcCode": "063036013",
+          "centroid": {
+            "lat": 10.7698015,
+            "lng": 122.557158
+          }
+        },
+        {
+          "name": "Pandac",
+          "psgcCode": "063036014",
+          "centroid": {
+            "lat": 10.7534465,
+            "lng": 122.5224254
+          }
+        },
+        {
+          "name": "Tigum",
+          "psgcCode": "063036017",
+          "centroid": {
+            "lat": 10.7804847,
+            "lng": 122.5544045
+          }
+        },
+        {
+          "name": "Ungka I",
+          "psgcCode": "063036018",
+          "centroid": {
+            "lat": 10.7631295,
+            "lng": 122.5394713
+          }
+        },
+        {
+          "name": "Ungka II",
+          "psgcCode": "063036019",
+          "centroid": {
+            "lat": 10.7538674,
+            "lng": 122.5361103
+          }
+        },
+        {
+          "name": "Pal-agon",
+          "psgcCode": "063036020",
+          "centroid": {
+            "lat": 10.7757633,
+            "lng": 122.5236077
+          }
+        }
+      ]
+    },
+    {
+      "name": "San Miguel",
+      "psgcCode": "063041000",
+      "barangays": [
+        {
+          "name": "Consolacion",
+          "psgcCode": "063041017",
+          "centroid": {
+            "lat": 10.8094298,
+            "lng": 122.4747653
+          }
+        },
+        {
+          "name": "Igtambo",
+          "psgcCode": "063041018",
+          "centroid": {
+            "lat": 10.7778702,
+            "lng": 122.4526995
+          }
+        },
+        {
+          "name": "San Antonio",
+          "psgcCode": "063041019",
+          "centroid": {
+            "lat": 10.7770647,
+            "lng": 122.4377623
+          }
+        },
+        {
+          "name": "San Jose",
+          "psgcCode": "063041020",
+          "centroid": {
+            "lat": 10.7822233,
+            "lng": 122.4664301
+          }
+        },
+        {
+          "name": "Santa Cruz",
+          "psgcCode": "063041021",
+          "centroid": {
+            "lat": 10.7894527,
+            "lng": 122.4585363
+          }
+        },
+        {
+          "name": "Santa Teresa",
+          "psgcCode": "063041022",
+          "centroid": {
+            "lat": 10.806979,
+            "lng": 122.4953693
+          }
+        },
+        {
+          "name": "Santo Angel",
+          "psgcCode": "063041023",
+          "centroid": {
+            "lat": 10.7631418,
+            "lng": 122.4204563
+          }
+        },
+        {
+          "name": "Santo Niño",
+          "psgcCode": "063041024",
+          "centroid": {
+            "lat": 10.7875384,
+            "lng": 122.4766746
+          }
+        }
+      ]
+    }
+  ]
+}

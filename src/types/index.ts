@@ -203,3 +203,23 @@ export interface FarmerReviewSummary {
     totalReviews: number;
     recentReviews: Review[];
 }
+
+export interface FarmLocation {
+  province: string;
+  city: string;
+  barangay: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  accuracy: 'gps' | 'manual_pin' | 'barangay_centroid';
+}
+
+// Extended Farmer interface with location
+export interface FarmerWithLocation extends Farmer {
+  farmLocation?: FarmLocation;
+  farmAddressDetails?: string;
+  locationGeohash?: string; // For Firestore geo queries
+  locationUpdatedAt?: Date;
+  nextLocationUpdateAt?: Date; // 3-month cooldown
+}

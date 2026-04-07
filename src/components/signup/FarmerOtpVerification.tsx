@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import logo from '../../assets/icons/logo.png';
 import { useAuth } from '../../context/AuthContext';
 import SuccessModal from '../verification/SuccessModal'; // Your original modal for final success
-
+//famrerOTPverification
 interface LocationState {
   tempId: string;
   phoneNumber: string;

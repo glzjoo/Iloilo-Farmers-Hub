@@ -22,7 +22,6 @@ interface ExtendedUserProfile extends UserProfile {
   phoneNo?: string;
   // Farmer-specific fields
   farmName?: string; 
-  farmAddress?: string; 
   farmType?: string; 
   verificationStatus?: string; 
   // Consumer-specific fields
@@ -67,6 +66,24 @@ interface VerificationData {
   [key: string]: any; // For additional fields from your existing verification
 }
 
+// Farmer with location data
+interface FarmerWithLocation extends Farmer {
+  farmLocation?: {
+    province: string;
+    city: string;
+    barangay: string;
+    coordinates: {
+      lat: number;
+      lng: number;
+    };
+    accuracy: 'gps' | 'manual_pin' | 'barangay_centroid';
+  };
+  farmAddressDetails?: string;
+  locationGeohash?: string | null;
+  locationUpdatedAt?: Date;
+  nextLocationUpdateAt?: Date;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -86,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (baseProfile.role === 'farmer') {
         const farmerDoc = await getDoc(doc(db, 'farmers', firebaseUser.uid));
         if (farmerDoc.exists()) {
-          const farmerData = farmerDoc.data() as Farmer;
+          const farmerData = farmerDoc.data() as FarmerWithLocation;
           return {
             ...baseProfile,
             firstName: farmerData.firstName,
@@ -94,7 +111,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             profileImage: farmerData.profileImage,
             phoneNo: farmerData.phoneNo,
             farmName: farmerData.farmName,
-            farmAddress: farmerData.farmAddress,
             farmType: farmerData.farmType,
             verificationStatus: farmerData.verificationStatus,
           };
@@ -359,7 +375,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-// Prepare farmer signup - Store data temporarily before ID verification
+  // Prepare farmer signup - Store data temporarily before ID verification
   const prepareFarmerSignup = async (data: FarmerSignupData): Promise<string> => {
     try {
       // Simple timestamp + random ID (works in all browsers)
@@ -367,6 +383,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       console.log('Generated tempId:', tempId);
 
+      // UPDATED: Include new location fields
       const pendingData = {
         tempId,
         farmerData: {
@@ -374,7 +391,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           lastName: data.lastName,
           email: data.email || null,
           farmName: data.farmName,
-          farmAddress: data.farmAddress,
+          farmLocation: data.farmLocation,
+          farmAddressDetails: data.farmAddressDetails || '',
           phoneNo: data.phoneNo,
           farmType: data.farmType,
           agreeToTerms: data.agreeToTerms,
@@ -470,7 +488,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Complete farmer signup after OTP verification
-  // Complete farmer signup after OTP verification
   const completeFarmerSignup = async (
     tempId: string,
     confirmation: ConfirmationResult,
@@ -511,16 +528,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         createdAt: new Date(),
       };
 
-      const farmerData: Farmer = {
+      // Generate geohash for location-based queries
+      const geofireCommon = await import('geofire-common');
+      const geohash = data.farmLocation?.coordinates 
+        ? geofireCommon.geohashForLocation([data.farmLocation.coordinates.lat, data.farmLocation.coordinates.lng])
+        : null;
+
+      // UPDATED: Build address from location
+      const displayAddress = data.farmLocation
+        ? `${data.farmLocation.barangay}, ${data.farmLocation.city}, ${data.farmLocation.province}`
+        : 'Address not provided';
+
+      const farmerData: FarmerWithLocation = {
         uid: firebaseUser.uid,
         firstName: data.firstName,
         lastName: data.lastName,
         phoneNo: data.phoneNo,
         email: data.email || null,
         idType: verificationData.idType || 'phNationalId',
-        cardAddress: verificationData.extractedAddress || data.farmAddress,
+        cardAddress: verificationData.extractedAddress || displayAddress,
         profileImage: '',
         createdAt: new Date(),
+        farmName: data.farmName,
+        farmType: data.farmType,
+        farmLocation: data.farmLocation, // Will be undefined if not provided
+        farmAddressDetails: data.farmAddressDetails || '',
+        locationGeohash: geohash, // Will be null if no coordinates
+        locationUpdatedAt: data.farmLocation ? new Date() : undefined,
+        nextLocationUpdateAt: data.farmLocation ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) : undefined,
       };
 
       const sanitize = (val: any) => val === undefined ? null : val;
@@ -541,9 +576,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await setDoc(doc(db, 'farmers', firebaseUser.uid), {
           ...farmerData,
-          farmName: data.farmName,
-          farmAddress: data.farmAddress,
-          farmType: data.farmType,
           verificationStatus: 'verified',
           verificationData: {
             faceMatchScore: sanitize(verificationData.faceMatchScore),
@@ -577,7 +609,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         phoneNo: data.phoneNo,
         profileImage: '',
         farmName: data.farmName,
-        farmAddress: data.farmAddress,
         farmType: data.farmType,
         verificationStatus: 'verified',
       });
