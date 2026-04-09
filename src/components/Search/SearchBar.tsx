@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import searchIcon from '../../assets/icons/search.svg';
 import { useSanitizedInput } from '../../hooks/useSanitizedInput';
-
+//searchbar.tsx
 // Debounce hook for future autocomplete
 function useDebounce<T extends (...args: any[]) => any>(
   callback: T,

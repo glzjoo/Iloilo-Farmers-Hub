@@ -5,7 +5,7 @@ import { db } from '../lib/firebase';
 import accountSettingsIcon from '../assets/icons/account-settings.svg';
 import shareIcon from '../assets/icons/share.svg';
 import ProfileInfoSectionConsumer from '../components/Profile/ProfileInfoSectionConsumer';
-
+//consumerAccountPage.tsx
 interface ConsumerProfile {
     firstName: string;
     lastName: string;

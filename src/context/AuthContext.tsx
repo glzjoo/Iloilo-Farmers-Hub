@@ -13,7 +13,7 @@ import { auth, db } from '../lib/firebase';
 import type { UserProfile, Consumer, Farmer } from '../types';
 import type { ConsumerSignupData, FarmerSignupData } from '../lib/validations';
 import SuspensionNoticeModal from '../components/admin/SuspensionNoticeModal';
-
+//authcontext.tsx
 // Extended profile that combines auth + role-specific data
 interface ExtendedUserProfile extends UserProfile {
   firstName?: string;

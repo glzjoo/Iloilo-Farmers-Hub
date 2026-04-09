@@ -4,6 +4,7 @@ import Fuse from 'fuse.js';
 import minus from '../../assets/icons/minus.svg';
 import add from '../../assets/icons/add.svg';
 import type { Product } from '../../types';
+import type { FarmerWithLocation } from '../../types';
 import { 
     getProducts,
     type ProductQueryOptions 
@@ -11,11 +12,49 @@ import {
 import { addToCart } from '../../services/cartService';
 import { useAuth } from '../../context/AuthContext';
 import ActionGuardModal from '../common/ActionGuardModal';
+import FarmerCard from './FarmerCard';
+import { 
+    CITY_COORDINATES, 
+    BARANGAY_COORDINATES, 
+    typedBarangays,
+    type Coordinates 
+} from '../../hooks/useNearbyFarmers';
 
 interface ShopAllProps {
     searchQuery?: string;
     queryOptions?: ProductQueryOptions;
+    // NEW: Nearby farmers mode
+    nearbyFarmers?: (FarmerWithLocation & { distance: number; formattedDistance: string })[];
+    showNearbyFarmers?: boolean;
+    nearbyLoading?: boolean;
+    nearbyError?: string | null;
+    // NEW: For manual location selection in empty state
+    onManualLocationSelect?: (coords: Coordinates | null) => void;
 }
+
+// Type for barangay data
+interface CityInfo {
+    name: string;
+    psgcCode: string;
+    barangays: Array<{
+        name: string;
+        psgcCode: string;
+        centroid: {
+            lat: number;
+            lng: number;
+        };
+    }>;
+}
+
+interface BarangayData {
+    province: {
+        name: string;
+        psgcCode: string;
+    };
+    cities: CityInfo[];
+}
+
+const typedBarangaysData = typedBarangays as unknown as BarangayData;
 
 // Trending Algorithm Score Calculator - FULL ALGORITHM
 const calculateTrendingScore = (product: Product): number => {
@@ -51,7 +90,13 @@ const isOutOfStock = (stock: string): boolean => {
 
 export default function ShopAll({ 
     searchQuery = '', 
-    queryOptions = { sortBy: 'trending', limit: 100 }
+    queryOptions = { sortBy: 'trending', limit: 100 },
+    // NEW props
+    nearbyFarmers = [],
+    showNearbyFarmers = false,
+    nearbyLoading = false,
+    nearbyError = null,
+    onManualLocationSelect,
 }: ShopAllProps) {
     const navigate = useNavigate();
     const { user, userProfile } = useAuth();
@@ -61,6 +106,11 @@ export default function ShopAll({
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [addingToCart, setAddingToCart] = useState<string | null>(null);
     const [showGuardModal, setShowGuardModal] = useState(false);
+
+    // State for manual location selector in empty state
+    const [showManualSelector, setShowManualSelector] = useState(false);
+    const [selectedCity, setSelectedCity] = useState('');
+    const [selectedBarangay, setSelectedBarangay] = useState('');
 
     // Stable dependency key to prevent infinite re-fetching
     const queryOptionsKey = useMemo(() => {
@@ -73,8 +123,13 @@ export default function ShopAll({
         });
     }, [queryOptions]);
 
-    // Fetch products when queryOptions change
+    // Fetch products when queryOptions change (only when not showing nearby farmers)
     useEffect(() => {
+        if (showNearbyFarmers) {
+            setLoading(false);
+            return;
+        }
+
         const fetchProducts = async () => {
             try {
                 setLoading(true);
@@ -111,7 +166,7 @@ export default function ShopAll({
         };
 
         fetchProducts();
-    }, [queryOptionsKey]);
+    }, [queryOptionsKey, showNearbyFarmers]);
 
     // Initialize Fuse instance for fuzzy search
     const fuse = useMemo(() => {
@@ -130,6 +185,9 @@ export default function ShopAll({
 
     // Process and display products
     const displayedProducts = useMemo(() => {
+        // If showing nearby farmers, return empty (we render farmers separately)
+        if (showNearbyFarmers) return [];
+
         let filtered: Product[];
 
         // 1. Apply search if exists (Fuse.js fuzzy search)
@@ -214,7 +272,7 @@ export default function ShopAll({
         // For rating/price sorts: Firestore already sorted, just separate stock status
         return [...inStock, ...outOfStock];
 
-    }, [products, searchQuery, fuse, queryOptions.sortBy]);
+    }, [products, searchQuery, fuse, queryOptions.sortBy, showNearbyFarmers]);
 
     const handleIncrement = (productId: string) => {
         setQuantities(prev => ({
@@ -272,6 +330,179 @@ export default function ShopAll({
         }
     };
 
+    // Handle city selection in empty state
+    const handleCityChange = (city: string) => {
+        setSelectedCity(city);
+        setSelectedBarangay('');
+        
+        if (city && CITY_COORDINATES[city] && onManualLocationSelect) {
+            onManualLocationSelect(CITY_COORDINATES[city]);
+        }
+    };
+
+    // Handle barangay selection in empty state
+    const handleBarangayChange = (barangay: string) => {
+        setSelectedBarangay(barangay);
+        
+        if (selectedCity && onManualLocationSelect) {
+            if (BARANGAY_COORDINATES[selectedCity]?.[barangay]) {
+                onManualLocationSelect(BARANGAY_COORDINATES[selectedCity][barangay]);
+            } else if (CITY_COORDINATES[selectedCity]) {
+                onManualLocationSelect(CITY_COORDINATES[selectedCity]);
+            }
+        }
+    };
+
+    const getBarangaysForCity = (cityName: string): string[] => {
+        const city = typedBarangaysData.cities.find((c) => c.name === cityName);
+        return city ? city.barangays.map((b) => b.name) : [];
+    };
+
+    const cities = typedBarangaysData.cities.map((c) => c.name);
+
+    // NEARBY FARMERS RENDER
+    if (showNearbyFarmers) {
+        if (nearbyLoading) {
+            return (
+                <section className="w-full py-8">
+                    <div className="max-w-7xl mx-auto px-6">
+                        <div className="flex justify-center items-center h-64">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                        </div>
+                    </div>
+                </section>
+            );
+        }
+
+        if (nearbyError) {
+            return (
+                <section className="w-full py-8">
+                    <div className="max-w-7xl mx-auto px-6">
+                        <div className="text-center py-16 text-red-500">
+                            <p className="text-xl">{nearbyError}</p>
+                        </div>
+                    </div>
+                </section>
+            );
+        }
+
+        if (nearbyFarmers.length === 0) {
+            return (
+                <div className="w-full">
+                    <div className="text-center py-12 bg-gray-50 rounded-lg px-6">
+                        <div className="mb-4">
+                            <svg className="w-16 h-16 text-gray-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <p className="text-xl font-primary text-gray-600 mb-2">
+                            No farmers within 5km
+                        </p>
+                        <p className="text-sm font-primary text-gray-400 mb-6">
+                            Try selecting a different location to find more farmers
+                        </p>
+
+                        {/* Manual Location Selector - Same as GPS fallback */}
+                        {!showManualSelector ? (
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => setShowManualSelector(true)}
+                                    className="w-full max-w-xs mx-auto px-6 py-3 bg-primary text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                                >
+                                    📍 Select Location Manually
+                                </button>
+                                <div>
+                                    <button
+                                        onClick={() => navigate('/shop')}
+                                        className="text-sm text-gray-500 hover:text-primary transition underline"
+                                    >
+                                        Browse all products instead
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="max-w-xs mx-auto bg-white p-4 rounded-lg shadow-sm space-y-3 text-left">
+                                <p className="text-sm font-medium text-gray-700 text-center">Select your location:</p>
+                                
+                                {/* City Dropdown */}
+                                <div>
+                                    <label className="text-xs text-gray-500 mb-1 block">City/Municipality</label>
+                                    <select
+                                        value={selectedCity}
+                                        onChange={(e) => handleCityChange(e.target.value)}
+                                        className="w-full px-3 py-2 text-sm border rounded focus:ring-1 focus:ring-primary focus:border-primary bg-white"
+                                    >
+                                        <option value="">Select city...</option>
+                                        {cities.map((city) => (
+                                            <option key={city} value={city}>
+                                                {city}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Barangay Dropdown */}
+                                {selectedCity && (
+                                    <div>
+                                        <label className="text-xs text-gray-500 mb-1 block">Barangay (optional)</label>
+                                        <select
+                                            value={selectedBarangay}
+                                            onChange={(e) => handleBarangayChange(e.target.value)}
+                                            className="w-full px-3 py-2 text-sm border rounded focus:ring-1 focus:ring-primary focus:border-primary bg-white"
+                                        >
+                                            <option value="">All barangays</option>
+                                            {getBarangaysForCity(selectedCity).map((barangay) => (
+                                                <option key={barangay} value={barangay}>
+                                                    {barangay}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+
+                                {/* Back button */}
+                                <button
+                                    onClick={() => {
+                                        setShowManualSelector(false);
+                                        setSelectedCity('');
+                                        setSelectedBarangay('');
+                                    }}
+                                    className="w-full text-xs text-gray-500 hover:text-primary py-2"
+                                >
+                                    ← Cancel
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div className="w-full">
+                <div className="mb-6 flex items-center justify-between">
+                    <p className="text-sm text-gray-600">
+                        Found <span className="font-semibold text-primary">{nearbyFarmers.length}</span> farmers within 5km
+                    </p>
+                    <button
+                        onClick={() => navigate('/shop')}
+                        className="text-sm text-gray-500 hover:text-primary transition"
+                    >
+                        Show all products
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                    {nearbyFarmers.map((farmer) => (
+                        <FarmerCard key={farmer.uid} farmer={farmer} />
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    // REGULAR PRODUCTS RENDER
     if (loading) {
         return (
             <section className="w-full py-8">
@@ -301,13 +532,6 @@ export default function ShopAll({
             </section>
         );
     }
-
-    // Determine if filters are actually active (not just default 'trending')
-    const hasActiveFilters = 
-        (queryOptions.categories && queryOptions.categories.length > 0) || 
-        (queryOptions.sortBy && queryOptions.sortBy !== 'trending') || 
-        queryOptions.minPrice !== undefined || 
-        queryOptions.maxPrice !== undefined;
 
     return (
         <div className="w-full">
