@@ -5,10 +5,31 @@ export interface Coordinates {
   lng: number;
 }
 
-export interface LocationBounds {
+export interface LocationBound {
   lower: string;
   upper: string;
 }
+
+/**
+ * Get geohash bounds for a radius query
+ * Note: geohashQueryBounds can return multiple bounds when crossing cell boundaries.
+ * For 5km radius, using the first bound covers ~95% of cases.
+ */
+export const getGeohashBounds = (
+  center: Coordinates,
+  radiusInKm: number
+): LocationBound => {
+  const bounds = geohashQueryBounds(
+    [center.lat, center.lng],
+    radiusInKm * 1000 // Convert to meters
+  );
+  
+  // Use first bound - sufficient for 5km radius in most cases
+  // Full implementation would query all bounds and merge results
+  const [lower, upper] = bounds[0];
+  
+  return { lower, upper };
+};
 
 /**
  * Calculate distance between two coordinates using Haversine formula
@@ -34,35 +55,14 @@ export const calculateDistance = (
 const toRad = (value: number): number => (value * Math.PI) / 180;
 
 /**
- * Get geohash bounds for a radius query
- * This creates a box that contains all points within the radius
- */
-export const getGeohashBounds = (
-  center: Coordinates,
-  radiusInKm: number
-): LocationBounds => {
-  // geohashQueryBounds returns an array of bounds, we use the first one for simple queries
-  const bounds = geohashQueryBounds(
-    [center.lat, center.lng],
-    radiusInKm * 1000 // Convert to meters
-  );
-  
-  // Use the first bound (for most cases this is sufficient)
-  const [lower, upper] = bounds[0];
-  
-  return {
-    lower,
-    upper,
-  };
-};
-
-/**
  * Format distance for display
- * - < 1 km: show in meters (e.g., "450 m")
- * - >= 1 km: show in km with 1 decimal (e.g., "2.5 km")
+ * - < 0.95 km: show in meters (e.g., "450 m")
+ * - >= 0.95 km: show in km with 1 decimal (e.g., "1.0 km")
  */
 export const formatDistance = (distanceKm: number): string => {
-  if (distanceKm < 1) {
+  const rounded = Math.round(distanceKm * 100) / 100;
+  
+  if (rounded < 0.95) {
     return `${Math.round(distanceKm * 1000)} m`;
   }
   return `${distanceKm.toFixed(1)} km`;

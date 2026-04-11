@@ -4,19 +4,19 @@ import {
   query,
   where,
   getDocs,
+  limit,
   type QuerySnapshot,
   type DocumentData,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import type { FarmerWithLocation, Product } from '../types';
+import type { FarmerWithLocation } from '../types';
 import {
   calculateDistance,
   getGeohashBounds,
   type Coordinates,
 } from '../services/locationService';
-import { getProducts } from '../services/shopService';
 import iloiloBarangays from '../data/iloilo-barangays.json';
-
+//useNearbyFarmers.ts
 interface NearbyFarmerResult extends FarmerWithLocation {
   distance: number; // in km
   formattedDistance: string;
@@ -168,8 +168,7 @@ export const useNearbyFarmers = (
         const bounds = getGeohashBounds(userLocation, radiusKm);
 
         // Query farmers within geohash bounds
-        // SIMPLIFIED: Removed orderBy to avoid index requirement
-        // We'll sort client-side instead
+        // Note: For complete accuracy with large radii, query all bounds from geohashQueryBounds
         const farmersQuery = query(
           collection(db, 'farmers'),
           where('locationGeohash', '>=', bounds.lower),
@@ -203,18 +202,18 @@ export const useNearbyFarmers = (
           if (distance > radiusKm) continue;
 
           // Check if farmer has active products (if required)
+          // FIXED: Query Firestore directly instead of using getProducts
           let hasActiveProducts = true;
           if (requireActiveProducts) {
             try {
-              const products = await getProducts({
-                categories: [],
-                limit: 1,
-              });
-              // Filter products by this farmer
-              const farmerProducts = products.filter(
-                (p: Product) => p.farmerId === doc.id && p.status === 'active'
+              const productsQuery = query(
+                collection(db, 'products'),
+                where('farmerId', '==', doc.id),
+                where('status', '==', 'active'),
+                limit(1)
               );
-              hasActiveProducts = farmerProducts.length > 0;
+              const productsSnapshot = await getDocs(productsQuery);
+              hasActiveProducts = !productsSnapshot.empty;
             } catch {
               hasActiveProducts = false;
             }
@@ -230,7 +229,16 @@ export const useNearbyFarmers = (
         }
 
         // Sort by distance (nearest first) - client side
-        results.sort((a, b) => a.distance - b.distance);
+        if (isUsingManualLocation) {
+          // Random shuffle for manual mode (centroid approximations not accurate for distance)
+          for (let i = results.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [results[i], results[j]] = [results[j], results[i]];
+          }
+        } else {
+          // Sort by distance (nearest first) for GPS mode
+          results.sort((a, b) => a.distance - b.distance);
+        }
 
         setFarmers(results);
       } catch (err: any) {

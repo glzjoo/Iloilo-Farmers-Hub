@@ -6,6 +6,7 @@ interface FarmerCardProps {
     distance: number;
     formattedDistance: string;
   };
+  hideDistance?: boolean; // NEW PROP
 }
 
 function StarRating({ rating }: { rating: number }) {
@@ -26,7 +27,7 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-export default function FarmerCard({ farmer }: FarmerCardProps) {
+export default function FarmerCard({ farmer, hideDistance = false }: FarmerCardProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -38,7 +39,7 @@ export default function FarmerCard({ farmer }: FarmerCardProps) {
     ? `${farmer.farmLocation.barangay}, ${farmer.farmLocation.city}`
     : farmer.farmAddress || 'Location not specified';
 
-  // Get distance badge color
+  // Get distance badge color (only used when not hidden)
   const getDistanceColor = (distance: number): string => {
     if (distance <= 1) return 'bg-green-100 text-green-700';
     if (distance <= 2.5) return 'bg-blue-100 text-blue-700';
@@ -59,21 +60,23 @@ export default function FarmerCard({ farmer }: FarmerCardProps) {
           className="w-full h-44 object-cover transition-transform duration-300 group-hover:scale-105"
         />
         
-        {/* Distance Badge */}
-        <div
-          className={`absolute top-2 right-2 rounded-full px-2.5 py-1 flex items-center gap-1 shadow-sm ${getDistanceColor(
-            farmer.distance
-          )}`}
-        >
-          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <span className="text-[11px] font-semibold">{farmer.formattedDistance}</span>
-        </div>
+        {/* Distance Badge - Hidden for manual location */}
+        {!hideDistance && (
+          <div
+            className={`absolute top-2 right-2 rounded-full px-2.5 py-1 flex items-center gap-1 shadow-sm ${getDistanceColor(
+              farmer.distance
+            )}`}
+          >
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span className="text-[11px] font-semibold">{farmer.formattedDistance}</span>
+          </div>
+        )}
       </div>
 
       {/* Info Container */}
