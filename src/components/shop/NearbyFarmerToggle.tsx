@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   CITY_COORDINATES,
   BARANGAY_COORDINATES,
@@ -13,6 +13,7 @@ interface NearbyFarmerToggleProps {
   locationError: string | null;
   isLoading: boolean;
   isUsingManualLocation: boolean;
+  gpsPermissionGranted?: boolean;
 }
 
 const cities = typedBarangays.cities.map((c) => c.name);
@@ -24,6 +25,7 @@ export default function NearbyFarmerToggle({
   locationError,
   isLoading,
   isUsingManualLocation,
+  gpsPermissionGranted = false,
 }: NearbyFarmerToggleProps) {
   const [showManualSelector, setShowManualSelector] = useState(false);
   const [selectedCity, setSelectedCity] = useState('');
@@ -31,10 +33,8 @@ export default function NearbyFarmerToggle({
 
   const handleToggle = () => {
     if (!isActive) {
-      // Activating - request GPS
       onToggle(true);
     } else {
-      // Deactivating
       onToggle(false);
       onLocationSelect(null);
       setShowManualSelector(false);
@@ -59,7 +59,6 @@ export default function NearbyFarmerToggle({
   const handleBarangayChange = (barangay: string) => {
     setSelectedBarangay(barangay);
     
-    // Use barangay centroid for more precise location
     if (selectedCity && BARANGAY_COORDINATES[selectedCity]?.[barangay]) {
       onLocationSelect(BARANGAY_COORDINATES[selectedCity][barangay]);
     } else if (selectedCity && CITY_COORDINATES[selectedCity]) {
@@ -72,10 +71,13 @@ export default function NearbyFarmerToggle({
     return city ? city.barangays.map((b) => b.name) : [];
   };
 
+  // Show manual selector if GPS error OR if GPS worked but no farmers found
+  const shouldShowManualSelector = showManualSelector || (gpsPermissionGranted && isActive && !isLoading && !isUsingManualLocation);
+
   return (
     <div className="border-b border-gray-200 pb-5 mb-5">
       <h3 className="text-[13px] font-semibold text-gray-800 mb-4 uppercase tracking-wider flex items-center gap-2">
-        Nearby Farmers
+        <span className="text-primary">📍</span> Nearby Farmers
       </h3>
 
       {/* Main Toggle Button */}
@@ -119,7 +121,7 @@ export default function NearbyFarmerToggle({
       </button>
 
       {/* Error Message */}
-      {locationError && !showManualSelector && (
+      {locationError && !shouldShowManualSelector && (
         <div className="mt-3 p-3 bg-red-50 rounded-lg">
           <p className="text-xs text-red-600 mb-2">{locationError}</p>
           <button
@@ -132,9 +134,13 @@ export default function NearbyFarmerToggle({
       )}
 
       {/* Manual Location Selector */}
-      {showManualSelector && (
+      {shouldShowManualSelector && (
         <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-3">
-          <p className="text-xs text-gray-600 font-medium">Select your location:</p>
+          <p className="text-xs text-gray-600 font-medium">
+            {gpsPermissionGranted 
+              ? 'No farmers found at your location. Try selecting a different area:'
+              : 'Select your location:'}
+          </p>
           
           {/* City Dropdown */}
           <div>
@@ -172,21 +178,23 @@ export default function NearbyFarmerToggle({
             </div>
           )}
 
-          {/* Back to GPS */}
-          <button
-            onClick={() => {
-              setShowManualSelector(false);
-              onToggle(true); // Retry GPS
-            }}
-            className="text-xs text-gray-500 hover:text-primary underline"
-          >
-            ← Try GPS instead
-          </button>
+          {/* Back to GPS (only show if not in empty state) */}
+          {!gpsPermissionGranted && (
+            <button
+              onClick={() => {
+                setShowManualSelector(false);
+                onToggle(true);
+              }}
+              className="text-xs text-gray-500 hover:text-primary underline"
+            >
+              ← Try GPS instead
+            </button>
+          )}
         </div>
       )}
 
       {/* Active Status Indicator */}
-      {isActive && !locationError && (
+      {isActive && !locationError && !shouldShowManualSelector && (
         <div className="mt-3 flex items-center gap-2 text-xs text-green-600">
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path

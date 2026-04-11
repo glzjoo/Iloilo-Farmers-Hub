@@ -23,13 +23,13 @@ import {
 interface ShopAllProps {
     searchQuery?: string;
     queryOptions?: ProductQueryOptions;
-    // NEW: Nearby farmers mode
     nearbyFarmers?: (FarmerWithLocation & { distance: number; formattedDistance: string })[];
     showNearbyFarmers?: boolean;
     nearbyLoading?: boolean;
     nearbyError?: string | null;
-    // NEW: For manual location selection in empty state
-    onManualLocationSelect?: (coords: Coordinates | null) => void;
+    onManualLocationSelect?: (coords: { lat: number; lng: number } | null) => void; // ADD THIS
+    isUsingManualLocation?: boolean;
+    gpsPermissionGranted?: boolean;
 }
 
 // Type for barangay data

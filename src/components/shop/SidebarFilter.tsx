@@ -13,13 +13,14 @@ interface SidebarFilterProps {
     hasFilters: boolean;
     trendingItems?: { id: string; name: string; image?: string }[];
     onTrendingClick?: (productId: string) => void;
-    // NEW: Nearby farmers props
+    // Nearby farmers props
     showNearbyFarmers?: boolean;
     onNearbyToggle?: (active: boolean) => void;
     onLocationSelect?: (coords: { lat: number; lng: number } | null) => void;
     nearbyLocationError?: string | null;
     nearbyLoading?: boolean;
     isUsingManualLocation?: boolean;
+    gpsPermissionGranted?: boolean;
 }
 
 const categoryOptions = [
@@ -51,13 +52,14 @@ export default function SidebarFilter({
     hasFilters,
     trendingItems = [],
     onTrendingClick,
-    // NEW props
+    // Nearby farmers props
     showNearbyFarmers = false,
     onNearbyToggle = () => {},
     onLocationSelect = () => {},
     nearbyLocationError = null,
     nearbyLoading = false,
     isUsingManualLocation = false,
+    gpsPermissionGranted = false,
 }: SidebarFilterProps) {
     const [localPriceMin, setLocalPriceMin] = useState(priceRange?.min?.toString() || '');
     const [localPriceMax, setLocalPriceMax] = useState(priceRange?.max?.toString() || '');
@@ -80,9 +82,6 @@ export default function SidebarFilter({
         onPriceChange(min, max === Infinity ? 999999 : max);
     };
 
-    // Check if any filters are active (including nearby)
-    const hasAnyFilters = hasFilters || showNearbyFarmers;
-
     return (
         <aside className="w-full h-full bg-white border-r border-gray-100 pr-4">
             <div className="flex items-center justify-between mb-6">
@@ -90,22 +89,29 @@ export default function SidebarFilter({
                     <img src={filter} className="w-5 h-5" alt="Filter" />
                     Filters
                 </h2>
-                {hasAnyFilters && (
+                {hasFilters && (
                     <button 
-                        onClick={() => {
-                            onClear();
-                            onNearbyToggle(false);
-                            onLocationSelect(null);
-                        }}
+                        onClick={onClear}
                         className="text-xs text-red-600 hover:text-red-800 underline"
                     >
-                        Clear All
+                        Clear
                     </button>
                 )}
             </div>
 
-            {/* Trending - Dynamic clickable items */}
-            {trendingItems.length > 0 && !showNearbyFarmers && (
+            {/* Nearby Farmers Toggle - Prominent placement at top */}
+            <NearbyFarmerToggle
+                isActive={showNearbyFarmers}
+                onToggle={onNearbyToggle}
+                onLocationSelect={onLocationSelect}
+                locationError={nearbyLocationError}
+                isLoading={nearbyLoading}
+                isUsingManualLocation={isUsingManualLocation}
+                gpsPermissionGranted={gpsPermissionGranted}
+            />
+
+            {/* Trending - Hidden when showing nearby farmers */}
+            {!showNearbyFarmers && trendingItems.length > 0 && (
                 <div className="border-b border-gray-200 pb-5 mb-5">
                     <h3 className="text-[13px] font-semibold text-gray-800 mb-4 uppercase tracking-wider flex items-center gap-2">
                         <span className="text-red-500">🔥</span> Trending Now
@@ -137,16 +143,6 @@ export default function SidebarFilter({
                     </div>
                 </div>
             )}
-
-            {/* NEARBY FARMERS TOGGLE - PROMINENT PLACEMENT */}
-            <NearbyFarmerToggle
-                isActive={showNearbyFarmers}
-                onToggle={onNearbyToggle}
-                onLocationSelect={onLocationSelect}
-                locationError={nearbyLocationError}
-                isLoading={nearbyLoading}
-                isUsingManualLocation={isUsingManualLocation}
-            />
 
             {/* Sort by - Hidden when showing nearby farmers */}
             {!showNearbyFarmers && (
