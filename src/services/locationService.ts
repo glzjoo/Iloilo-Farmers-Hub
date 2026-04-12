@@ -10,38 +10,27 @@ export interface LocationBound {
   upper: string;
 }
 
-/**
- * Get geohash bounds for a radius query
- * Note: geohashQueryBounds can return multiple bounds when crossing cell boundaries.
- * For 5km radius, using the first bound covers ~95% of cases.
- */
 export const getGeohashBounds = (
   center: Coordinates,
   radiusInKm: number
 ): LocationBound => {
   const bounds = geohashQueryBounds(
     [center.lat, center.lng],
-    radiusInKm * 1000 // Convert to meters
+    radiusInKm * 1000
   );
   
-  // Use first bound - sufficient for 5km radius in most cases
-  // Full implementation would query all bounds and merge results
   const [lower, upper] = bounds[0];
   
   return { lower, upper };
 };
 
-/**
- * Calculate distance between two coordinates using Haversine formula
- * Returns distance in kilometers
- */
 export const calculateDistance = (
   lat1: number,
   lon1: number,
   lat2: number,
   lon2: number
 ): number => {
-  const R = 6371; // Earth's radius in km
+  const R = 6371;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a =
@@ -55,22 +44,29 @@ export const calculateDistance = (
 const toRad = (value: number): number => (value * Math.PI) / 180;
 
 /**
- * Format distance for display
- * - < 0.95 km: show in meters (e.g., "450 m")
- * - >= 0.95 km: show in km with 1 decimal (e.g., "1.0 km")
+ * Format distance for GPS mode - shows approximate ranges only (privacy)
+ * - 0-1km: "Within 1km"
+ * - 1-2km: "1-2km"
+ * - 2-3km: "2-3km"
+ * - 3-4km: "3-4km"
+ * - 4-5km: "4-5km"
  */
 export const formatDistance = (distanceKm: number): string => {
-  const rounded = Math.round(distanceKm * 100) / 100;
-  
-  if (rounded < 0.95) {
-    return `${Math.round(distanceKm * 1000)} m`;
-  }
-  return `${distanceKm.toFixed(1)} km`;
+  if (distanceKm <= 1) return 'Within 1km';
+  if (distanceKm <= 2) return '1-2km';
+  if (distanceKm <= 3) return '2-3km';
+  if (distanceKm <= 4) return '3-4km';
+  if (distanceKm <= 5) return '4-5km';
+  return '5km+';
 };
 
 /**
- * Get distance category for styling/badge colors
+ * Format distance for manual mode - shows "~X km" (centroid approximation)
  */
+export const formatManualDistance = (distanceKm: number): string => {
+  return `~${Math.round(distanceKm)} km`;
+};
+
 export const getDistanceCategory = (distanceKm: number): 'very-close' | 'close' | 'near' | 'far' => {
   if (distanceKm <= 1) return 'very-close';
   if (distanceKm <= 2.5) return 'close';

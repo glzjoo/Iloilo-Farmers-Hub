@@ -271,9 +271,7 @@ export default function ShopAll({
         }
     };
 
-    // NEARBY FARMERS LOGIC
-
-    // 1. Instruction screen (haven't chosen method yet)
+    // SELECTION MODE: Show instruction message
     if (nearbyMode === 'choosing') {
         return (
             <div className="w-full">
@@ -291,25 +289,38 @@ export default function ShopAll({
                         </p>
                     </div>
                     
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <button
+                            onClick={() => navigate('/shop')}
+                            className="px-6 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:border-primary hover:text-primary transition-colors"
+                        >
+                            Browse All Products
+                        </button>
+                    </div>
                 </div>
             </div>
         );
     }
 
-    // 2. Searching or Results (gps or manual mode)
+    // NEARBY FARMERS RENDER (gps or manual mode)
     if (nearbyMode === 'gps' || nearbyMode === 'manual') {
+        // 1. Loading state - show immediately, don't show empty state while loading
         if (nearbyLoading) {
             return (
                 <section className="w-full py-8">
                     <div className="max-w-7xl mx-auto px-6">
-                        <div className="flex justify-center items-center h-64">
+                        <div className="flex flex-col justify-center items-center h-64 gap-4">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                            <p className="text-gray-600">
+                                {nearbyMode === 'gps' ? 'Finding farmers near you...' : 'Searching farmers...'}
+                            </p>
                         </div>
                     </div>
                 </section>
             );
         }
 
+        // 2. Error state
         if (nearbyError) {
             return (
                 <section className="w-full py-8">
@@ -322,7 +333,28 @@ export default function ShopAll({
             );
         }
 
-        // If we've searched and found no farmers
+        // 3. Instruction state (manual only, before clicking Apply)
+        if (!hasSearched && nearbyMode === 'manual') {
+            return (
+                <div className="w-full">
+                    <div className="text-center py-16 bg-gray-50 rounded-lg px-6">
+                        <div className="mb-6">
+                            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Select Location</h2>
+                            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                                Select your city and barangay in the sidebar, then click Apply Location to find farmers
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 4. Empty state (only after search completed and found nothing)
         if (hasSearched && nearbyFarmers.length === 0) {
             return (
                 <div className="w-full">
@@ -353,38 +385,26 @@ export default function ShopAll({
                                 </p>
                             </>
                         )}
-                    </div>
-                </div>
-            );
-        }
 
-        // If we haven't searched yet (manual mode waiting for Apply)
-        if (!hasSearched && nearbyMode === 'manual') {
-            return (
-                <div className="w-full">
-                    <div className="text-center py-16 bg-gray-50 rounded-lg px-6">
-                        <div className="mb-6">
-                            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Select Location</h2>
-                            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                                Select your city and barangay in the sidebar, then click Apply Location to find farmers
-                            </p>
+                        <div className="mt-4">
+                            <button
+                                onClick={() => navigate('/shop')}
+                                className="text-sm text-gray-500 hover:text-primary transition"
+                            >
+                                Browse All Products
+                            </button>
                         </div>
                     </div>
                 </div>
             );
         }
 
-        // Results
+        // 5. Results
         return (
             <div className="w-full">
                 <div className="mb-6 flex items-center justify-between">
                     <p className="text-sm text-gray-600">
-                        Found <span className="font-semibold text-primary">{nearbyFarmers.length}</span> {isUsingManualLocation ? 'farmers in this area' : 'farmers within 5km'}
+                        Found <span className="font-semibold text-primary">{nearbyFarmers.length}</span> {isUsingManualLocation ? 'farmers in this area' : 'farmers nearby'}
                     </p>
                     <button
                         onClick={() => navigate('/shop')}
@@ -407,7 +427,7 @@ export default function ShopAll({
         );
     }
 
-    // REGULAR PRODUCTS (selection mode)
+    // REGULAR PRODUCTS RENDER (selection mode)
     if (loading) {
         return (
             <section className="w-full py-8">

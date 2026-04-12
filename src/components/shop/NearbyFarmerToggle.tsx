@@ -14,7 +14,7 @@ interface NearbyFarmerToggleProps {
   onBack: () => void;
   onEnableGPS: () => void;
   onEnableManual: () => void;
-  onLocationSelect: (coords: Coordinates | null) => void;
+  onLocationSelect: (coords: Coordinates | null, city?: string, barangay?: string) => void;
   locationError: string | null;
   isLoading: boolean;
 }
@@ -44,11 +44,16 @@ export default function NearbyFarmerToggle({
   };
 
   const handleApplyManual = () => {
+    let coords: Coordinates | null = null;
+    
     if (selectedCity && BARANGAY_COORDINATES[selectedCity]?.[selectedBarangay]) {
-      onLocationSelect(BARANGAY_COORDINATES[selectedCity][selectedBarangay]);
+      coords = BARANGAY_COORDINATES[selectedCity][selectedBarangay];
     } else if (selectedCity && CITY_COORDINATES[selectedCity]) {
-      onLocationSelect(CITY_COORDINATES[selectedCity]);
+      coords = CITY_COORDINATES[selectedCity];
     }
+    
+    // Pass city and barangay along with coordinates
+    onLocationSelect(coords, selectedCity, selectedBarangay || undefined);
   };
 
   const getBarangaysForCity = (cityName: string): string[] => {

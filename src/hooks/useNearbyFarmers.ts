@@ -13,12 +13,14 @@ import type { FarmerWithLocation } from '../types';
 import {
   calculateDistance,
   getGeohashBounds,
+  formatDistance,
+  formatManualDistance,
   type Coordinates,
 } from '../services/locationService';
 import iloiloBarangays from '../data/iloilo-barangays.json';
-//useNearbyFarmers.ts
+
 interface NearbyFarmerResult extends FarmerWithLocation {
-  distance: number; // in km
+  distance: number;
   formattedDistance: string;
   hasActiveProducts: boolean;
 }
@@ -35,10 +37,9 @@ interface UseNearbyFarmersReturn {
   locationError: string | null;
   requestLocation: () => void;
   isUsingManualLocation: boolean;
-  setManualLocation: (location: Coordinates | null) => void;
+  setManualLocation: (location: Coordinates | null, city?: string, barangay?: string) => void;
 }
 
-// Type for the barangay JSON structure
 interface BarangayInfo {
   name: string;
   psgcCode: string;
@@ -64,7 +65,6 @@ interface BarangayData {
 
 const typedBarangays = iloiloBarangays as unknown as BarangayData;
 
-// Build a lookup map for city coordinates (using first barangay centroid as approximation)
 const CITY_COORDINATES: Record<string, Coordinates> = {};
 typedBarangays.cities.forEach((city) => {
   if (city.barangays.length > 0) {
@@ -75,7 +75,6 @@ typedBarangays.cities.forEach((city) => {
   }
 });
 
-// Build barangay coordinate lookup
 const BARANGAY_COORDINATES: Record<string, Record<string, Coordinates>> = {};
 typedBarangays.cities.forEach((city) => {
   BARANGAY_COORDINATES[city.name] = {};
@@ -98,11 +97,13 @@ export const useNearbyFarmers = (
   const [locationError, setLocationError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
   const [isUsingManualLocation, setIsUsingManualLocation] = useState(false);
+  const [manualCriteria, setManualCriteria] = useState<{city?: string, barangay?: string}>({});
 
-  // Request browser geolocation
   const requestLocation = useCallback(() => {
     setLocationError(null);
     setIsUsingManualLocation(false);
+    setManualCriteria({});
+    setFarmers([]); // Clear previous results immediately
 
     if (!navigator.geolocation) {
       setLocationError('Geolocation is not supported by your browser');
@@ -120,7 +121,7 @@ export const useNearbyFarmers = (
         let message = 'Unable to retrieve your location';
         switch (err.code) {
           case err.PERMISSION_DENIED:
-            message = 'Location access denied. Please enable location permissions or use manual selection.';
+            message = 'Location access denied. Please enable location permissions.';
             break;
           case err.POSITION_UNAVAILABLE:
             message = 'Location information unavailable';
@@ -139,20 +140,20 @@ export const useNearbyFarmers = (
     );
   }, []);
 
-  // Set manual location (from dropdown)
-  const setManualLocation = useCallback((location: Coordinates | null) => {
+  const setManualLocation = useCallback((location: Coordinates | null, city?: string, barangay?: string) => {
     setLocationError(null);
     if (location) {
       setUserLocation(location);
       setIsUsingManualLocation(true);
+      setManualCriteria({ city, barangay });
     } else {
       setUserLocation(null);
       setIsUsingManualLocation(false);
+      setManualCriteria({});
       setFarmers([]);
     }
   }, []);
 
-  // Fetch nearby farmers when location changes
   useEffect(() => {
     if (!userLocation) {
       setFarmers([]);
@@ -164,45 +165,86 @@ export const useNearbyFarmers = (
       setError(null);
 
       try {
-        // Get geohash bounds for the radius
-        const bounds = getGeohashBounds(userLocation, radiusKm);
+        let snapshot: QuerySnapshot<DocumentData>;
 
-        // Query farmers within geohash bounds
-        // Note: For complete accuracy with large radii, query all bounds from geohashQueryBounds
-        const farmersQuery = query(
-          collection(db, 'farmers'),
-          where('locationGeohash', '>=', bounds.lower),
-          where('locationGeohash', '<=', bounds.upper),
-          where('status', '==', 'active')
-        );
+        if (isUsingManualLocation && manualCriteria.city) {
+          console.log('=== MANUAL MODE ===');
+          console.log('City:', manualCriteria.city);
+          console.log('Barangay:', manualCriteria.barangay || 'Any');
 
-        const snapshot: QuerySnapshot<DocumentData> = await getDocs(farmersQuery);
-        
-        // Process results and calculate exact distances
+          let farmersQuery;
+          
+          if (manualCriteria.barangay) {
+            farmersQuery = query(
+              collection(db, 'farmers'),
+              where('farmLocation.city', '==', manualCriteria.city),
+              where('farmLocation.barangay', '==', manualCriteria.barangay),
+              where('verificationStatus', '==', 'verified')
+            );
+          } else {
+            farmersQuery = query(
+              collection(db, 'farmers'),
+              where('farmLocation.city', '==', manualCriteria.city),
+              where('verificationStatus', '==', 'verified')
+            );
+          }
+
+          snapshot = await getDocs(farmersQuery);
+          console.log('Manual query results:', snapshot.docs.length);
+
+        } else {
+          console.log('=== GPS MODE ===');
+          console.log('User location:', userLocation);
+
+          const bounds = getGeohashBounds(userLocation, radiusKm);
+          console.log('Geohash bounds:', bounds);
+
+          const farmersQuery = query(
+            collection(db, 'farmers'),
+            where('locationGeohash', '>=', bounds.lower),
+            where('locationGeohash', '<=', bounds.upper),
+            where('verificationStatus', '==', 'verified')
+          );
+
+          snapshot = await getDocs(farmersQuery);
+          console.log('GPS query results (before distance filter):', snapshot.docs.length);
+        }
+
         const results: NearbyFarmerResult[] = [];
         
         for (const doc of snapshot.docs) {
           const farmerData = doc.data() as FarmerWithLocation;
           
-          // Skip farmers without location coordinates
           if (!farmerData.farmLocation?.coordinates) continue;
 
           const farmerLat = farmerData.farmLocation.coordinates.lat;
           const farmerLng = farmerData.farmLocation.coordinates.lng;
 
-          // Calculate exact distance using Haversine
-          const distance = calculateDistance(
-            userLocation.lat,
-            userLocation.lng,
-            farmerLat,
-            farmerLng
-          );
+          let distance: number;
+          let formattedDistance: string;
 
-          // Filter by exact radius (geohash is a box, so we need to filter)
-          if (distance > radiusKm) continue;
+          if (isUsingManualLocation) {
+            distance = calculateDistance(
+              userLocation.lat,
+              userLocation.lng,
+              farmerLat,
+              farmerLng
+            );
+            formattedDistance = formatManualDistance(distance);
+          } else {
+            distance = calculateDistance(
+              userLocation.lat,
+              userLocation.lng,
+              farmerLat,
+              farmerLng
+            );
+            
+            if (distance > radiusKm) continue;
+            
+            // Use privacy-friendly distance format for GPS
+            formattedDistance = formatDistance(distance);
+          }
 
-          // Check if farmer has active products (if required)
-          // FIXED: Query Firestore directly instead of using getProducts
           let hasActiveProducts = true;
           if (requireActiveProducts) {
             try {
@@ -219,28 +261,27 @@ export const useNearbyFarmers = (
             }
           }
 
+          if (!hasActiveProducts) continue;
+
           results.push({
             ...farmerData,
             uid: doc.id,
             distance,
-            formattedDistance: formatDistance(distance),
+            formattedDistance,
             hasActiveProducts,
           });
         }
 
-        // Sort by distance (nearest first) - client side
         if (isUsingManualLocation) {
-          // Random shuffle for manual mode (centroid approximations not accurate for distance)
-          for (let i = results.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [results[i], results[j]] = [results[j], results[i]];
-          }
+          results.sort((a, b) => (a.farmName || '').localeCompare(b.farmName || ''));
         } else {
-          // Sort by distance (nearest first) for GPS mode
+          // Sort by distance but keep the privacy ranges
           results.sort((a, b) => a.distance - b.distance);
         }
 
+        console.log('Final results:', results.length);
         setFarmers(results);
+
       } catch (err: any) {
         console.error('Error fetching nearby farmers:', err);
         setError(err.message || 'Failed to fetch nearby farmers');
@@ -250,7 +291,7 @@ export const useNearbyFarmers = (
     };
 
     fetchNearbyFarmers();
-  }, [userLocation, radiusKm, requireActiveProducts]);
+  }, [userLocation, radiusKm, requireActiveProducts, isUsingManualLocation, manualCriteria]);
 
   return {
     farmers,
@@ -263,14 +304,5 @@ export const useNearbyFarmers = (
   };
 };
 
-// Helper to format distance (duplicated from locationService for internal use)
-const formatDistance = (distanceKm: number): string => {
-  if (distanceKm < 1) {
-    return `${Math.round(distanceKm * 1000)} m`;
-  }
-  return `${distanceKm.toFixed(1)} km`;
-};
-
-// Export coordinate lookups for use in other components
 export { CITY_COORDINATES, BARANGAY_COORDINATES, typedBarangays };
 export type { Coordinates };

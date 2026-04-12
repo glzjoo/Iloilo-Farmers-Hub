@@ -6,6 +6,8 @@ import type { ProductQueryOptions } from "../services/shopService";
 import { getTrendingItems } from "../services/shopService";
 import { useNearbyFarmers } from "../hooks/useNearbyFarmers";
 
+import { DebugNearby } from '../components/debug/DebugNearby';
+
 type NearbyMode = 'selection' | 'choosing' | 'gps' | 'manual';
 
 const CATEGORIES = ['All', 'Vegetables', 'Fruits', 'Rice', 'Corn', 'Livestock', 'Poultry', 'Fishery', 'Other'];
@@ -164,9 +166,9 @@ export default function Shop() {
         // Don't mark as searched yet, wait for Apply
     }, []);
 
-    const handleLocationSelect = useCallback((coords: { lat: number; lng: number } | null) => {
-        setHasSearched(true); // Mark as searched when Apply is clicked
-        setManualLocation(coords);
+    const handleLocationSelect = useCallback((coords: { lat: number; lng: number } | null, city?: string, barangay?: string) => {
+    setHasSearched(true);   
+    setManualLocation(coords, city, barangay); // Pass city/barangay
     }, [setManualLocation]);
 
     // Auto-fallback to manual if GPS denied
@@ -244,6 +246,7 @@ export default function Shop() {
                     />
                 </div>
             </div>
+            <DebugNearby />
         </div>
     );
 }
