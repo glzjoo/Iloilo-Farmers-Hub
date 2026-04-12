@@ -6,7 +6,6 @@ import type { ProductQueryOptions } from "../services/shopService";
 import { getTrendingItems } from "../services/shopService";
 import { useNearbyFarmers } from "../hooks/useNearbyFarmers";
 
-import { DebugNearby } from '../components/debug/DebugNearby';
 
 type NearbyMode = 'selection' | 'choosing' | 'gps' | 'manual';
 
@@ -246,7 +245,6 @@ export default function Shop() {
                     />
                 </div>
             </div>
-            <DebugNearby />
         </div>
     );
 }
