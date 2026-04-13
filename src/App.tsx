@@ -28,7 +28,8 @@ import ConsumerAccountSettingPage from './pages/ConsumerAccountSetting';
 import ReviewFarmer from './pages/ReviewFarmer';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
-
+import FarmerShopPage from './pages/FarmerShopPage';
+//app.tsx
 // Pages that should not have footer and should be full viewport height
 const FULL_HEIGHT_PAGES = ['/messages'];
 
@@ -82,6 +83,7 @@ function AppLayout() {
                     <Route path="/AddProduct" element={<SellModalPage />} />
                     <Route path="/my-listings" element={<MyListingPage />} />
                     <Route path="/farmer-account" element={<FarmerAccountPage />} />
+                    <Route path="/farmer/:farmerId" element={<FarmerShopPage />} />
                     <Route path="/consumer-account" element={<ConsumerAccountPage />} />
                     <Route path="/farmer-account-setting" element={<FarmerAccountSettingPage />} />
                     <Route path="/consumer-account-setting" element={<ConsumerAccountSettingPage />} />

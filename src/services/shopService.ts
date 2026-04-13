@@ -15,7 +15,7 @@ import { db } from '../lib/firebase';
 import type { Product } from '../types';
 
 const PRODUCTS_COLLECTION = 'products';
-
+//shopservice.ts
 // Helper to convert Firestore data to Product type
 const convertDocToProduct = (doc: DocumentData): Product => {
     const data = doc.data();

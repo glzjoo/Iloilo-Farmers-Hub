@@ -4,6 +4,7 @@ import Fuse from 'fuse.js';
 import minus from '../../assets/icons/minus.svg';
 import add from '../../assets/icons/add.svg';
 import type { Product } from '../../types';
+import type { FarmerWithLocation } from '../../types';
 import { 
     getProducts,
     type ProductQueryOptions 
@@ -11,13 +12,21 @@ import {
 import { addToCart } from '../../services/cartService';
 import { useAuth } from '../../context/AuthContext';
 import ActionGuardModal from '../common/ActionGuardModal';
+import FarmerCard from './FarmerCard';
+
+type NearbyMode = 'selection' | 'choosing' | 'gps' | 'manual';
 
 interface ShopAllProps {
     searchQuery?: string;
     queryOptions?: ProductQueryOptions;
+    nearbyFarmers?: (FarmerWithLocation & { distance: number; formattedDistance: string })[];
+    nearbyMode: NearbyMode;
+    nearbyLoading?: boolean;
+    nearbyError?: string | null;
+    isUsingManualLocation?: boolean;
+    hasSearched: boolean;
 }
 
-// Trending Algorithm Score Calculator - FULL ALGORITHM
 const calculateTrendingScore = (product: Product): number => {
     const ratingScore = (product.rating || 0) * 0.4;
     const soldScore = Math.log10((product.soldCount || 0) + 1) * 0.3;
@@ -27,7 +36,6 @@ const calculateTrendingScore = (product: Product): number => {
     if (product.createdAt) {
         const now = new Date();
         const createdAt = product.createdAt?.toDate?.() || new Date(product.createdAt);
-        // Guard against invalid date
         if (!isNaN(createdAt.getTime())) {
             const daysSinceCreated = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
             if (daysSinceCreated <= 14) {
@@ -39,7 +47,6 @@ const calculateTrendingScore = (product: Product): number => {
     return ratingScore + soldScore + reviewScore + recencyScore;
 };
 
-// Diversity multiplier: prevents single farmer from dominating results
 const getDiversityMultiplier = (sameFarmerCount: number): number => {
     return Math.max(0.7, 1 - (sameFarmerCount * 0.05));
 };
@@ -51,7 +58,13 @@ const isOutOfStock = (stock: string): boolean => {
 
 export default function ShopAll({ 
     searchQuery = '', 
-    queryOptions = { sortBy: 'trending', limit: 100 }
+    queryOptions = { sortBy: 'trending', limit: 100 },
+    nearbyFarmers = [],
+    nearbyMode,
+    nearbyLoading = false,
+    nearbyError = null,
+    isUsingManualLocation = false,
+    hasSearched,
 }: ShopAllProps) {
     const navigate = useNavigate();
     const { user, userProfile } = useAuth();
@@ -62,7 +75,6 @@ export default function ShopAll({
     const [addingToCart, setAddingToCart] = useState<string | null>(null);
     const [showGuardModal, setShowGuardModal] = useState(false);
 
-    // Stable dependency key to prevent infinite re-fetching
     const queryOptionsKey = useMemo(() => {
         return JSON.stringify({
             categories: queryOptions.categories?.sort().join(','),
@@ -73,17 +85,18 @@ export default function ShopAll({
         });
     }, [queryOptions]);
 
-    // Fetch products when queryOptions change
     useEffect(() => {
+        if (nearbyMode !== 'selection') {
+            setLoading(false);
+            return;
+        }
+
         const fetchProducts = async () => {
             try {
                 setLoading(true);
                 setError('');
-
-                console.log('Fetching products with options:', queryOptions);
                 const fetchedProducts = await getProducts(queryOptions);
                 
-                // Client-side price filtering (if range specified)
                 let filtered = fetchedProducts;
                 if (queryOptions.minPrice !== undefined || queryOptions.maxPrice !== undefined) {
                     filtered = filtered.filter(p => {
@@ -95,7 +108,6 @@ export default function ShopAll({
                 
                 setProducts(filtered);
 
-                // Initialize quantities
                 const initialQuantities: Record<string, number> = {};
                 filtered.forEach(p => {
                     initialQuantities[p.id] = 1;
@@ -111,9 +123,8 @@ export default function ShopAll({
         };
 
         fetchProducts();
-    }, [queryOptionsKey]);
+    }, [queryOptionsKey, nearbyMode]);
 
-    // Initialize Fuse instance for fuzzy search
     const fuse = useMemo(() => {
         const fuseOptions = {
             keys: [
@@ -128,11 +139,11 @@ export default function ShopAll({
         return new Fuse(products, fuseOptions);
     }, [products]);
 
-    // Process and display products
     const displayedProducts = useMemo(() => {
+        if (nearbyMode !== 'selection') return [];
+
         let filtered: Product[];
 
-        // 1. Apply search if exists (Fuse.js fuzzy search)
         if (searchQuery) {
             const fuseResults = fuse.search(searchQuery);
             filtered = fuseResults.map(result => result.item);
@@ -140,7 +151,6 @@ export default function ShopAll({
             filtered = [...products];
         }
 
-        // 2. Split by stock status (in stock first)
         const inStock: Product[] = [];
         const outOfStock: Product[] = [];
 
@@ -152,9 +162,7 @@ export default function ShopAll({
             }
         });
 
-        // 3. Apply algorithms based on sort type
         if (queryOptions.sortBy === 'newest') {
-            // Pure date sort - NO algorithm
             const sortedInStock = [...inStock].sort((a, b) => {
                 const dateA = a.createdAt?.toDate?.() || new Date(0);
                 const dateB = b.createdAt?.toDate?.() || new Date(0);
@@ -174,16 +182,13 @@ export default function ShopAll({
             return [...sortedInStock, ...sortedOutOfStock];
         } 
         else if (queryOptions.sortBy === 'trending' || !queryOptions.sortBy) {
-            // FULL TRENDING ALGORITHM with diversity (DEFAULT behavior)
             const withBaseScores = inStock.map(product => ({
                 product,
                 baseScore: calculateTrendingScore(product)
             }));
 
-            // Sort by base score
             withBaseScores.sort((a, b) => b.baseScore - a.baseScore);
 
-            // Apply diversity boost to prevent farmer domination
             const farmerProductCount: Record<string, number> = {};
             const withDiversityScores = withBaseScores.map(item => {
                 const farmerId = item.product.farmerId;
@@ -195,11 +200,9 @@ export default function ShopAll({
                 return { ...item, finalScore };
             });
 
-            // Re-sort by final diversity-adjusted score
             withDiversityScores.sort((a, b) => b.finalScore - a.finalScore);
             const sortedInStock = withDiversityScores.map(item => item.product);
 
-            // Sort out-of-stock by date (newest first)
             const sortedOutOfStock = [...outOfStock].sort((a, b) => {
                 const dateA = a.createdAt?.toDate?.() || new Date(0);
                 const dateB = b.createdAt?.toDate?.() || new Date(0);
@@ -211,10 +214,8 @@ export default function ShopAll({
             return [...sortedInStock, ...sortedOutOfStock];
         }
 
-        // For rating/price sorts: Firestore already sorted, just separate stock status
         return [...inStock, ...outOfStock];
-
-    }, [products, searchQuery, fuse, queryOptions.sortBy]);
+    }, [products, searchQuery, fuse, queryOptions.sortBy, nearbyMode]);
 
     const handleIncrement = (productId: string) => {
         setQuantities(prev => ({
@@ -241,9 +242,7 @@ export default function ShopAll({
 
     const handleAddToCart = async (e: React.MouseEvent, product: Product) => {
         e.stopPropagation();
-
         const role = checkUserRole();
-
         if (role !== 'consumer') {
             setShowGuardModal(true);
             return;
@@ -272,6 +271,163 @@ export default function ShopAll({
         }
     };
 
+    // SELECTION MODE: Show instruction message
+    if (nearbyMode === 'choosing') {
+        return (
+            <div className="w-full">
+                <div className="text-center py-16 bg-gray-50 rounded-lg px-6">
+                    <div className="mb-6">
+                        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Find Local Farmers</h2>
+                        <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                            Choose between GPS or manual location in the sidebar to discover farmers near you
+                        </p>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <button
+                            onClick={() => navigate('/shop')}
+                            className="px-6 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:border-primary hover:text-primary transition-colors"
+                        >
+                            Browse All Products
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // NEARBY FARMERS RENDER (gps or manual mode)
+    if (nearbyMode === 'gps' || nearbyMode === 'manual') {
+        // 1. Loading state - show immediately, don't show empty state while loading
+        if (nearbyLoading) {
+            return (
+                <section className="w-full py-8">
+                    <div className="max-w-7xl mx-auto px-6">
+                        <div className="flex flex-col justify-center items-center h-64 gap-4">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                            <p className="text-gray-600">
+                                {nearbyMode === 'gps' ? 'Finding farmers near you...' : 'Searching farmers...'}
+                            </p>
+                        </div>
+                    </div>
+                </section>
+            );
+        }
+
+        // 2. Error state
+        if (nearbyError) {
+            return (
+                <section className="w-full py-8">
+                    <div className="max-w-7xl mx-auto px-6">
+                        <div className="text-center py-16 text-red-500">
+                            <p className="text-xl">{nearbyError}</p>
+                        </div>
+                    </div>
+                </section>
+            );
+        }
+
+        // 3. Instruction state (manual only, before clicking Apply)
+        if (!hasSearched && nearbyMode === 'manual') {
+            return (
+                <div className="w-full">
+                    <div className="text-center py-16 bg-gray-50 rounded-lg px-6">
+                        <div className="mb-6">
+                            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Select Location</h2>
+                            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                                Select your city and barangay in the sidebar, then click Apply Location to find farmers
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 4. Empty state (only after search completed and found nothing)
+        if (hasSearched && nearbyFarmers.length === 0) {
+            return (
+                <div className="w-full">
+                    <div className="text-center py-12 bg-gray-50 rounded-lg px-6">
+                        <div className="mb-4">
+                            <svg className="w-16 h-16 text-gray-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        
+                        {isUsingManualLocation ? (
+                            <>
+                                <p className="text-xl font-primary text-gray-600 mb-2">
+                                    No farmers found in this area
+                                </p>
+                                <p className="text-sm font-primary text-gray-400 mb-6">
+                                    Try selecting a different city or barangay in the sidebar
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <p className="text-xl font-primary text-gray-600 mb-2">
+                                    No farmers within 5km
+                                </p>
+                                <p className="text-sm font-primary text-gray-400 mb-6">
+                                    We couldn't find any active farmers near your current location
+                                </p>
+                            </>
+                        )}
+
+                        <div className="mt-4">
+                            <button
+                                onClick={() => navigate('/shop')}
+                                className="text-sm text-gray-500 hover:text-primary transition"
+                            >
+                                Browse All Products
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 5. Results
+        return (
+            <div className="w-full">
+                <div className="mb-6 flex items-center justify-between">
+                    <p className="text-sm text-gray-600">
+                        Found <span className="font-semibold text-primary">{nearbyFarmers.length}</span> {isUsingManualLocation ? 'farmers in this area' : 'farmers nearby'}
+                    </p>
+                    <button
+                        onClick={() => navigate('/shop')}
+                        className="text-sm text-gray-500 hover:text-primary transition"
+                    >
+                        Show all products
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                    {nearbyFarmers.map((farmer) => (
+                        <FarmerCard 
+                            key={farmer.uid} 
+                            farmer={farmer} 
+                            hideDistance={isUsingManualLocation}
+                        />
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    // REGULAR PRODUCTS RENDER (selection mode)
     if (loading) {
         return (
             <section className="w-full py-8">
@@ -301,13 +457,6 @@ export default function ShopAll({
             </section>
         );
     }
-
-    // Determine if filters are actually active (not just default 'trending')
-    const hasActiveFilters = 
-        (queryOptions.categories && queryOptions.categories.length > 0) || 
-        (queryOptions.sortBy && queryOptions.sortBy !== 'trending') || 
-        queryOptions.minPrice !== undefined || 
-        queryOptions.maxPrice !== undefined;
 
     return (
         <div className="w-full">

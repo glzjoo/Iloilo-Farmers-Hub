@@ -1,5 +1,5 @@
 import farmer from '../../assets/images/sample-photo-farmer.jpg';
-
+//sellers near you component
 interface SellerCard {
     name: string;
     farmName: string;

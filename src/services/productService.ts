@@ -15,7 +15,7 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import type { Product } from '../types';
-
+//product service
 const PRODUCTS_COLLECTION = 'products';
 
 // Helper to convert Firestore data to Product type
