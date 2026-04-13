@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-    getRecentTopReviews, 
-    getPlatformReviewStats, 
-    getProductNamesForReviews, 
+import {
+    getRecentTopReviews,
+    getPlatformReviewStats,
+    getProductNamesForReviews,
     getFarmerNamesForReviews,
     getConsumerProfilesForReviews
 } from '../../services/reviewService';
 import type { Review } from '../../types';
 
 export default function ReviewSection() {
+    /* remove for now this is previously the  review section for landing*/
     const navigate = useNavigate();
     const [reviews, setReviews] = useState<Review[]>([]);
     const [stats, setStats] = useState({
@@ -27,19 +28,19 @@ export default function ReviewSection() {
         const fetchReviews = async () => {
             try {
                 setLoading(true);
-                
+
                 const [reviewsData, statsData] = await Promise.all([
                     getRecentTopReviews(3, 5),
                     getPlatformReviewStats()
                 ]);
-                
+
                 setReviews(reviewsData);
                 setStats({
                     averageRating: statsData.averageRating,
                     totalReviews: statsData.totalReviews,
                     distribution: statsData.ratingDistribution
                 });
-                
+
                 if (reviewsData.length > 0) {
                     const [prodMap, farmMap, consumerMap] = await Promise.all([
                         getProductNamesForReviews(reviewsData),
@@ -50,7 +51,7 @@ export default function ReviewSection() {
                     setFarmerNames(farmMap);
                     setConsumerProfiles(consumerMap);
                 }
-                
+
             } catch (err) {
                 console.error('Error loading reviews:', err);
                 setError('Failed to load reviews');
@@ -70,10 +71,10 @@ export default function ReviewSection() {
     const formatDate = (timestamp: any): string => {
         if (!timestamp) return '';
         const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
-        return date.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric' 
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
         });
     };
 
@@ -137,14 +138,14 @@ export default function ReviewSection() {
                 <div className="flex items-center gap-6 mb-8 border-b border-gray-300 pb-3">
                     <h2 className="text-lg font-bold text-dark cursor-pointer border-b-2 border-black pb-1">Product Reviews</h2>
                 </div>
-                
+
                 <div className="flex items-start gap-16">
                     <div className="flex flex-col items-start">
                         <p className="text-6xl font-bold text-dark leading-none">{stats.averageRating.toFixed(2)}</p>
                         <div className="flex items-center mt-2 -ml-1">
                             {[...Array(5)].map((_, i) => (
-                                <span 
-                                    key={i} 
+                                <span
+                                    key={i}
                                     className={`text-2xl ${i < Math.round(stats.averageRating) ? 'text-yellow-400' : 'text-gray-300'}`}
                                 >
                                     ★
@@ -160,9 +161,9 @@ export default function ReviewSection() {
                                 <div className="flex-1 h-[15px] rounded-full overflow-hidden" style={{ backgroundColor: '#D9D9D9' }}>
                                     <div
                                         className="h-full rounded-full transition-all duration-500"
-                                        style={{ 
-                                            width: `${getPercentage(stats.distribution[stars as keyof typeof stats.distribution])}%`, 
-                                            backgroundColor: '#FFCB45' 
+                                        style={{
+                                            width: `${getPercentage(stats.distribution[stars as keyof typeof stats.distribution])}%`,
+                                            backgroundColor: '#FFCB45'
                                         }}
                                     />
                                 </div>
@@ -178,16 +179,16 @@ export default function ReviewSection() {
                     {reviews.map((review) => {
                         const consumer = getConsumerDisplay(review);
                         return (
-                            <div 
-                                key={review.id} 
+                            <div
+                                key={review.id}
                                 className="border border-gray-200 p-6 h-[200px] cursor-pointer hover:shadow-lg transition-shadow"
                                 style={{ borderRadius: '40px' }}
                                 onClick={() => navigate(`/item/${review.productId}`)}
                             >
                                 <div className="flex items-center gap-3 mb-2">
                                     {consumer.avatar ? (
-                                        <img 
-                                            src={consumer.avatar} 
+                                        <img
+                                            src={consumer.avatar}
                                             alt={consumer.name}
                                             className="w-10 h-10 rounded-full object-cover"
                                         />
@@ -206,7 +207,7 @@ export default function ReviewSection() {
                                         </span>
                                     )}
                                 </div>
-                                
+
                                 <div className="mb-2 text-xs text-gray-500 truncate">
                                     <span className="font-medium text-gray-700">{productNames.get(review.productId) || 'Product'}</span>
                                     <span className="mx-1">•</span>
@@ -218,7 +219,7 @@ export default function ReviewSection() {
                                         <span key={s} className={`text-sm ${s < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
                                     ))}
                                 </div>
-                                
+
                                 <p className="text-sm text-gray-600 line-clamp-2">{review.comment}</p>
                             </div>
                         );

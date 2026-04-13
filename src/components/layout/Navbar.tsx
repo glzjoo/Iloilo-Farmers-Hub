@@ -1,4 +1,4 @@
-import logo from '../../assets/icons/logo.png';
+import logo from '../../assets/icons/Logo.svg';
 import savedItemsIcon from '../../assets/icons/saved-items.png';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -19,8 +19,9 @@ export default function Navbar() {
                 </div>
                 <div className="max-w-7xl mx-auto flex items-center justify-between px-6 pb-4 pt-1 gap-4">
                     <Link to="/" className="flex items-center gap-2 text-white no-underline shrink-0">
-                        <img src={logo} className="w-11 h-11 rounded-full object-cover" />
-                        <span className="font-primary font-bold text-lg tracking-wide whitespace-nowrap">ILOILO FARMERS HUB</span>
+                        <img src={logo} className="w-9 h-9 rounded-full object-cover" />
+                        <span className="font-primary font-bold text-lg tracking-wide whitespace-nowrap">Iloilo Farmers Hub
+                        </span>
                     </Link>
 
                     <SearchBar />

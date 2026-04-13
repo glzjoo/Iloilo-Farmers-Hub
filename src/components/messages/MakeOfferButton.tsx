@@ -69,11 +69,6 @@ export default function MakeOfferButton({
         >
           Order Received
         </button>
-        <button
-          className="w-full py-2.5 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors"
-        >
-          Report
-        </button>
       </div>
     );
   }
