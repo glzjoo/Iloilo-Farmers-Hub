@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-
+//ActionGuardmodal
 interface ActionGuardModalProps {
     isOpen: boolean;
     action: 'addToCart' | 'messageSeller' | 'buyNow';
