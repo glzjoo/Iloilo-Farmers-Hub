@@ -220,10 +220,13 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
           } else {
             setShowProximityConfirm(true);
           }
+        } else {
+          setLocationError(
+            `Unable to detect a valid location near your GPS coordinates. Please place the pin manually on the map.`
+          );
         }
         return;
-      }
-    }
+      }    }
 
     acceptGPSLocation(coords);
   };
