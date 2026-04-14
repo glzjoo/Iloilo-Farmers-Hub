@@ -41,6 +41,9 @@ export interface Farmer {
     //offer count
     offerCount?: number;
     remainingOffers?: number;
+    averageRating?: number; 
+    totalReviews?: number;  
+    lastReviewAt?: Date | any;
 }
 
 export interface Consumer {

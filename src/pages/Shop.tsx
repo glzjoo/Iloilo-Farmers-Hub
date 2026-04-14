@@ -6,7 +6,7 @@ import type { ProductQueryOptions } from "../services/shopService";
 import { getTrendingItems } from "../services/shopService";
 import { useNearbyFarmers } from "../hooks/useNearbyFarmers";
 
-
+//Shop.tsx page
 type NearbyMode = 'selection' | 'choosing' | 'gps' | 'manual';
 
 const CATEGORIES = ['All', 'Vegetables', 'Fruits', 'Rice', 'Corn', 'Livestock', 'Poultry', 'Fishery', 'Other'];

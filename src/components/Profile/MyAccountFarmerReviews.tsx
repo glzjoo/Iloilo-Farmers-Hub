@@ -1,3 +1,6 @@
+// ============================================
+// FILE: src/components/Profile/MyAccountFarmerReviews.tsx 
+// ============================================
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getFarmerReviews } from '../../services/reviewService';
@@ -8,18 +11,31 @@ interface ReviewWithProduct extends Review {
     productName?: string;
 }
 
-function StarRating({ rating }: { rating: number }) {
-    const stars = [];
-    for (let i = 1; i <= 5; i++) {
-        if (i <= Math.floor(rating)) {
-            stars.push(<span key={i} className="text-yellow-500 text-lg">★</span>);
-        } else if (i - 0.5 <= rating) {
-            stars.push(<span key={i} className="text-yellow-500 text-lg">★</span>);
-        } else {
-            stars.push(<span key={i} className="text-gray-300 text-lg">★</span>);
-        }
-    }
-    return <div className="flex gap-0.5">{stars}</div>;
+// Star display component - whole stars only
+function StarDisplay({ rating, size = 'text-lg' }: { rating: number; size?: string }) {
+    const roundedRating = Math.round(rating);
+    return (
+        <div className="flex gap-0.5">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <span 
+                    key={star} 
+                    className={`${size} ${star <= roundedRating ? 'text-yellow-500' : 'text-gray-300'}`}
+                >
+                    ★
+                </span>
+            ))}
+        </div>
+    );
+}
+
+// Rating row with label
+function RatingRow({ label, rating }: { label: string; rating: number }) {
+    return (
+        <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-500 w-20">{label}:</span>
+            <StarDisplay rating={rating} size="text-sm" />
+        </div>
+    );
 }
 
 // Simple date formatter
@@ -192,7 +208,7 @@ export default function MyAccountFarmerReviews() {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <StarRating rating={review.rating} />
+                                    <StarDisplay rating={review.rating} size="text-base" />
                                     <p className="text-xs text-gray-500 mt-1">
                                         {formatDate(review.createdAt)}
                                     </p>
@@ -225,17 +241,13 @@ export default function MyAccountFarmerReviews() {
                                     />
                                 )}
                                 
-                                {/* Rating Details */}
-                                <div className="flex flex-wrap gap-4 mb-2">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs font-primary text-gray-500">Quality:</span>
-                                        <span className="text-sm font-primary text-black">{review.quality}</span>
-                                    </div>
-                                    {review.appearance && (
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-primary text-gray-500">Appearance:</span>
-                                            <span className="text-sm font-primary text-black">{review.appearance}</span>
-                                        </div>
+                                {/* UPDATED: Rating Details with Stars */}
+                                <div className="bg-white/50 rounded-lg p-3 space-y-2 mb-3">
+                                    <RatingRow label="Product Rating" rating={review.rating} />
+                                    <RatingRow label="Quality" rating={review.quality} />
+                                    <RatingRow label="Appearance" rating={review.appearance} />
+                                    {review.farmerRating > 0 && (
+                                        <RatingRow label="Farmer Service" rating={review.farmerRating} />
                                     )}
                                 </div>
                                 

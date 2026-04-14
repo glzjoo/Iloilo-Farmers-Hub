@@ -8,7 +8,7 @@ import {
     getConsumerProfilesForReviews
 } from '../../services/reviewService';
 import type { Review } from '../../types';
-
+//ReviewSection
 export default function ReviewSection() {
     const navigate = useNavigate();
     const [reviews, setReviews] = useState<Review[]>([]);
