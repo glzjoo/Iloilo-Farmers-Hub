@@ -164,8 +164,6 @@ export interface Cart {
     updatedAt: Date | any;
 }
 
-// Add these to your existing types/index.ts
-
 export interface Review {
     id: string;
     productId: string;
@@ -173,16 +171,17 @@ export interface Review {
     consumerId: string;
     consumerName: string;
     consumerAvatar?: string;
-    rating: number; // 1-5 stars
-    quality: string;
-    appearance?: string;
+    rating: number; // Auto-calculated: (quality + appearance) / 2
+    farmerRating: number; // 1-5 stars - separate rating for farmer service
+    quality: number; // 1-5 stars (whole numbers only)
+    appearance: number; // 1-5 stars (whole numbers only)
     comment: string;
-    images?: string[]; // URLs to uploaded images
-    video?: string; // URL to uploaded video
+    images?: string[];
+    video?: string;
     createdAt: Date | any;
     updatedAt?: Date | any;
-    orderId?: string; // Link to the order/conversation for verification
-    verifiedPurchase: boolean; // true if from completed order
+    orderId?: string;
+    verifiedPurchase: boolean;
 }
 
 export interface ReviewStats {

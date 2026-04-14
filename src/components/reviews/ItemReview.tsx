@@ -1,3 +1,6 @@
+// ============================================
+// FILE: src/components/reviews/ItemReview.tsx (COMPLETE)
+// ============================================
 import { useState, useEffect } from 'react';
 import Filter from '../../assets/icons/Filter.svg';
 import { getProductReviews, getProductReviewStats } from '../../services/reviewService';
@@ -7,21 +10,35 @@ interface ItemReviewProps {
     productId: string;
 }
 
-function StarRating({ rating }: { rating: number }) {
-    const stars = [];
-    for (let i = 1; i <= 5; i++) {
-        if (i <= Math.floor(rating)) {
-            stars.push(<span key={i} className="text-yellow-500 text-lg">★</span>);
-        } else if (i - 0.5 <= rating) {
-            stars.push(<span key={i} className="text-yellow-500 text-lg">★</span>);
-        } else {
-            stars.push(<span key={i} className="text-gray-300 text-lg">★</span>);
-        }
-    }
-    return <div className="flex gap-0.5">{stars}</div>;
+// Star display component - whole stars only
+function StarRating({ rating, size = 'text-lg' }: { rating: number; size?: string }) {
+    const roundedRating = Math.round(rating);
+    return (
+        <div className="flex gap-0.5">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <span 
+                    key={star} 
+                    className={`${size} ${star <= roundedRating ? 'text-yellow-500' : 'text-gray-300'}`}
+                >
+                    ★
+                </span>
+            ))}
+        </div>
+    );
 }
 
-// Simple date formatter without date-fns
+// Star rating with label
+function RatingRow({ label, rating }: { label: string; rating: number }) {
+    return (
+        <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-600 w-24">{label}:</span>
+            <StarRating rating={rating} size="text-sm" />
+            <span className="text-sm text-gray-400">({rating}/5)</span>
+        </div>
+    );
+}
+
+// Simple date formatter
 const formatDate = (timestamp: any): string => {
     if (!timestamp) return '';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -78,7 +95,7 @@ export default function ItemReview({ productId }: ItemReviewProps) {
     }, [productId]);
 
     const filteredReviews = filterRating 
-        ? reviews.filter(r => r.rating === filterRating)
+        ? reviews.filter(r => Math.round(r.rating) === filterRating)
         : reviews;
 
     if (loading) {
@@ -141,7 +158,7 @@ export default function ItemReview({ productId }: ItemReviewProps) {
                     <div className="flex flex-col gap-4">
                         {filteredReviews.map((review) => (
                             <div key={review.id} className="bg-gray-100 rounded-xl p-6">
-                                <div className="flex items-center gap-3 mb-1">
+                                <div className="flex items-center gap-3 mb-3">
                                     <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
                                         {review.consumerAvatar ? (
                                             <img 
@@ -166,9 +183,24 @@ export default function ItemReview({ productId }: ItemReviewProps) {
                                         )}
                                     </div>
                                 </div>
-                                <div className="ml-13 pl-0.5">
-                                    <StarRating rating={review.rating} />
-                                    <p className="text-sm font-primary text-gray-600 mt-1">
+                                
+                                <div className="ml-13 pl-0.5 space-y-3">
+                                    {/* Overall Product Rating */}
+                                    <div className="flex items-center gap-3">
+                                        <StarRating rating={review.rating} />
+                                        <span className="text-sm text-gray-600">Product Rating</span>
+                                    </div>
+                                    
+                                    {/* Detailed Ratings */}
+                                    <div className="bg-white/50 rounded-lg p-3 space-y-2">
+                                        <RatingRow label="Quality" rating={review.quality} />
+                                        <RatingRow label="Appearance" rating={review.appearance} />
+                                        {review.farmerRating > 0 && (
+                                            <RatingRow label="Farmer Service" rating={review.farmerRating} />
+                                        )}
+                                    </div>
+                                    
+                                    <p className="text-sm font-primary text-gray-600">
                                         {formatDate(review.createdAt)} &nbsp; {formatTime(review.createdAt)}
                                     </p>
                                     
@@ -196,17 +228,12 @@ export default function ItemReview({ productId }: ItemReviewProps) {
                                         />
                                     )}
                                     
-                                    <div className="flex gap-4 mt-3">
-                                        <span className="text-sm font-primary text-gray-400">Quality:</span>
-                                        <span className="text-sm font-primary text-black">{review.quality}</span>
-                                    </div>
-                                    {review.appearance && (
-                                        <div className="flex gap-4 mt-1">
-                                            <span className="text-sm font-primary text-gray-400">Appearance:</span>
-                                            <span className="text-sm font-primary text-black">{review.appearance}</span>
-                                        </div>
+                                    {/* Comment */}
+                                    {review.comment && (
+                                        <p className="text-sm font-primary text-black mt-2 bg-white/30 p-3 rounded-lg">
+                                            {review.comment}
+                                        </p>
                                     )}
-                                    <p className="text-sm font-primary text-black mt-2">{review.comment}</p>
                                 </div>
                             </div>
                         ))}
