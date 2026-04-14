@@ -5,6 +5,972 @@
   },
   "cities": [
     {
+      "name": "Iloilo City",
+      "psgcCode": "063022000",
+      "barangays": [
+        {
+          "name": "Abo-abo",
+          "psgcCode": "063022001",
+          "centroid": {
+            "lat": 10.7204,
+            "lng": 122.5621
+          }
+        },
+        {
+          "name": "Airport",
+          "psgcCode": "063022002",
+          "centroid": {
+            "lat": 10.7136,
+            "lng": 122.5453
+          }
+        },
+        {
+          "name": "Bakhaw",
+          "psgcCode": "063022003",
+          "centroid": {
+            "lat": 10.7089,
+            "lng": 122.5512
+          }
+        },
+        {
+          "name": "Balabago",
+          "psgcCode": "063022004",
+          "centroid": {
+            "lat": 10.7421,
+            "lng": 122.5387
+          }
+        },
+        {
+          "name": "Balantang",
+          "psgcCode": "063022005",
+          "centroid": {
+            "lat": 10.7315,
+            "lng": 122.5489
+          }
+        },
+        {
+          "name": "Baldoza",
+          "psgcCode": "063022006",
+          "centroid": {
+            "lat": 10.7156,
+            "lng": 122.5384
+          }
+        },
+        {
+          "name": "Bantud",
+          "psgcCode": "063022007",
+          "centroid": {
+            "lat": 10.7258,
+            "lng": 122.5421
+          }
+        },
+        {
+          "name": "Banuyao",
+          "psgcCode": "063022008",
+          "centroid": {
+            "lat": 10.7389,
+            "lng": 122.5345
+          }
+        },
+        {
+          "name": "Benedicto",
+          "psgcCode": "063022009",
+          "centroid": {
+            "lat": 10.7012,
+            "lng": 122.5567
+          }
+        },
+        {
+          "name": "Burgos-Mabini-Plaza",
+          "psgcCode": "063022010",
+          "centroid": {
+            "lat": 10.6915,
+            "lng": 122.5643
+          }
+        },
+        {
+          "name": "Caingin",
+          "psgcCode": "063022011",
+          "centroid": {
+            "lat": 10.7432,
+            "lng": 122.5289
+          }
+        },
+        {
+          "name": "Calahunan",
+          "psgcCode": "063022012",
+          "centroid": {
+            "lat": 10.7189,
+            "lng": 122.5287
+          }
+        },
+        {
+          "name": "Calubihan",
+          "psgcCode": "063022013",
+          "centroid": {
+            "lat": 10.7356,
+            "lng": 122.5312
+          }
+        },
+        {
+          "name": "Camalig",
+          "psgcCode": "063022014",
+          "centroid": {
+            "lat": 10.7123,
+            "lng": 122.5734
+          }
+        },
+        {
+          "name": "Cathedral",
+          "psgcCode": "063022015",
+          "centroid": {
+            "lat": 10.6898,
+            "lng": 122.5621
+          }
+        },
+        {
+          "name": "Cuartero",
+          "psgcCode": "063022016",
+          "centroid": {
+            "lat": 10.7023,
+            "lng": 122.5712
+          }
+        },
+        {
+          "name": "Danao",
+          "psgcCode": "063022017",
+          "centroid": {
+            "lat": 10.7245,
+            "lng": 122.5567
+          }
+        },
+        {
+          "name": "Delgado",
+          "psgcCode": "063022018",
+          "centroid": {
+            "lat": 10.6978,
+            "lng": 122.5689
+          }
+        },
+        {
+          "name": "Dinagyang",
+          "psgcCode": "063022019",
+          "centroid": {
+            "lat": 10.7056,
+            "lng": 122.5612
+          }
+        },
+        {
+          "name": "Esperanza",
+          "psgcCode": "063022020",
+          "centroid": {
+            "lat": 10.7312,
+            "lng": 122.5234
+          }
+        },
+        {
+          "name": "Flores",
+          "psgcCode": "063022021",
+          "centroid": {
+            "lat": 10.6945,
+            "lng": 122.5734
+          }
+        },
+        {
+          "name": "General Hughes-Montes",
+          "psgcCode": "063022022",
+          "centroid": {
+            "lat": 10.6879,
+            "lng": 122.5698
+          }
+        },
+        {
+          "name": "Gloria",
+          "psgcCode": "063022023",
+          "centroid": {
+            "lat": 10.7102,
+            "lng": 122.5489
+          }
+        },
+        {
+          "name": "Hinactacan",
+          "psgcCode": "063022024",
+          "centroid": {
+            "lat": 10.7502,
+            "lng": 122.5234
+          }
+        },
+        {
+          "name": "Ingore",
+          "psgcCode": "063022025",
+          "centroid": {
+            "lat": 10.7189,
+            "lng": 122.5189
+          }
+        },
+        {
+          "name": "Jalandoni Estate",
+          "psgcCode": "063022026",
+          "centroid": {
+            "lat": 10.7023,
+            "lng": 122.5389
+          }
+        },
+        {
+          "name": "Jalandoni-Wilson",
+          "psgcCode": "063022027",
+          "centroid": {
+            "lat": 10.6956,
+            "lng": 122.5567
+          }
+        },
+        {
+          "name": "Jaro",
+          "psgcCode": "063022028",
+          "centroid": {
+            "lat": 10.7245,
+            "lng": 122.5567
+          }
+        },
+        {
+          "name": "Kahirupan",
+          "psgcCode": "063022029",
+          "centroid": {
+            "lat": 10.7089,
+            "lng": 122.5423
+          }
+        },
+        {
+          "name": "Kauswagan",
+          "psgcCode": "063022030",
+          "centroid": {
+            "lat": 10.7412,
+            "lng": 122.5123
+          }
+        },
+        {
+          "name": "Laguda",
+          "psgcCode": "063022031",
+          "centroid": {
+            "lat": 10.7356,
+            "lng": 122.5189
+          }
+        },
+        {
+          "name": "Lanit",
+          "psgcCode": "063022032",
+          "centroid": {
+            "lat": 10.7589,
+            "lng": 122.5089
+          }
+        },
+        {
+          "name": "Lapuz Norte",
+          "psgcCode": "063022033",
+          "centroid": {
+            "lat": 10.6812,
+            "lng": 122.5767
+          }
+        },
+        {
+          "name": "Lapuz Sur",
+          "psgcCode": "063022034",
+          "centroid": {
+            "lat": 10.6756,
+            "lng": 122.5734
+          }
+        },
+        {
+          "name": "Legaspi dela Rama",
+          "psgcCode": "063022035",
+          "centroid": {
+            "lat": 10.6923,
+            "lng": 122.5812
+          }
+        },
+        {
+          "name": "Liberation",
+          "psgcCode": "063022036",
+          "centroid": {
+            "lat": 10.7023,
+            "lng": 122.5712
+          }
+        },
+        {
+          "name": "Libertad",
+          "psgcCode": "063022037",
+          "centroid": {
+            "lat": 10.6898,
+            "lng": 122.5789
+          }
+        },
+        {
+          "name": "Loboc",
+          "psgcCode": "063022038",
+          "centroid": {
+            "lat": 10.7456,
+            "lng": 122.5234
+          }
+        },
+        {
+          "name": "Lopez Jaena Norte",
+          "psgcCode": "063022039",
+          "centroid": {
+            "lat": 10.6412,
+            "lng": 122.4612
+          }
+        },
+        {
+          "name": "Lopez Jaena Sur",
+          "psgcCode": "063022040",
+          "centroid": {
+            "lat": 10.6356,
+            "lng": 122.4589
+          }
+        },
+        {
+          "name": "Luna",
+          "psgcCode": "063022041",
+          "centroid": {
+            "lat": 10.7102,
+            "lng": 122.5234
+          }
+        },
+        {
+          "name": "M.H. del Pilar",
+          "psgcCode": "063022042",
+          "centroid": {
+            "lat": 10.6912,
+            "lng": 122.5845
+          }
+        },
+        {
+          "name": "Magsaysay",
+          "psgcCode": "063022043",
+          "centroid": {
+            "lat": 10.7356,
+            "lng": 122.5067
+          }
+        },
+        {
+          "name": "Malipayon",
+          "psgcCode": "063022044",
+          "centroid": {
+            "lat": 10.7023,
+            "lng": 122.5289
+          }
+        },
+        {
+          "name": "Mansaya",
+          "psgcCode": "063022045",
+          "centroid": {
+            "lat": 10.7189,
+            "lng": 122.5134
+          }
+        },
+        {
+          "name": "Marcelo H. del Pilar",
+          "psgcCode": "063022046",
+          "centroid": {
+            "lat": 10.6856,
+            "lng": 122.5867
+          }
+        },
+        {
+          "name": "Maria Clara",
+          "psgcCode": "063022047",
+          "centroid": {
+            "lat": 10.7123,
+            "lng": 122.5189
+          }
+        },
+        {
+          "name": "Molo",
+          "psgcCode": "063022048",
+          "centroid": {
+            "lat": 10.6915,
+            "lng": 122.5432
+          }
+        },
+        {
+          "name": "Monica Blumentritt",
+          "psgcCode": "063022049",
+          "centroid": {
+            "lat": 10.7012,
+            "lng": 122.5512
+          }
+        },
+        {
+          "name": "Muelle Loney",
+          "psgcCode": "063022050",
+          "centroid": {
+            "lat": 10.6915,
+            "lng": 122.5734
+          }
+        },
+        {
+          "name": "Navais",
+          "psgcCode": "063022051",
+          "centroid": {
+            "lat": 10.7523,
+            "lng": 122.5012
+          }
+        },
+        {
+          "name": "Nonoy",
+          "psgcCode": "063022052",
+          "centroid": {
+            "lat": 10.7289,
+            "lng": 122.5089
+          }
+        },
+        {
+          "name": "North Avanceña",
+          "psgcCode": "063022053",
+          "centroid": {
+            "lat": 10.6989,
+            "lng": 122.5489
+          }
+        },
+        {
+          "name": "North Baluarte",
+          "psgcCode": "063022054",
+          "centroid": {
+            "lat": 10.6956,
+            "lng": 122.5412
+          }
+        },
+        {
+          "name": "North Fundidor",
+          "psgcCode": "063022055",
+          "centroid": {
+            "lat": 10.7023,
+            "lng": 122.5312
+          }
+        },
+        {
+          "name": "North San Jose",
+          "psgcCode": "063022056",
+          "centroid": {
+            "lat": 10.6656,
+            "lng": 122.4789
+          }
+        },
+        {
+          "name": "Obrero",
+          "psgcCode": "063022057",
+          "centroid": {
+            "lat": 10.7289,
+            "lng": 122.5189
+          }
+        },
+        {
+          "name": "Ortiz",
+          "psgcCode": "063022058",
+          "centroid": {
+            "lat": 10.6856,
+            "lng": 122.5712
+          }
+        },
+        {
+          "name": "Osmeña",
+          "psgcCode": "063022059",
+          "centroid": {
+            "lat": 10.7356,
+            "lng": 122.5012
+          }
+        },
+        {
+          "name": "Parian",
+          "psgcCode": "063022060",
+          "centroid": {
+            "lat": 10.6912,
+            "lng": 122.5567
+          }
+        },
+        {
+          "name": "Pavia",
+          "psgcCode": "063022061",
+          "centroid": {
+            "lat": 10.7123,
+            "lng": 122.5089
+          }
+        },
+        {
+          "name": "Perez",
+          "psgcCode": "063022062",
+          "centroid": {
+            "lat": 10.7256,
+            "lng": 122.5123
+          }
+        },
+        {
+          "name": "Poblacion Molo",
+          "psgcCode": "063022063",
+          "centroid": {
+            "lat": 10.6956,
+            "lng": 122.5389
+          }
+        },
+        {
+          "name": "President Roxas",
+          "psgcCode": "063022064",
+          "centroid": {
+            "lat": 10.7023,
+            "lng": 122.5012
+          }
+        },
+        {
+          "name": "Progreso",
+          "psgcCode": "063022065",
+          "centroid": {
+            "lat": 10.7189,
+            "lng": 122.4934
+          }
+        },
+        {
+          "name": "Quiot",
+          "psgcCode": "063022066",
+          "centroid": {
+            "lat": 10.7356,
+            "lng": 122.4934
+          }
+        },
+        {
+          "name": "Quintin Salas",
+          "psgcCode": "063022067",
+          "centroid": {
+            "lat": 10.6856,
+            "lng": 122.5645
+          }
+        },
+        {
+          "name": "Railway",
+          "psgcCode": "063022068",
+          "centroid": {
+            "lat": 10.7089,
+            "lng": 122.5289
+          }
+        },
+        {
+          "name": "Rima",
+          "psgcCode": "063022069",
+          "centroid": {
+            "lat": 10.7412,
+            "lng": 122.4934
+          }
+        },
+        {
+          "name": "Rizal",
+          "psgcCode": "063022070",
+          "centroid": {
+            "lat": 10.6912,
+            "lng": 122.5389
+          }
+        },
+        {
+          "name": "Rizal Estanzuela",
+          "psgcCode": "063022071",
+          "centroid": {
+            "lat": 10.6723,
+            "lng": 122.5612
+          }
+        },
+        {
+          "name": "Rizal Ibarra",
+          "psgcCode": "063022072",
+          "centroid": {
+            "lat": 10.6689,
+            "lng": 122.5589
+          }
+        },
+        {
+          "name": "Rizal Palapala I",
+          "psgcCode": "063022073",
+          "centroid": {
+            "lat": 10.6623,
+            "lng": 122.5567
+          }
+        },
+        {
+          "name": "Rizal Palapala II",
+          "psgcCode": "063022074",
+          "centroid": {
+            "lat": 10.6589,
+            "lng": 122.5545
+          }
+        },
+        {
+          "name": "Roxas Village",
+          "psgcCode": "063022075",
+          "centroid": {
+            "lat": 10.7456,
+            "lng": 122.4867
+          }
+        },
+        {
+          "name": "Sambag",
+          "psgcCode": "063022076",
+          "centroid": {
+            "lat": 10.6956,
+            "lng": 122.5512
+          }
+        },
+        {
+          "name": "Sampaguita",
+          "psgcCode": "063022077",
+          "centroid": {
+            "lat": 10.7023,
+            "lng": 122.5189
+          }
+        },
+        {
+          "name": "San Agustin",
+          "psgcCode": "063022078",
+          "centroid": {
+            "lat": 10.7412,
+            "lng": 122.4867
+          }
+        },
+        {
+          "name": "San Felix",
+          "psgcCode": "063022079",
+          "centroid": {
+            "lat": 10.7312,
+            "lng": 122.4934
+          }
+        },
+        {
+          "name": "San Isidro",
+          "psgcCode": "063022080",
+          "centroid": {
+            "lat": 10.7189,
+            "lng": 122.5089
+          }
+        },
+        {
+          "name": "San Jose",
+          "psgcCode": "063022081",
+          "centroid": {
+            "lat": 10.7089,
+            "lng": 122.5189
+          }
+        },
+        {
+          "name": "San Jose de Buenavista",
+          "psgcCode": "063022082",
+          "centroid": {
+            "lat": 10.6556,
+            "lng": 122.5412
+          }
+        },
+        {
+          "name": "San Juan",
+          "psgcCode": "063022083",
+          "centroid": {
+            "lat": 10.6912,
+            "lng": 122.5234
+          }
+        },
+        {
+          "name": "San Pedro",
+          "psgcCode": "063022084",
+          "centroid": {
+            "lat": 10.7123,
+            "lng": 122.5012
+          }
+        },
+        {
+          "name": "San Pedro Molo",
+          "psgcCode": "063022085",
+          "centroid": {
+            "lat": 10.6856,
+            "lng": 122.5312
+          }
+        },
+        {
+          "name": "San Rafael",
+          "psgcCode": "063022086",
+          "centroid": {
+            "lat": 10.7256,
+            "lng": 122.5012
+          }
+        },
+        {
+          "name": "San Roque",
+          "psgcCode": "063022087",
+          "centroid": {
+            "lat": 10.7023,
+            "lng": 122.4934
+          }
+        },
+        {
+          "name": "San Vicente",
+          "psgcCode": "063022088",
+          "centroid": {
+            "lat": 10.6656,
+            "lng": 122.5289
+          }
+        },
+        {
+          "name": "Santa Cruz",
+          "psgcCode": "063022089",
+          "centroid": {
+            "lat": 10.7123,
+            "lng": 122.5389
+          }
+        },
+        {
+          "name": "Santa Filomena",
+          "psgcCode": "063022090",
+          "centroid": {
+            "lat": 10.7412,
+            "lng": 122.4789
+          }
+        },
+        {
+          "name": "Santa Rosa",
+          "psgcCode": "063022091",
+          "centroid": {
+            "lat": 10.6956,
+            "lng": 122.5712
+          }
+        },
+        {
+          "name": "Santo Domingo",
+          "psgcCode": "063022092",
+          "centroid": {
+            "lat": 10.7289,
+            "lng": 122.4867
+          }
+        },
+        {
+          "name": "Santo Niño Norte",
+          "psgcCode": "063022093",
+          "centroid": {
+            "lat": 10.6589,
+            "lng": 122.5489
+          }
+        },
+        {
+          "name": "Santo Niño Sur",
+          "psgcCode": "063022094",
+          "centroid": {
+            "lat": 10.6523,
+            "lng": 122.5467
+          }
+        },
+        {
+          "name": "Santos",
+          "psgcCode": "063022095",
+          "centroid": {
+            "lat": 10.6856,
+            "lng": 122.5389
+          }
+        },
+        {
+          "name": "Simeon Ledesma",
+          "psgcCode": "063022096",
+          "centroid": {
+            "lat": 10.6656,
+            "lng": 122.5512
+          }
+        },
+        {
+          "name": "South Baluarte",
+          "psgcCode": "063022097",
+          "centroid": {
+            "lat": 10.6889,
+            "lng": 122.5367
+          }
+        },
+        {
+          "name": "South Fundidor",
+          "psgcCode": "063022098",
+          "centroid": {
+            "lat": 10.6956,
+            "lng": 122.5267
+          }
+        },
+        {
+          "name": "South San Jose",
+          "psgcCode": "063022099",
+          "centroid": {
+            "lat": 10.6589,
+            "lng": 122.4734
+          }
+        },
+        {
+          "name": "Taal",
+          "psgcCode": "063022100",
+          "centroid": {
+            "lat": 10.6823,
+            "lng": 122.5612
+          }
+        },
+        {
+          "name": "Tabuc Suba",
+          "psgcCode": "063022101",
+          "centroid": {
+            "lat": 10.7023,
+            "lng": 122.5189
+          }
+        },
+        {
+          "name": "Tagbac",
+          "psgcCode": "063022102",
+          "centroid": {
+            "lat": 10.7189,
+            "lng": 122.4789
+          }
+        },
+        {
+          "name": "Tanza-Esperanza",
+          "psgcCode": "063022103",
+          "centroid": {
+            "lat": 10.6856,
+            "lng": 122.5912
+          }
+        },
+        {
+          "name": "Tap-oc",
+          "psgcCode": "063022104",
+          "centroid": {
+            "lat": 10.7456,
+            "lng": 122.4712
+          }
+        },
+        {
+          "name": "Taytay Zone II",
+          "psgcCode": "063022105",
+          "centroid": {
+            "lat": 10.6912,
+            "lng": 122.5289
+          }
+        },
+        {
+          "name": "Ticud",
+          "psgcCode": "063022106",
+          "centroid": {
+            "lat": 10.6412,
+            "lng": 122.4489
+          }
+        },
+        {
+          "name": "Timawa",
+          "psgcCode": "063022107",
+          "centroid": {
+            "lat": 10.6956,
+            "lng": 122.5389
+          }
+        },
+        {
+          "name": "Ungka",
+          "psgcCode": "063022108",
+          "centroid": {
+            "lat": 10.7289,
+            "lng": 122.5289
+          }
+        },
+        {
+          "name": "Veterans Village",
+          "psgcCode": "063022109",
+          "centroid": {
+            "lat": 10.7023,
+            "lng": 122.4789
+          }
+        },
+        {
+          "name": "Villa Anita",
+          "psgcCode": "063022110",
+          "centroid": {
+            "lat": 10.6756,
+            "lng": 122.5689
+          }
+        },
+        {
+          "name": "West Habog-habog",
+          "psgcCode": "063022111",
+          "centroid": {
+            "lat": 10.7156,
+            "lng": 122.5089
+          }
+        },
+        {
+          "name": "West Timawa",
+          "psgcCode": "063022112",
+          "centroid": {
+            "lat": 10.6889,
+            "lng": 122.5312
+          }
+        },
+        {
+          "name": "Yulo Drive",
+          "psgcCode": "063022113",
+          "centroid": {
+            "lat": 10.7123,
+            "lng": 122.5389
+          }
+        },
+        {
+          "name": "Zamora-Melliza",
+          "psgcCode": "063022114",
+          "centroid": {
+            "lat": 10.6856,
+            "lng": 122.5467
+          }
+        },
+        {
+          "name": "Zone 1",
+          "psgcCode": "063022115",
+          "centroid": {
+            "lat": 10.7189,
+            "lng": 122.5012
+          }
+        },
+        {
+          "name": "Zone 2",
+          "psgcCode": "063022116",
+          "centroid": {
+            "lat": 10.7289,
+            "lng": 122.4912
+          }
+        },
+        {
+          "name": "Zone 3",
+          "psgcCode": "063022117",
+          "centroid": {
+            "lat": 10.7389,
+            "lng": 122.4812
+          }
+        },
+        {
+          "name": "Zone 4",
+          "psgcCode": "063022118",
+          "centroid": {
+            "lat": 10.7489,
+            "lng": 122.4712
+          }
+        },
+        {
+          "name": "Zone 5",
+          "psgcCode": "063022119",
+          "centroid": {
+            "lat": 10.7589,
+            "lng": 122.4612
+          }
+        },
+        {
+          "name": "Zone 6",
+          "psgcCode": "063022120",
+          "centroid": {
+            "lat": 10.7689,
+            "lng": 122.4512
+          }
+        }
+      ]
+    },
+    {
       "name": "Oton",
       "psgcCode": "063034000",
       "barangays": [

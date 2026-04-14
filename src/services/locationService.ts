@@ -1,4 +1,8 @@
+// ============================================
+// FILE: src/services/locationService.ts
+// ============================================
 import { geohashQueryBounds } from 'geofire-common';
+import iloiloData from '../data/iloilo-barangays.json';
 
 export interface Coordinates {
   lat: number;
@@ -9,6 +13,19 @@ export interface LocationBound {
   lower: string;
   upper: string;
 }
+
+// Pre-computed city centroids (calculated from barangay averages)
+export const CITY_CENTROIDS: Record<string, Coordinates> = {
+  'Iloilo City': { lat: 10.7202, lng: 122.5621 },
+  'Oton': { lat: 10.7178, lng: 122.4725 },
+  'Pavia': { lat: 10.7698, lng: 122.5349 },
+  'San Miguel': { lat: 10.7887, lng: 122.4655 },
+};
+
+export const SUPPORTED_CITIES = Object.keys(CITY_CENTROIDS);
+export const SERVICE_AREA_RADIUS_KM = 15; // Max distance from any city center
+export const PROXIMITY_RADIUS_KM = 8; // Max distance from selected barangay
+export const DETECTION_CONFIDENCE_THRESHOLD_KM = 2; // Threshold for uncertain detection
 
 export const getGeohashBounds = (
   center: Coordinates,
@@ -44,12 +61,123 @@ export const calculateDistance = (
 const toRad = (value: number): number => (value * Math.PI) / 180;
 
 /**
+ * Check if coordinates are within the service area (15km of any supported city)
+ */
+export const isWithinServiceArea = (coords: Coordinates): boolean => {
+  for (const city of SUPPORTED_CITIES) {
+    const cityCenter = CITY_CENTROIDS[city];
+    const distance = calculateDistance(
+      coords.lat, coords.lng,
+      cityCenter.lat, cityCenter.lng
+    );
+    if (distance <= SERVICE_AREA_RADIUS_KM) {
+      return true;
+    }
+  }
+  return false;
+};
+
+/**
+ * Find the nearest city to given coordinates
+ */
+export const getNearestCity = (coords: Coordinates): { city: string; distance: number } | null => {
+  let nearest = null;
+  let minDistance = Infinity;
+
+  for (const city of SUPPORTED_CITIES) {
+    const cityCenter = CITY_CENTROIDS[city];
+    const distance = calculateDistance(
+      coords.lat, coords.lng,
+      cityCenter.lat, cityCenter.lng
+    );
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearest = city;
+    }
+  }
+
+  return nearest ? { city: nearest, distance: minDistance } : null;
+};
+
+/**
+ * Find the nearest barangay within a specific city
+ */
+export const getNearestBarangayInCity = (
+  coords: Coordinates, 
+  cityName: string
+): { barangay: string; distance: number } | null => {
+  const city = iloiloData.cities.find(c => c.name === cityName);
+  if (!city) return null;
+
+  let nearest = null;
+  let minDistance = Infinity;
+
+  for (const barangay of city.barangays) {
+    if (!barangay.centroid) continue;
+    const distance = calculateDistance(
+      coords.lat, coords.lng,
+      barangay.centroid.lat,
+      barangay.centroid.lng
+    );
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearest = barangay.name;
+    }
+  }
+
+  return nearest ? { barangay: nearest, distance: minDistance } : null;
+};
+
+/**
+ * Check if coordinates are within proximity of selected barangay (8km)
+ */
+export const isWithinSelectedBarangay = (
+  coords: Coordinates,
+  cityName: string,
+  barangayName: string
+): { isWithin: boolean; distance: number } => {
+  const city = iloiloData.cities.find(c => c.name === cityName);
+  const barangay = city?.barangays.find(b => b.name === barangayName);
+  
+  if (!barangay?.centroid) {
+    return { isWithin: false, distance: Infinity };
+  }
+
+  const distance = calculateDistance(
+    coords.lat, coords.lng,
+    barangay.centroid.lat,
+    barangay.centroid.lng
+  );
+
+  return {
+    isWithin: distance <= PROXIMITY_RADIUS_KM,
+    distance,
+  };
+};
+
+/**
+ * Get full location detection from coordinates (city + barangay)
+ * Returns distance from barangay centroid for confidence checking
+ */
+export const detectLocationFromCoordinates = (
+  coords: Coordinates
+): { city: string; barangay: string; distanceFromCity: number; distanceFromBarangay: number } | null => {
+  const nearestCity = getNearestCity(coords);
+  if (!nearestCity) return null;
+
+  const nearestBarangay = getNearestBarangayInCity(coords, nearestCity.city);
+  if (!nearestBarangay) return null;
+
+  return {
+    city: nearestCity.city,
+    barangay: nearestBarangay.barangay,
+    distanceFromCity: nearestCity.distance,
+    distanceFromBarangay: nearestBarangay.distance,
+  };
+};
+
+/**
  * Format distance for GPS mode - shows approximate ranges only (privacy)
- * - 0-1km: "Within 1km"
- * - 1-2km: "1-2km"
- * - 2-3km: "2-3km"
- * - 3-4km: "3-4km"
- * - 4-5km: "4-5km"
  */
 export const formatDistance = (distanceKm: number): string => {
   if (distanceKm <= 1) return 'Within 1km';
