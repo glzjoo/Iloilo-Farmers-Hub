@@ -33,7 +33,7 @@ export default function LanguageSwitcher() {
         className="flex items-center gap-1 bg-transparent border-none cursor-pointer text-white"
       >
         <img src={languageIcon} className="w-5 h-5 brightness-0 invert" alt="" />
-        <span className="text-xs font-medium">{t(currentLabel)}</span>
+        <span className="text-xs font-heading">{t(currentLabel)}</span>
         <span className="text-xs">▾</span>
       </button>
 
@@ -46,11 +46,10 @@ export default function LanguageSwitcher() {
                 i18n.changeLanguage(lang.code);
                 setOpen(false);
               }}
-              className={`w-full text-left px-4 py-2.5 text-sm border-none cursor-pointer transition-colors ${
-                i18n.language === lang.code
-                  ? 'bg-green-50 text-primary font-semibold'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+              className={`w-full font-heading text-left px-4 py-2.5 text-sm border-none cursor-pointer transition-colors ${i18n.language === lang.code
+                ? 'bg-green-50 text-primary font-semibold'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
             >
               {t(lang.labelKey)}
             </button>
