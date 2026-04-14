@@ -243,7 +243,7 @@ export default function MyAccountFarmerReviews() {
                                 
                                 {/* UPDATED: Rating Details with Stars */}
                                 <div className="bg-white/50 rounded-lg p-3 space-y-2 mb-3">
-                                    <RatingRow label="Product Rating" rating={review.rating} />
+                                    <RatingRow label="Rating" rating={review.rating} />
                                     <RatingRow label="Quality" rating={review.quality} />
                                     <RatingRow label="Appearance" rating={review.appearance} />
                                     {review.farmerRating > 0 && (

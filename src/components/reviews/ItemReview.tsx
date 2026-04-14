@@ -187,8 +187,9 @@ export default function ItemReview({ productId }: ItemReviewProps) {
                                 <div className="ml-13 pl-0.5 space-y-3">
                                     {/* Overall Product Rating */}
                                     <div className="flex items-center gap-3">
+                                        <span className="text-sm text-gray-600">Rating: </span>
                                         <StarRating rating={review.rating} />
-                                        <span className="text-sm text-gray-600">Product Rating</span>
+            
                                     </div>
                                     
                                     {/* Detailed Ratings */}
