@@ -32,10 +32,9 @@ export default function ReviewFarmerDetails() {
     
     const { productId, farmerId, orderId, fromOrder } = (location.state as LocationState) || {};
     
-    // Three separate ratings
-    const [farmerRating, setFarmerRating] = useState(0); // For farmer service/experience
-    const [quality, setQuality] = useState(0); // Product quality
-    const [appearance, setAppearance] = useState(0); // Product appearance
+    const [farmerRating, setFarmerRating] = useState(0);
+    const [quality, setQuality] = useState(0);
+    const [appearance, setAppearance] = useState(0);
     
     const [comment, setComment] = useState('');
     const [images, setImages] = useState<File[]>([]);
@@ -122,9 +121,9 @@ export default function ReviewFarmerDetails() {
                 consumerId: user.uid,
                 consumerName: `${userProfile.firstName} ${userProfile.lastName}`,
                 consumerAvatar: userProfile.profileImage || '',
-                farmerRating, // Separate farmer rating
-                quality,      // Product quality (1-5)
-                appearance,   // Product appearance (1-5)
+                farmerRating,
+                quality,
+                appearance,
                 comment: comment.trim(),
                 verifiedPurchase: fromOrder || false,
             };
@@ -159,7 +158,6 @@ export default function ReviewFarmerDetails() {
             )}
             
             <div className="flex flex-col flex-1 pl-2">
-                {/* Farmer Rating - Separate from Product */}
                 <div className="mb-8">
                     <p className="font-semibold text-lg text-black mb-4">Rate Farmer</p>
                     <p className="text-sm text-gray-500 mb-2">How was your experience with this farmer?</p>
@@ -174,12 +172,10 @@ export default function ReviewFarmerDetails() {
                     </div>
                 </div>
                 
-                {/* Combined Media Upload Section */}
                 <p className="font-medium text-black mb-4">
                     Add photos or video ({totalMediaCount}/6)
                 </p>
                 
-                {/* Selected Media Preview */}
                 <div className="flex gap-3 flex-wrap mb-4">
                     {images.map((img, idx) => (
                         <div key={`img-${idx}`} className="relative w-20 h-20">
@@ -241,46 +237,43 @@ export default function ReviewFarmerDetails() {
             </div>
 
             <div className="flex flex-col flex-1">
-                <div className="flex justify-start mb-2">
-                    <span className="text-sm text-gray-600">
-                        {comment.length}/500 characters
-                    </span>
-                </div>
-
                 <div className="flex flex-col gap-6">
-                    {/* Product Quality - Star Rating */}
-                    <div className="flex flex-col gap-2">
-                        <label className="font-semibold text-black">Product Quality:</label>
-                        <p className="text-sm text-gray-500">Freshness, taste, ripeness</p>
-                        <div className="flex gap-2">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <StarIcon
-                                    key={star}
-                                    filled={quality >= star}
-                                    onClick={() => setQuality(star)}
-                                    size="w-8 h-8"
-                                />
-                            ))}
+
+                    {/* SIDE-BY-SIDE RATINGS */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <div className="flex flex-col gap-2">
+                            <label className="font-semibold text-black">Product Quality:</label>
+                            <p className="text-sm text-gray-500">Freshness, taste, ripeness</p>
+                            <div className="flex gap-2">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <StarIcon
+                                        key={star}
+                                        filled={quality >= star}
+                                        onClick={() => setQuality(star)}
+                                        size="w-8 h-8"
+                                    />
+                                ))}
+                            </div>
                         </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label className="font-semibold text-black">Product Appearance:</label>
+                            <p className="text-sm text-gray-500">Visual condition, color, size, packaging</p>
+                            <div className="flex gap-2">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <StarIcon
+                                        key={star}
+                                        filled={appearance >= star}
+                                        onClick={() => setAppearance(star)}
+                                        size="w-8 h-8"
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
                     </div>
 
-                    {/* Product Appearance - Star Rating */}
-                    <div className="flex flex-col gap-2">
-                        <label className="font-semibold text-black">Product Appearance:</label>
-                        <p className="text-sm text-gray-500">Visual condition, color, size, packaging</p>
-                        <div className="flex gap-2">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <StarIcon
-                                    key={star}
-                                    filled={appearance >= star}
-                                    onClick={() => setAppearance(star)}
-                                    size="w-8 h-8"
-                                />
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Comment */}
                     <div className="flex flex-col gap-2">
                         <label className="font-semibold text-black">Comment:</label>
                         <textarea
