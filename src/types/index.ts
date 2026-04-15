@@ -117,6 +117,8 @@ export interface VerificationData {
     verifiedAt?: Date | any;
     verifiedBy?: string;
     idType?: string;
+    mobileWalletNo?: string | null;
+    issuingAgency?: string | null;
 }
 
 // Face++ API response types

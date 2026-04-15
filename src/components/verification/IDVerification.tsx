@@ -1,3 +1,6 @@
+// ============================================
+// FILE: src/components/verification/IDVerification.tsx (COMPLETE)
+// ============================================
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -13,7 +16,7 @@ import SelfieCaptureSection from './SelfieCaptureSection';
 import VerificationInfoCard from './VerificationInfoCard';
 
 const idVerificationSchema = z.object({
-  idType: z.enum(['passport', 'drivers_license', 'national_id', 'umid', 'other']),
+  idType: z.enum(['passport', 'drivers_license', 'national_id', 'farmers_fisheries_id', 'umid', 'other']),
   idNumber: z.string().min(5, 'ID number is required'),
   agreeToVerification: z.boolean().refine((val) => val === true, {
     message: 'You must agree to the verification process',
@@ -49,6 +52,7 @@ export default function IDVerification() {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
   } = useForm<IDVerificationFormData>({
     resolver: zodResolver(idVerificationSchema),
     defaultValues: {
@@ -97,7 +101,7 @@ export default function IDVerification() {
     setError(null);
   };
 
-  // More robust name matching with garbage filtering
+  // Enhanced name matching for both ID types
   const checkNameMatch = (extractedName: string, formData: FarmerSignupData): boolean => {
     if (!extractedName) return false;
     
@@ -111,21 +115,23 @@ export default function IDVerification() {
     const firstName = normalize(formData.firstName);
     const lastName = normalize(formData.lastName);
     
-    // Filter out common OCR garbage/template text from Philippine IDs
+    // Filter out common OCR garbage/template text
     const garbageWords = [
       'statistic', 'authority', 'philippine', 'repub', 'publik', 
       'nasrep', 'kad', 'tisticsal', 'pilipinas', 'filipinas',
       'pambansa', 'pagkakakilanlan', 'philippines', 'republic',
       'apelyido', 'pangalan', 'given', 'names', 'last', 'name',
       'middle', 'gitnang', 'petsa', 'kapanganakan', 'date', 'birth',
-      'tirahan', 'address', 'city', 'zone'
+      'tirahan', 'address', 'city', 'zone', 'department', 'agriculture',
+      'registry', 'system', 'basic', 'sectors', 'farmers', 'fishers',
+      'rsbsa', 'reference', 'mobile', 'wallet'
     ];
     
     const extractedWords = extracted.split(' ').filter(word => 
       word.length > 2 && !garbageWords.some(g => word.includes(g))
     );
     
-    // Check if first name appears in any extracted word
+    // Check if first name appears
     const firstNameMatch = extractedWords.some(word => 
       word.includes(firstName) || 
       firstName.includes(word) ||
@@ -139,7 +145,6 @@ export default function IDVerification() {
       calculateSimilarity(word, lastName) > 0.7
     );
     
-    // Debug logging
     console.log('Name matching debug:', {
       extractedRaw: extractedName,
       extractedFiltered: extractedWords,
@@ -200,6 +205,8 @@ export default function IDVerification() {
         extractedAddress: verificationResult?.verification?.idData?.address ?? null,
         idCardImageUrl: verificationResult?.idCardUrl ?? null,
         selfieImageUrl: verificationResult?.selfieUrl ?? null,
+        mobileWalletNo: verificationResult?.verification?.idData?.mobileWalletNo ?? null,
+        issuingAgency: verificationResult?.verification?.idData?.issuingAgency ?? null,
       });
 
       navigate('/otp-verification', {
@@ -385,6 +392,7 @@ export default function IDVerification() {
           </label>
           <select {...register('idType')} className={getInputClass('idType')}>
             <option value="national_id">Philsys National ID</option>
+            <option value="farmers_fisheries_id">DA Farmers & Fisheries ID (RSBSA)</option>
             <option value="drivers_license">Driver's License (LTO)</option>
             <option value="umid">UMID (SSS/GSIS)</option>
             <option value="passport">Philippine Passport</option>
@@ -397,8 +405,27 @@ export default function IDVerification() {
           <label className="block text-sm font-primary font-semibold text-gray-800 mb-2">
             ID Number <span className="text-red-500">*</span>
           </label>
-          <input {...register('idNumber')} type="text" placeholder="Enter ID number as shown on your card" className={getInputClass('idNumber')} />
+          <input 
+            {...register('idNumber')} 
+            type="text" 
+            placeholder="Enter ID number" 
+            className={getInputClass('idNumber')} 
+          />
           {errors.idNumber && <p className="mt-1 text-xs text-red-500 font-primary">{errors.idNumber.message}</p>}
+          
+          {/* Updated help text */}
+          <p className="text-xs text-gray-500 mt-1">
+            {watch('idType') === 'farmers_fisheries_id' ? (
+              <>
+                RSBSA Reference No. (e.g., 063034025000033 or 06-30-34-025-000033). 
+                <span className="text-primary font-medium"> Dashes are optional.</span>
+              </>
+            ) : watch('idType') === 'national_id' ? (
+              <>Philsys ID (e.g., 123456789012 or 1234-5678-9012)</>
+            ) : (
+              <>ID number as shown on your card</>
+            )}
+          </p>
         </div>
 
         <IDUploadSection 
