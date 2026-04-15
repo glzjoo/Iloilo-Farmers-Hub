@@ -12,7 +12,7 @@ interface CartItemProps {
     onMessageSeller: () => void; 
     isUpdating?: boolean;
 }
-
+//cartItem.tsx
 export default function CartItem({ 
     productId,
     name, 
