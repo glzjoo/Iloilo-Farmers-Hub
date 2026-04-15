@@ -12,8 +12,8 @@ function StarDisplay({ rating }: { rating: number }) {
     return (
         <div className="flex items-center gap-0.5">
             {[1, 2, 3, 4, 5].map((star) => (
-                <span 
-                    key={star} 
+                <span
+                    key={star}
                     className={`text-xs ${star <= roundedRating ? 'text-yellow-400' : 'text-gray-400'}`}
                 >
                     ★
@@ -66,11 +66,11 @@ export default function NowAvailable() {
         return (
             <section className="w-full py-8">
                 <div className="flex flex-wrap gap-4 justify-center">
-                    <div className="text-center py-12 text-neutral-500 w-full">
+                    <div className="text-center py-12 text-gray-500 w-full">
                         <p>Check back soon for fresh arrivals!</p>
-                        <button 
+                        <button
                             onClick={() => navigate('/shop')}
-                            className="mt-2 text-leaf hover:underline font-semibold"
+                            className="mt-2 text-primary hover:underline"
                         >
                             Browse All Products
                         </button>
@@ -84,13 +84,13 @@ export default function NowAvailable() {
         <section className="w-full py-8">
             <div className="flex flex-wrap gap-4 justify-center">
                 {products.map((product) => (
-                    <div 
-                        key={product.id} 
+                    <div
+                        key={product.id}
                         className="relative w-[300px] h-[510px] rounded-lg overflow-hidden cursor-pointer group"
                         onClick={() => handleProductClick(product.id)}
                     >
-                        <img 
-                            src={product.image || '/placeholder-product.png'} 
+                        <img
+                            src={product.image || '/placeholder-product.png'}
                             alt={product.name}
                             className="w-full h-full object-cover transition-transform group-hover:scale-105"
                         />
@@ -98,16 +98,16 @@ export default function NowAvailable() {
                             <p className="text-sm text-white/80">Now Available</p>
                             <h3 className="text-xl font-bold text-white mb-1">{product.name}</h3>
                             <p className="text-white/90 text-sm mb-2">₱{product.price.toFixed(2)} / {product.unit}</p>
-                            
+
                             {/* Stars only - no count */}
                             {product.rating > 0 && (
                                 <div className="mb-2">
                                     <StarDisplay rating={product.rating} />
                                 </div>
                             )}
-                            
-                            <button 
-                                className="font-body bg-white text-primary font-semibold rounded-full px-6 py-2 text-sm cursor-pointer hover:bg-accent active:scale-95 transition-all duration-200"
+
+                            <button
+                                className="bg-white text-primary font-bold rounded-full px-6 py-2 text-lg cursor-pointer hover:bg-gray-100 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleProductClick(product.id);

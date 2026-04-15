@@ -1,4 +1,4 @@
-import logo from '../../assets/icons/Logo.svg';
+import logo from '../../assets/icons/logo.png';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,10 +18,7 @@ export default function NavbarLoggedInConsumer() {
     const { t } = useTranslation();
 
     const linkClass = (path: string) =>
-        `no-underline text-sm font-semibold tracking-wide transition-colors ${location.pathname === path
-            ? 'text-secondary border-b-2 border-secondary pb-0.5'
-            : 'text-neutral-500 hover:text-secondary'
-        }`;
+        `no-underline text-sm font-semibold transition-colors ${location.pathname === path ? 'text-primary' : 'text-gray-700 hover:text-green-700'}`;
 
     const displayName = userProfile
         ? `${userProfile.firstName} ${userProfile.lastName}`
@@ -53,8 +50,9 @@ export default function NavbarLoggedInConsumer() {
                 </div>
 
                 <div className="max-w-7xl mx-auto flex items-center justify-between px-6 pb-4 pt-1 gap-4">
-                    <Link to="/" className="flex items-center text-accent no-underline shrink-0">
-                        <img src={logo} className="h-8 w-auto" alt="Iloilo Farmers Hub" />
+                    <Link to="/" className="flex items-center gap-2 text-white no-underline shrink-0">
+                        <img src={logo} className="w-11 h-11 rounded-full object-cover" />
+                        <span className="font-primary font-bold text-lg tracking-wide whitespace-nowrap">ILOILO FARMERS HUB</span>
                     </Link>
 
                     <SearchBar />
@@ -81,10 +79,10 @@ export default function NavbarLoggedInConsumer() {
                                     )}
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-sm font-heading font-semibold text-accent leading-tight">
+                                    <p className="text-sm font-semibold text-white leading-tight">
                                         {displayName}
                                     </p>
-                                    <p className="text-xs text-accent/70 leading-tight">{contactInfo}</p>
+                                    <p className="text-xs text-green-200 leading-tight">{contactInfo}</p>
                                 </div>
                                 <span className="text-white text-xs">▾</span>
                             </button>
@@ -101,32 +99,32 @@ export default function NavbarLoggedInConsumer() {
                                             )}
                                         </div>
                                         <div>
-                                            <p className="text-accent font-heading font-semibold text-sm">{displayName}</p>
-                                            <p className="text-accent/70 text-xs">{contactInfo}</p>
+                                            <p className="text-white font-semibold text-sm">{displayName}</p>
+                                            <p className="text-green-200 text-xs">{contactInfo}</p>
                                         </div>
                                     </div>
 
                                     <div className="py-2">
                                         {/* Messages */}
-                                        <Link to="/messages" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-neutral-100 text-left">
+                                        <Link to="/messages" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
                                             <img src={messagesIcon} className="w-7 h-7" />
                                             <div>
-                                                <p className="text-base font-bold text-primary">{t('messages')}</p>
-                                                <p className="text-xs text-neutral-500">{t('no_unread')}</p>
+                                                <p className="text-base font-bold text-black">{t('messages')}</p>
+                                                <p className="text-xs text-gray-400">{t('no_unread')}</p>
                                             </div>
                                         </Link>
 
                                         {/* Settings */}
-                                        <Link to="/consumer-account-setting" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-neutral-100 text-left">
+                                        <Link to="/consumer-account-setting" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
                                             <img src={settingIcon} className="w-7 h-7" />
                                             <div>
-                                                <p className="text-base font-bold text-primary">{t('settings')}</p>
+                                                <p className="text-base font-bold text-black">{t('settings')}</p>
                                             </div>
                                         </Link>
 
                                         <button
                                             onClick={() => { logout(); navigate('/'); setShowDropdown(false); }}
-                                            className="flex items-center gap-4 w-full px-5 py-3.5 bg-transparent border-none cursor-pointer hover:bg-neutral-100 text-left"
+                                            className="flex items-center gap-4 w-full px-5 py-3.5 bg-transparent border-none cursor-pointer hover:bg-gray-50 text-left"
                                         >
                                             <img src={logOutIcon} className="w-7 h-7" />
                                             <div>
@@ -143,7 +141,7 @@ export default function NavbarLoggedInConsumer() {
             </nav>
 
             {/* Consumer navigation */}
-            <div className="bg-white border-b border-neutral-300 shadow-sm">
+            <div className="bg-white border-b border-gray-200 shadow-sm">
                 <div className="max-w-7xl mx-auto relative flex items-center justify-center gap-10 px-6 py-3">
                     <Link to="/" className={linkClass('/')}>{t('nav_home')}</Link>
                     <Link to="/shop" className={linkClass('/shop')}>{t('nav_shop')}</Link>

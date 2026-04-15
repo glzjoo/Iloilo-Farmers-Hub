@@ -11,14 +11,11 @@ export default {
         dark: '#1E1E1E',  // use text-dark
         secondary: '#56BB5B',
       },
-
       fontFamily: {
         heading: ['"Merriweather Sans"', 'sans-serif'], // use font-heading
         body: ['"Open Sans"', 'sans-serif'], // use font-body
       },
-
     },
   },
   plugins: [],
 }
-
