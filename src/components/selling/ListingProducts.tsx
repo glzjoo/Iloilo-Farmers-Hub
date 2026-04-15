@@ -6,6 +6,7 @@ import searchIcon from '../../assets/icons/search.svg';
 import ListedProductCard from './ListedProductCard';
 import EditProductModal from './EditProductModal';
 import ConfirmationModal from '../common/ConfirmationModal';
+import ErrorModal from '../common/ErrorModal';
 import type { Product } from '../../types';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
@@ -17,6 +18,7 @@ export default function ListingProducts() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [actionError, setActionError] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [productToDelete, setProductToDelete] = useState<Product | null>(null);
@@ -101,7 +103,7 @@ export default function ListingProducts() {
             });
             setEditingProduct(null);
         } catch (err: any) {
-            alert('Failed to update product: ' + err.message);
+            setActionError('Failed to update product: ' + err.message);
         }
     };
 
@@ -190,6 +192,13 @@ export default function ListingProducts() {
                 onConfirm={handleConfirmDelete}
                 onCancel={cancelDelete}
                 variant="warning"
+            />
+
+            <ErrorModal
+                isOpen={Boolean(actionError)}
+                title="Action failed"
+                message={actionError}
+                onClose={() => setActionError('')}
             />
             {/* Edit Product Modal */}
             {editingProduct && (

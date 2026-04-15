@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
 import CartItem from './CartItem';
 import ConfirmationModal from '../common/ConfirmationModal';
+import ErrorModal from '../common/ErrorModal';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
 import { removeFromCart, updateCartItemQuantity } from '../../services/cartService';
@@ -17,6 +18,7 @@ export default function ItemsCheckout() {
     const [cartItems, setCartItems] = useState<CartItemType[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
     const [updatingItem, setUpdatingItem] = useState<string | null>(null);
     const [pendingRemoveProductId, setPendingRemoveProductId] = useState<string | null>(null);
 
@@ -66,7 +68,7 @@ export default function ItemsCheckout() {
             await updateCartItemQuantity(user.uid, productId, newQuantity);
             // State updates automatically via onSnapshot
         } catch (err: any) {
-            alert(err.message || 'Failed to update quantity');
+            setErrorMessage(err.message || 'Failed to update quantity');
         } finally {
             setUpdatingItem(null);
         }
@@ -88,7 +90,7 @@ export default function ItemsCheckout() {
             await removeFromCart(user.uid, pendingRemoveProductId);
             // State updates automatically via onSnapshot
         } catch (err: any) {
-            alert(err.message || 'Failed to remove item');
+            setErrorMessage(err.message || 'Failed to remove item');
         }
     };
 
@@ -215,6 +217,13 @@ export default function ItemsCheckout() {
                 onConfirm={handleConfirmRemove}
                 onCancel={closeRemoveConfirmation}
                 variant="warning"
+            />
+
+            <ErrorModal
+                isOpen={Boolean(errorMessage)}
+                title="Cart error"
+                message={errorMessage}
+                onClose={() => setErrorMessage('')}
             />
         </section>
     );

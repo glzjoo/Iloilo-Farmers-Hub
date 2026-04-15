@@ -15,6 +15,7 @@ import {
 import { addToCart } from '../../services/cartService';
 import { useAuth } from '../../context/AuthContext';
 import ActionGuardModal from '../common/ActionGuardModal';
+import ErrorModal from '../common/ErrorModal';
 import FarmerCard from './FarmerCard';
 
 type NearbyMode = 'selection' | 'choosing' | 'gps' | 'manual';
@@ -91,6 +92,7 @@ export default function ShopAll({
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [addingToCart, setAddingToCart] = useState<string | null>(null);
     const [showGuardModal, setShowGuardModal] = useState(false);
@@ -285,7 +287,7 @@ export default function ShopAll({
 
             alert(`Added ${quantity} ${product.unit} of ${product.name} to cart!`);
         } catch (err: any) {
-            alert(err.message || 'Failed to add to cart');
+            setErrorMessage(err.message || 'Failed to add to cart');
         } finally {
             setAddingToCart(null);
         }
@@ -572,6 +574,13 @@ export default function ShopAll({
                 action="addToCart"
                 userRole={checkUserRole()}
                 onClose={() => setShowGuardModal(false)}
+            />
+
+            <ErrorModal
+                isOpen={Boolean(errorMessage)}
+                title="Cart error"
+                message={errorMessage}
+                onClose={() => setErrorMessage('')}
             />
         </div>
     );

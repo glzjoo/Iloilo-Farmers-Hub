@@ -4,6 +4,7 @@ import filterIcon from '../../assets/icons/Filter.svg';
 import ListedProductCard from '../selling/ListedProductCard';
 import EditProductModal from '../selling/EditProductModal';
 import ConfirmationModal from '../common/ConfirmationModal';
+import ErrorModal from '../common/ErrorModal';
 import type { Product } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { getFarmerProducts, deleteProduct } from '../../services/productService';
@@ -18,6 +19,7 @@ export default function MyAccountFarmerListing() {
     const [searchQuery, setSearchQuery] = useState('');
     const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
     const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+    const [modalError, setModalError] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const [activeFilters, setActiveFilters] = useState({ category: 'All', status: 'All', sortBy: 'Newest' });
 
@@ -56,7 +58,7 @@ export default function MyAccountFarmerListing() {
             await deleteProduct(productToDelete.id, productToDelete.image);
             setProducts(prev => prev.filter(p => p.id !== productToDelete.id));
         } catch (err: any) {
-            alert(err.message || 'Failed to delete product');
+            setModalError(err.message || 'Failed to delete product');
         } finally {
             setDeleteLoading(null);
             setProductToDelete(null);
@@ -183,6 +185,13 @@ export default function MyAccountFarmerListing() {
                 onConfirm={handleConfirmDelete}
                 onCancel={cancelDelete}
                 variant="warning"
+            />
+
+            <ErrorModal
+                isOpen={Boolean(modalError)}
+                title="Delete error"
+                message={modalError}
+                onClose={() => setModalError('')}
             />
 
             {/* Edit Product Modal */}
