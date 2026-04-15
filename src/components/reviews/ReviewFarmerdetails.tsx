@@ -29,7 +29,7 @@ export default function ReviewFarmerDetails() {
     const navigate = useNavigate();
     const location = useLocation();
     const { user, userProfile } = useAuth();
-    
+
     const { productId, farmerId, orderId, fromOrder } = (location.state as LocationState) || {};
     
     const [farmerRating, setFarmerRating] = useState(0);
@@ -41,12 +41,12 @@ export default function ReviewFarmerDetails() {
     const [video, setVideo] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
-    
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
-        
+
         for (const file of files) {
             const isImage = file.type.startsWith('image/');
             const isVideo = file.type.startsWith('video/');
@@ -135,7 +135,7 @@ export default function ReviewFarmerDetails() {
             console.log('Submitting review with data:', reviewData);
 
             await addReview(reviewData, images, video);
-            
+
             if (fromOrder) {
                 navigate('/messages');
             } else {
@@ -156,7 +156,7 @@ export default function ReviewFarmerDetails() {
                     {error}
                 </div>
             )}
-            
+
             <div className="flex flex-col flex-1 pl-2">
                 <div className="mb-8">
                     <p className="font-semibold text-lg text-black mb-4">Rate Farmer</p>
@@ -179,9 +179,9 @@ export default function ReviewFarmerDetails() {
                 <div className="flex gap-3 flex-wrap mb-4">
                     {images.map((img, idx) => (
                         <div key={`img-${idx}`} className="relative w-20 h-20">
-                            <img 
-                                src={URL.createObjectURL(img)} 
-                                alt="" 
+                            <img
+                                src={URL.createObjectURL(img)}
+                                alt=""
                                 className="w-full h-full object-cover rounded-lg"
                             />
                             <button
@@ -195,8 +195,8 @@ export default function ReviewFarmerDetails() {
                     
                     {video && (
                         <div className="relative w-28 h-20">
-                            <video 
-                                src={URL.createObjectURL(video)} 
+                            <video
+                                src={URL.createObjectURL(video)}
                                 className="w-full h-full object-cover rounded-lg"
                             />
                             <span className="absolute bottom-1 left-1 text-[10px] bg-black/70 text-white px-1.5 py-0.5 rounded">
@@ -212,7 +212,7 @@ export default function ReviewFarmerDetails() {
                     )}
                     
                     {totalMediaCount < 6 && (
-                        <button 
+                        <button
                             onClick={() => fileInputRef.current?.click()}
                             className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-[#187A38] hover:border-primary hover:bg-green-50 transition-colors"
                         >
@@ -221,7 +221,7 @@ export default function ReviewFarmerDetails() {
                         </button>
                     )}
                 </div>
-                
+
                 <input
                     type="file"
                     ref={fileInputRef}
@@ -230,7 +230,7 @@ export default function ReviewFarmerDetails() {
                     multiple
                     className="hidden"
                 />
-                
+
                 <p className="text-xs text-gray-500 mb-6">
                     Max 5 images + 1 video. Video max 50MB.
                 </p>
@@ -284,8 +284,8 @@ export default function ReviewFarmerDetails() {
                         />
                     </div>
                 </div>
-                
-                <button 
+
+                <button
                     onClick={handleSubmit}
                     disabled={isSubmitting || farmerRating === 0 || quality === 0 || appearance === 0}
                     className="w-full h-12 bg-[#187A38] rounded-md text-white font-semibold mt-6 hover:bg-green-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"

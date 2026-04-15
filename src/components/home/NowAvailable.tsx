@@ -66,11 +66,11 @@ export default function NowAvailable() {
         return (
             <section className="w-full py-8">
                 <div className="flex flex-wrap gap-4 justify-center">
-                    <div className="text-center py-12 text-gray-500 w-full">
+                    <div className="text-center py-12 text-neutral-500 w-full">
                         <p>Check back soon for fresh arrivals!</p>
                         <button 
                             onClick={() => navigate('/shop')}
-                            className="mt-2 text-primary hover:underline"
+                            className="mt-2 text-leaf hover:underline font-semibold"
                         >
                             Browse All Products
                         </button>
@@ -107,7 +107,7 @@ export default function NowAvailable() {
                             )}
                             
                             <button 
-                                className="bg-white text-primary font-bold rounded-full px-6 py-2 text-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                                className="font-body bg-white text-primary font-semibold rounded-full px-6 py-2 text-sm cursor-pointer hover:bg-accent active:scale-95 transition-all duration-200"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleProductClick(product.id);

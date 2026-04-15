@@ -18,7 +18,7 @@ export default function FarmerShopPage() {
 
       try {
         setLoading(true);
-        
+
         // Fetch farmer data
         const farmerDoc = await getDoc(doc(db, 'farmers', farmerId));
         if (!farmerDoc.exists()) {
@@ -92,7 +92,7 @@ export default function FarmerShopPage() {
               <p className="text-gray-600 mt-1">
                 by {farmer.firstName} {farmer.lastName}
               </p>
-              
+
               <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
                 <div className="flex items-center gap-1">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,7 +101,7 @@ export default function FarmerShopPage() {
                   </svg>
                   <span>{locationDisplay}</span>
                 </div>
-                
+
                 {farmer.farmType && (
                   <div className="flex items-center gap-1">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

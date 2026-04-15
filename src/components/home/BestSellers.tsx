@@ -58,14 +58,14 @@ export default function BestSellers() {
             <section className="w-full py-8">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-gray-900">Best Sellers</h2>
+                        <h2 className="font-heading text-2xl font-bold text-primary">Best Sellers</h2>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                         {[...Array(5)].map((_, i) => (
                             <div key={i} className="animate-pulse">
-                                <div className="w-full h-32 bg-gray-200 rounded-lg mb-2"></div>
-                                <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
-                                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                                <div className="w-full h-32 bg-neutral-300 rounded-lg mb-2"></div>
+                                <div className="h-4 bg-neutral-300 rounded w-3/4 mb-1"></div>
+                                <div className="h-4 bg-neutral-300 rounded w-1/2"></div>
                             </div>
                         ))}
                     </div>
@@ -79,13 +79,13 @@ export default function BestSellers() {
             <section className="w-full py-8">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-gray-900">Best Sellers</h2>
+                        <h2 className="font-heading text-2xl font-bold text-primary">Best Sellers</h2>
                     </div>
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-neutral-500">
                         <p>No best sellers yet. Check out our shop!</p>
                         <button
                             onClick={() => navigate('/shop')}
-                            className="mt-2 text-primary hover:underline"
+                            className="mt-2 text-leaf hover:underline font-semibold"
                         >
                             Browse All Products
                         </button>
@@ -99,7 +99,7 @@ export default function BestSellers() {
         <section className="w-full py-8">
             <div className="max-w-7xl mx-auto px-6">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">Best Sellers</h2>
+                    <h2 className="font-heading text-2xl font-bold text-primary">Best Sellers</h2>
                     <button className="flex items-center gap-2 bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity">
                         <img src={filter} className="w-5 h-5" alt="Filter" />
                     </button>
@@ -127,8 +127,8 @@ export default function BestSellers() {
 
                             <div className="flex items-center justify-between mt-2">
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="text-sm font-semibold text-gray-900 truncate">{product.name}</h3>
-                                    <p className="text-primary text-xs font-semibold">
+                                    <h3 className="font-body text-sm font-semibold text-primary truncate">{product.name}</h3>
+                                    <p className="font-body text-leaf text-xs font-semibold">
                                         ₱{product.price.toFixed(2)} / {product.unit}
                                     </p>
                                     {/* Stars only - no count */}
