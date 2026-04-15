@@ -1,3 +1,6 @@
+// ============================================
+// FILE: src/services/reviewService.ts (UPDATED)
+// ============================================
 import { 
     collection, 
     doc, 
@@ -33,6 +36,7 @@ const convertDocToReview = (doc: any): Review => {
         consumerName: data.consumerName,
         consumerAvatar: data.consumerAvatar,
         rating: data.rating,
+        farmerRating: data.farmerRating,
         quality: data.quality,
         appearance: data.appearance,
         comment: data.comment,
@@ -45,11 +49,9 @@ const convertDocToReview = (doc: any): Review => {
     };
 };
 
-//------------------------------------------CREATE SECTION------------------------------------------
-
 // CREATE - Add a new review
 export const addReview = async (
-    reviewData: any, // Changed to any to be flexible
+    reviewData: any,
     imageFiles?: File[],
     videoFile?: File | null
 ): Promise<string> => {
@@ -58,7 +60,7 @@ export const addReview = async (
         
         const batch = writeBatch(db);
         
-        // 1. Upload images if provided
+        // Upload images if provided
         const imageUrls: string[] = [];
         if (imageFiles && imageFiles.length > 0) {
             for (const file of imageFiles) {
@@ -67,13 +69,21 @@ export const addReview = async (
             }
         }
 
-        // 2. Upload video if provided
+        // Upload video if provided
         let videoUrl: string | null = null;
         if (videoFile) {
             videoUrl = await uploadReviewMedia(videoFile, reviewData.consumerId, 'video');
         }
 
-        // 3. Create review document - Build clean object without undefined
+        // Ensure whole numbers only (no half stars)
+        const quality = Math.round(reviewData.quality);
+        const appearance = Math.round(reviewData.appearance);
+        const farmerRating = Math.round(reviewData.farmerRating);
+        
+        // Calculate product rating as average of quality and appearance
+        const productRating = Math.round(((quality + appearance) / 2) * 10) / 10;
+
+        // Create review document
         const reviewRef = doc(collection(db, REVIEWS_COLLECTION));
         
         const newReview: any = {
@@ -82,9 +92,10 @@ export const addReview = async (
             consumerId: reviewData.consumerId,
             consumerName: reviewData.consumerName,
             consumerAvatar: reviewData.consumerAvatar || '',
-            rating: reviewData.rating,
-            quality: reviewData.quality,
-            appearance: reviewData.appearance || '',
+            rating: productRating, // Product rating (average of quality + appearance)
+            farmerRating: farmerRating, // Separate farmer rating
+            quality: quality,
+            appearance: appearance,
             comment: reviewData.comment,
             images: imageUrls,
             video: videoUrl,
@@ -93,7 +104,6 @@ export const addReview = async (
             updatedAt: serverTimestamp(),
         };
 
-        // Only add optional fields if they exist
         if (reviewData.orderId) {
             newReview.orderId = reviewData.orderId;
         }
@@ -102,14 +112,14 @@ export const addReview = async (
         
         batch.set(reviewRef, newReview);
 
-        // 4. Update product rating stats
+        // Update product rating stats
         const productRef = doc(db, PRODUCTS_COLLECTION, reviewData.productId);
         batch.update(productRef, {
             reviewCount: increment(1),
             lastReviewAt: serverTimestamp(),
         });
 
-        // 5. Update farmer's review count
+        // Update farmer's review count
         const farmerRef = doc(db, FARMERS_COLLECTION, reviewData.farmerId);
         batch.update(farmerRef, {
             totalReviews: increment(1),
@@ -118,7 +128,7 @@ export const addReview = async (
 
         await batch.commit();
 
-        // 6. Recalculate and update average ratings
+        // Recalculate and update average ratings
         await updateProductAverageRating(reviewData.productId);
         await updateFarmerAverageRating(reviewData.farmerId);
 
@@ -129,7 +139,7 @@ export const addReview = async (
     }
 };
 
-//------------------------------------------READ SECTION------------------------------------------
+// READ functions remain the same...
 
 // READ - Get reviews for a product
 export const getProductReviews = async (
@@ -188,7 +198,7 @@ export const getProductReviewStats = async (productId: string): Promise<ReviewSt
         let totalRating = 0;
         
         reviews.forEach(review => {
-            distribution[review.rating as keyof typeof distribution]++;
+            distribution[Math.round(review.rating) as keyof typeof distribution]++;
             totalRating += review.rating;
         });
         
@@ -247,8 +257,9 @@ export const getRecentTopReviews = async (
     try {
         const q = query(
             collection(db, REVIEWS_COLLECTION),
-            where('rating', '==', minRating),
+            where('rating', '>=', minRating),
             where('verifiedPurchase', '==', true),
+            orderBy('rating', 'desc'),
             orderBy('createdAt', 'desc'),
             limit(limitCount)
         );
@@ -264,8 +275,6 @@ export const getRecentTopReviews = async (
 // READ - Get platform-wide review stats (for landing page)
 export const getPlatformReviewStats = async (): Promise<ReviewStats> => {
     try {
-        // For efficiency, we'll fetch last 100 reviews to calculate stats
-        // If you have thousands, consider storing pre-calculated stats in a separate doc
         const q = query(
             collection(db, REVIEWS_COLLECTION),
             orderBy('createdAt', 'desc'),
@@ -279,7 +288,7 @@ export const getPlatformReviewStats = async (): Promise<ReviewStats> => {
         let totalRating = 0;
         
         reviews.forEach(review => {
-            distribution[review.rating as keyof typeof distribution]++;
+            distribution[Math.round(review.rating) as keyof typeof distribution]++;
             totalRating += review.rating;
         });
         
@@ -368,12 +377,10 @@ export const getConsumerProfilesForReviews = async (reviews: Review[]): Promise<
     return consumerMap;
 };
 
-//------------------------------------------UPDATE SECTION------------------------------------------
-
 // UPDATE - Update an existing review
 export const updateReview = async (
     reviewId: string,
-    updates: Partial<Pick<Review, 'rating' | 'quality' | 'appearance' | 'comment'>>,
+    updates: Partial<Pick<Review, 'farmerRating' | 'quality' | 'appearance' | 'comment'>>,
     newImageFiles?: File[],
     newVideoFile?: File | null
 ): Promise<void> => {
@@ -401,8 +408,17 @@ export const updateReview = async (
             newVideo = await uploadReviewMedia(newVideoFile, currentReview.consumerId, 'video');
         }
         
+        // Recalculate product rating if quality or appearance changed
+        let productRating = currentReview.rating;
+        if (updates.quality !== undefined || updates.appearance !== undefined) {
+            const quality = updates.quality !== undefined ? Math.round(updates.quality) : currentReview.quality;
+            const appearance = updates.appearance !== undefined ? Math.round(updates.appearance) : currentReview.appearance;
+            productRating = Math.round(((quality + appearance) / 2) * 10) / 10;
+        }
+        
         await updateDoc(reviewRef, {
             ...updates,
+            rating: productRating,
             images: newImages,
             video: newVideo,
             updatedAt: serverTimestamp(),
@@ -417,8 +433,6 @@ export const updateReview = async (
         throw new Error('Failed to update review.');
     }
 };
-
-//------------------------------------------DELETE SECTION------------------------------------------
 
 // DELETE - Delete a review
 export const deleteReview = async (reviewId: string): Promise<void> => {
@@ -461,8 +475,6 @@ export const deleteReview = async (reviewId: string): Promise<void> => {
     }
 };
 
-//------------------------------------------HELPERS------------------------------------------
-
 // HELPER - Upload review media (images/video)
 const uploadReviewMedia = async (
     file: File, 
@@ -486,21 +498,21 @@ const uploadReviewMedia = async (
     }
 };
 
-// HELPER - Update product average rating
+// HELPER - Update product average rating (based on quality+appearance average)
 const updateProductAverageRating = async (productId: string): Promise<void> => {
     try {
         const stats = await getProductReviewStats(productId);
         const productRef = doc(db, PRODUCTS_COLLECTION, productId);
         
         await updateDoc(productRef, {
-            rating: Math.round(stats.averageRating * 10) / 10, // Round to 1 decimal
+            rating: Math.round(stats.averageRating * 10) / 10,
         });
     } catch (error) {
         console.error('Error updating product rating:', error);
     }
 };
 
-// HELPER - Update farmer average rating
+// HELPER - Update farmer average rating (based on farmerRating field)
 const updateFarmerAverageRating = async (farmerId: string): Promise<void> => {
     try {
         const q = query(
@@ -513,8 +525,9 @@ const updateFarmerAverageRating = async (farmerId: string): Promise<void> => {
         
         if (reviews.length === 0) return;
         
-        const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
-        const average = totalRating / reviews.length;
+        // Calculate average of farmerRating specifically
+        const totalFarmerRating = reviews.reduce((sum, r) => sum + (r.farmerRating || r.rating), 0);
+        const average = totalFarmerRating / reviews.length;
         
         const farmerRef = doc(db, FARMERS_COLLECTION, farmerId);
         await updateDoc(farmerRef, {

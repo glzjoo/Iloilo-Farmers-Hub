@@ -1,83 +1,138 @@
-import farmer from '../../assets/images/sample-photo-farmer.jpg';
+// ============================================
+// FILE: src/components/home/SellersNearYou.tsx (DYNAMIC - NO DISTANCE BADGES)
+// ============================================
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
+import type { FarmerWithLocation } from '../../types';
+import FarmerCard from '../shop/FarmerCard';
 
-interface SellerCard {
-    name: string;
-    farmName: string;
-    location: string;
-    distance: number;
-    rating: number;
-    image: string;
-}
-
-const sampleSellers: SellerCard[] = [
-    { name: 'Rey Jane Andrada', farmName: "Rey's Fresh Farm", location: 'Oton, Iloilo', distance: 2.5, rating: 5.0, image: farmer },
-    { name: 'Maria Santos', farmName: "Santos Organic Farm", location: 'Pavia, Iloilo', distance: 4.1, rating: 4.8, image: farmer },
-    { name: 'Juan Dela Cruz', farmName: "Dela Cruz Harvest", location: 'Santa Barbara, Iloilo', distance: 6.3, rating: 4.5, image: farmer },
-    { name: 'Ana Reyes', farmName: "Reyes Green Acres", location: 'San Miguel, Iloilo', distance: 8.0, rating: 4.9, image: farmer },
-    { name: 'Pedro Garcia', farmName: "Garcia Family Farm", location: 'Leganes, Iloilo', distance: 10.2, rating: 4.2, image: farmer },
-];
-
-function StarRating({ rating }: { rating: number }) {
-    return (
-        <div className="flex items-center gap-0.5">
-            {[1, 2, 3, 4, 5].map(star => (
-                <span
-                    key={star}
-                    className={`text-sm leading-none ${star <= Math.round(rating) ? 'text-yellow-500' : 'text-neutral-300'}`}
-                >★</span>
-            ))}
-            <span className="text-xs text-neutral-500 ml-1 font-medium">{rating.toFixed(1)}</span>
-        </div>
-    );
+interface FarmerWithDistance extends FarmerWithLocation {
+  distance: number;
+  formattedDistance: string;
 }
 
 export default function SellersNearYou() {
+    const navigate = useNavigate();
+    const [farmers, setFarmers] = useState<FarmerWithDistance[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchRandomFarmers = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+
+                // Query for verified farmers with locations
+                const farmersQuery = query(
+                    collection(db, 'farmers'),
+                    where('verificationStatus', '==', 'verified'),
+                    where('farmLocation', '!=', null),
+                    limit(20)
+                );
+
+                const snapshot = await getDocs(farmersQuery);
+                
+                if (snapshot.empty) {
+                    setFarmers([]);
+                    setLoading(false);
+                    return;
+                }
+
+                // Convert to array and shuffle
+                const allFarmers = snapshot.docs.map(doc => {
+                    const data = doc.data() as FarmerWithLocation;
+                    return {
+                        ...data,
+                        uid: doc.id,
+                        distance: Math.random() * 14 + 1,
+                        formattedDistance: `${(Math.random() * 14 + 1).toFixed(1)} km`,
+                    } as FarmerWithDistance;
+                });
+
+                // Shuffle array (Fisher-Yates)
+                for (let i = allFarmers.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [allFarmers[i], allFarmers[j]] = [allFarmers[j], allFarmers[i]];
+                }
+
+                // Take first 5 random farmers
+                const randomFarmers = allFarmers.slice(0, 5);
+                
+                // Sort by distance for consistent display
+                randomFarmers.sort((a, b) => a.distance - b.distance);
+                
+                setFarmers(randomFarmers);
+
+            } catch (err: any) {
+                console.error('Error fetching random farmers:', err);
+                setError(err.message || 'Failed to load farmers');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRandomFarmers();
+    }, []);
+
+    const handleViewAll = () => {
+        navigate('/shop', { state: { showNearby: true } });
+    };
+
+    if (loading) {
+        return (
+            <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-12">
+                <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-2xl font-bold text-gray-900">Sellers Near You</h2>
+                </div>
+                <div className="flex justify-center items-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+            </section>
+        );
+    }
+
+    if (error || farmers.length === 0) {
+        return (
+            <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-12">
+                <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-2xl font-bold text-gray-900">Sellers Near You</h2>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-8 text-center">
+                    <p className="text-gray-500">
+                        {error ? 'Unable to load farmers. Please try again later.' : 'No farmers available at the moment.'}
+                    </p>
+                </div>
+            </section>
+        );
+    }
+
     return (
         <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-12">
             <div className="flex items-center justify-between mb-8">
-                <h2 className="font-heading text-2xl font-bold text-primary">Sellers Near You</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Sellers Near You</h2>
+                <button 
+                    onClick={handleViewAll}
+                    className="text-sm text-primary hover:text-green-700 font-medium flex items-center gap-1"
+                >
+                    View All
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
-                {sampleSellers.map((seller, idx) => (
-                    <div
-                        key={idx}
-                        className="group bg-white rounded-xl shadow-sm border border-neutral-300 overflow-hidden cursor-pointer hover:shadow-md hover:border-leaf transition-all duration-200"
-                    >
-                        {/* Photo */}
-                        <div className="relative overflow-hidden">
-                            <img
-                                src={seller.image}
-                                alt={seller.name}
-                                className="w-full h-44 object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                            {/* Distance badge */}
-                            <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1 shadow-sm">
-                                <svg className="w-3 h-3 text-leaf" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                                </svg>
-                                <span className="text-[11px] font-semibold text-primary">{seller.distance} km</span>
-                            </div>
-                        </div>
-
-                        {/* Seller Info */}
-                        <div className="p-3 bg-accent/40">
-                            <h3 className="font-body text-sm font-bold text-primary truncate">{seller.farmName}</h3>
-                            <p className="font-body text-xs text-neutral-500 mt-0.5 truncate">{seller.name}</p>
-                            <div className="flex items-center gap-1 mt-1.5">
-                                <svg className="w-3 h-3 text-neutral-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                                <span className="font-body text-xs text-neutral-500 truncate">{seller.location}</span>
-                            </div>
-                            <div className="mt-2">
-                                <StarRating rating={seller.rating} />
-                            </div>
-                        </div>
-                    </div>
+                {farmers.map((farmer) => (
+                    <FarmerCard 
+                        key={farmer.uid} 
+                        farmer={farmer}
+                        hideDistance={true}  // KEY CHANGE: Hide distance badges
+                    />
                 ))}
             </div>
         </section>
     );
-}
+}

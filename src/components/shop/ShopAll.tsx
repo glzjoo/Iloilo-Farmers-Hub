@@ -1,3 +1,6 @@
+// ============================================
+// FILE: src/components/shop/ShopAll.tsx (FIXED - HIDE DISTANCE IN MANUAL MODE)
+// ============================================
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Fuse from 'fuse.js';
@@ -55,6 +58,23 @@ const isOutOfStock = (stock: string): boolean => {
     const stockMatch = stock.match(/^(\d+)/);
     return stockMatch ? parseInt(stockMatch[1]) === 0 : true;
 };
+
+// Star display component - whole stars only
+function StarDisplay({ rating }: { rating: number }) {
+    const roundedRating = Math.round(rating);
+    return (
+        <div className="flex gap-0.5">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <span 
+                    key={star} 
+                    className={`text-xs ${star <= roundedRating ? 'text-yellow-500' : 'text-gray-300'}`}
+                >
+                    ★
+                </span>
+            ))}
+        </div>
+    );
+}
 
 export default function ShopAll({ 
     searchQuery = '', 
@@ -271,163 +291,136 @@ export default function ShopAll({
         }
     };
 
-    // SELECTION MODE: Show instruction message
-    if (nearbyMode === 'choosing') {
-        return (
-            <div className="w-full">
-                <div className="text-center py-16 bg-gray-50 rounded-lg px-6">
-                    <div className="mb-6">
-                        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                        </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Find Local Farmers</h2>
-                        <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                            Choose between GPS or manual location in the sidebar to discover farmers near you
-                        </p>
-                    </div>
-                    
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                        <button
-                            onClick={() => navigate('/shop')}
-                            className="px-6 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:border-primary hover:text-primary transition-colors"
-                        >
-                            Browse All Products
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    // NEARBY FARMERS RENDER (gps or manual mode)
+    // ==========================================
+    // NEARBY FARMERS DISPLAY SECTION
+    // ==========================================
+    
+    // Show nearby farmers when in GPS or Manual mode
     if (nearbyMode === 'gps' || nearbyMode === 'manual') {
-        // 1. Loading state - show immediately, don't show empty state while loading
+        // Loading state
         if (nearbyLoading) {
             return (
                 <section className="w-full py-8">
                     <div className="max-w-7xl mx-auto px-6">
-                        <div className="flex flex-col justify-center items-center h-64 gap-4">
+                        <div className="flex justify-center items-center h-64">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                            <p className="text-gray-600">
-                                {nearbyMode === 'gps' ? 'Finding farmers near you...' : 'Searching farmers...'}
-                            </p>
+                            <span className="ml-3 text-gray-600">
+                                {isUsingManualLocation ? 'Searching farmers...' : 'Finding your location...'}
+                            </span>
                         </div>
                     </div>
                 </section>
             );
         }
 
-        // 2. Error state
+        // Error state
         if (nearbyError) {
             return (
                 <section className="w-full py-8">
                     <div className="max-w-7xl mx-auto px-6">
-                        <div className="text-center py-16 text-red-500">
-                            <p className="text-xl">{nearbyError}</p>
+                        <div className="text-center py-16">
+                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <p className="text-lg text-red-600 mb-2">Error finding farmers</p>
+                            <p className="text-sm text-gray-500">{nearbyError}</p>
                         </div>
                     </div>
                 </section>
             );
         }
 
-        // 3. Instruction state (manual only, before clicking Apply)
-        if (!hasSearched && nearbyMode === 'manual') {
+        // No farmers found
+        if (nearbyFarmers.length === 0) {
             return (
-                <div className="w-full">
-                    <div className="text-center py-16 bg-gray-50 rounded-lg px-6">
-                        <div className="mb-6">
-                            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <section className="w-full py-8">
+                    <div className="max-w-7xl mx-auto px-6">
+                        <div className="text-center py-16">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                             </div>
-                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Select Location</h2>
-                            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                                Select your city and barangay in the sidebar, then click Apply Location to find farmers
+                            <p className="text-lg text-gray-900 font-medium mb-2">No farmers found</p>
+                            <p className="text-sm text-gray-500 mb-4">
+                                {isUsingManualLocation 
+                                    ? "No verified farmers with active products in this area."
+                                    : "No farmers found within 5km of your location."}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                                Try expanding your search radius or selecting a different location.
                             </p>
                         </div>
                     </div>
-                </div>
+                </section>
             );
         }
 
-        // 4. Empty state (only after search completed and found nothing)
-        if (hasSearched && nearbyFarmers.length === 0) {
-            return (
-                <div className="w-full">
-                    <div className="text-center py-12 bg-gray-50 rounded-lg px-6">
-                        <div className="mb-4">
-                            <svg className="w-16 h-16 text-gray-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        // Show nearby farmers grid
+        // KEY CHANGE: Pass hideDistance=true when in manual mode
+        return (
+            <section className="w-full py-4">
+                <div className="max-w-7xl mx-auto px-6">
+                    {/* Header */}
+                    <div className="mb-6">
+                        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
-                        </div>
-                        
-                        {isUsingManualLocation ? (
-                            <>
-                                <p className="text-xl font-primary text-gray-600 mb-2">
-                                    No farmers found in this area
-                                </p>
-                                <p className="text-sm font-primary text-gray-400 mb-6">
-                                    Try selecting a different city or barangay in the sidebar
-                                </p>
-                            </>
-                        ) : (
-                            <>
-                                <p className="text-xl font-primary text-gray-600 mb-2">
-                                    No farmers within 5km
-                                </p>
-                                <p className="text-sm font-primary text-gray-400 mb-6">
-                                    We couldn't find any active farmers near your current location
-                                </p>
-                            </>
-                        )}
+                            Farmers Near You
+                        </h2>
+                        <p className="text-sm text-gray-500 mt-1">
+                            {isUsingManualLocation 
+                                ? `Showing farmers in selected area (${nearbyFarmers.length} found)`
+                                : `Showing farmers within 5km of your location (${nearbyFarmers.length} found)`}
+                        </p>
+                    </div>
 
-                        <div className="mt-4">
-                            <button
-                                onClick={() => navigate('/shop')}
-                                className="text-sm text-gray-500 hover:text-primary transition"
-                            >
-                                Browse All Products
-                            </button>
-                        </div>
+                    {/* Farmers Grid - hide distance badge in manual mode */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                        {nearbyFarmers.map((farmer) => (
+                            <FarmerCard 
+                                key={farmer.uid} 
+                                farmer={farmer} 
+                                hideDistance={isUsingManualLocation}  // KEY FIX: Hide distance in manual mode
+                            />
+                        ))}
                     </div>
                 </div>
-            );
-        }
-
-        // 5. Results
-        return (
-            <div className="w-full">
-                <div className="mb-6 flex items-center justify-between">
-                    <p className="text-sm text-gray-600">
-                        Found <span className="font-semibold text-primary">{nearbyFarmers.length}</span> {isUsingManualLocation ? 'farmers in this area' : 'farmers nearby'}
-                    </p>
-                    <button
-                        onClick={() => navigate('/shop')}
-                        className="text-sm text-gray-500 hover:text-primary transition"
-                    >
-                        Show all products
-                    </button>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                    {nearbyFarmers.map((farmer) => (
-                        <FarmerCard 
-                            key={farmer.uid} 
-                            farmer={farmer} 
-                            hideDistance={isUsingManualLocation}
-                        />
-                    ))}
-                </div>
-            </div>
+            </section>
         );
     }
 
-    // REGULAR PRODUCTS RENDER (selection mode)
+    // Choosing mode - show message to select GPS or Manual
+    if (nearbyMode === 'choosing') {
+        return (
+            <section className="w-full py-8">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="text-center py-16">
+                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <p className="text-lg text-gray-900 font-medium mb-2">Find Nearby Farmers</p>
+                        <p className="text-sm text-gray-500">
+                            Select a location method from the sidebar to discover farmers near you.
+                        </p>
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
+    // ==========================================
+    // SELECTION MODE: REGULAR PRODUCTS RENDER
+    // ==========================================
+    
     if (loading) {
         return (
             <section className="w-full py-8">
@@ -501,58 +494,61 @@ export default function ShopAll({
                                 )}
                             </div>
 
-                            <div className="flex flex-col mt-2">
-                                <div className="flex items-center justify-between gap-1">
-                                    <h3 className="text-sm font-semibold text-gray-900 truncate flex-1 min-w-0">
-                                        {product.name}
-                                    </h3>
-                                    {product.rating > 0 && (
-                                        <span className="text-xs text-yellow-600 flex-shrink-0">
-                                            ★ {product.rating.toFixed(1)}
-                                        </span>
-                                    )}
-                                </div>
-
-                                <p className="text-primary text-xs font-semibold mt-0.5">
-                                    ₱{product.price.toFixed(2)} / {product.unit}
-                                </p>
-
-                                <p className="text-xs text-gray-500 truncate mt-0.5">
-                                    {product.farmerName}
-                                </p>
-
-                                {(product.soldCount || 0) > 0 && (
-                                    <p className="text-xs text-gray-400 mt-0.5">
-                                        {product.soldCount} sold
-                                    </p>
+                            {/* Product Name + Rating (no count) */}
+                            <div className="flex items-center justify-between mt-2">
+                                <h3 className="text-sm font-semibold text-gray-900 truncate flex-1 min-w-0">
+                                    {product.name}
+                                </h3>
+                                {product.rating > 0 && (
+                                    <div className="flex-shrink-0 ml-1">
+                                        <StarDisplay rating={product.rating} />
+                                    </div>
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-1 mt-2">
-                                <button
-                                    className="bg-transparent border-none cursor-pointer p-0 disabled:opacity-50"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDecrement(product.id);
-                                    }}
-                                    disabled={isOutOfStock(product.stock)}
-                                >
-                                    <img src={minus} alt="Decrease" className="w-7 h-7" />
-                                </button>
-                                <span className="text-sm font-semibold text-gray-900 w-5 text-center">
-                                    {quantities[product.id] || 1}
-                                </span>
-                                <button
-                                    className="bg-transparent border-none cursor-pointer p-0 disabled:opacity-50"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleIncrement(product.id);
-                                    }}
-                                    disabled={isOutOfStock(product.stock)}
-                                >
-                                    <img src={add} alt="Increase" className="w-7 h-7" />
-                                </button>
+                            <p className="text-primary text-xs font-semibold mt-0.5">
+                                ₱{product.price.toFixed(2)} / {product.unit}
+                            </p>
+
+                            {/* REVISED LAYOUT: Farmer name inline with quantity buttons */}
+                            <div className="flex items-center justify-between mt-1.5">
+                                <p className="text-xs text-gray-500 truncate flex-1 mr-2">
+                                    {product.farmerName}
+                                </p>
+                                
+                                {/* Quantity buttons inline */}
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                    <button
+                                        className="bg-transparent border-none cursor-pointer p-0 disabled:opacity-50"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDecrement(product.id);
+                                        }}
+                                        disabled={isOutOfStock(product.stock)}
+                                    >
+                                        <img src={minus} alt="Decrease" className="w-6 h-6" />
+                                    </button>
+                                    <span className="text-sm font-semibold text-gray-900 w-4 text-center">
+                                        {quantities[product.id] || 1}
+                                    </span>
+                                    <button
+                                        className="bg-transparent border-none cursor-pointer p-0 disabled:opacity-50"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleIncrement(product.id);
+                                        }}
+                                        disabled={isOutOfStock(product.stock)}
+                                    >
+                                        <img src={add} alt="Increase" className="w-6 h-6" />
+                                    </button>
+                                </div>
                             </div>
+
+                            {(product.soldCount || 0) > 0 && (
+                                <p className="text-xs text-gray-400 mt-1">
+                                    {product.soldCount} sold
+                                </p>
+                            )}
 
                             <button
                                 className="w-full bg-primary flex items-center justify-center gap-2 text-white text-sm font-medium px-4 py-2 rounded-2xl border-none cursor-pointer mb-5 mt-2 hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"

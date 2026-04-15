@@ -1,3 +1,6 @@
+// ============================================
+// FILE: src/components/shop/FarmerCard.tsx (FIXED)
+// ============================================
 import { useNavigate } from 'react-router-dom';
 import type { FarmerWithLocation } from '../../types';
 
@@ -9,20 +12,20 @@ interface FarmerCardProps {
   hideDistance?: boolean;
 }
 
-function StarRating({ rating }: { rating: number }) {
+function StarDisplay({ rating }: { rating: number }) {
+  const roundedRating = Math.round(rating);
   return (
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((star) => (
         <span
           key={star}
           className={`text-sm leading-none ${
-            star <= Math.round(rating) ? 'text-yellow-500' : 'text-gray-300'
+            star <= roundedRating ? 'text-yellow-500' : 'text-gray-300'
           }`}
         >
           ★
         </span>
       ))}
-      <span className="text-xs text-gray-500 ml-1 font-medium">{rating.toFixed(1)}</span>
     </div>
   );
 }
@@ -34,18 +37,20 @@ export default function FarmerCard({ farmer, hideDistance = false }: FarmerCardP
     navigate(`/farmer/${farmer.uid}`);
   };
 
-  // Get location display string
   const locationDisplay = farmer.farmLocation
     ? `${farmer.farmLocation.barangay}, ${farmer.farmLocation.city}`
     : farmer.farmAddress || 'Location not specified';
 
-  // Get distance badge color (only used when not hidden)
   const getDistanceColor = (distance: number): string => {
     if (distance <= 1) return 'bg-green-100 text-green-700';
     if (distance <= 2.5) return 'bg-blue-100 text-blue-700';
     if (distance <= 5) return 'bg-yellow-100 text-yellow-700';
     return 'bg-gray-100 text-gray-700';
   };
+
+  // Use actual farmer rating from data, fallback to 0 if not available
+  const farmerRating = farmer.averageRating || 0;
+  const hasRating = farmerRating > 0;
 
   return (
     <div
@@ -60,7 +65,7 @@ export default function FarmerCard({ farmer, hideDistance = false }: FarmerCardP
           className="w-full h-44 object-cover transition-transform duration-300 group-hover:scale-105"
         />
         
-        {/* Distance Badge - Hidden for manual location */}
+        {/* Distance Badge */}
         {!hideDistance && (
           <div className={`absolute top-2 right-2 rounded-full px-2.5 py-1 flex items-center gap-1 shadow-sm ${getDistanceColor(farmer.distance)}`}>
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -109,9 +114,18 @@ export default function FarmerCard({ farmer, hideDistance = false }: FarmerCardP
           <span className="text-xs text-gray-400 truncate">{locationDisplay}</span>
         </div>
 
-        {/* Rating - placeholder for now, can be connected to review system */}
-        <div className="mt-2">
-          <StarRating rating={4.5} />
+        {/* Rating - Using actual farmer rating data */}
+        <div className="mt-2 flex items-center gap-1">
+          {hasRating ? (
+            <>
+              <StarDisplay rating={farmerRating} />
+              <span className="text-xs text-gray-500 ml-1 font-medium">
+                {Math.round(farmerRating)}
+              </span>
+            </>
+          ) : (
+            <span className="text-xs text-gray-400">No ratings yet</span>
+          )}
         </div>
       </div>
     </div>

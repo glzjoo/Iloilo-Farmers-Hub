@@ -8,7 +8,7 @@ import {
     getConsumerProfilesForReviews
 } from '../../services/reviewService';
 import type { Review } from '../../types';
-
+//ReviewSection
 export default function ReviewSection() {
     /* remove for now this is previously the  review section for landing*/
     const navigate = useNavigate();

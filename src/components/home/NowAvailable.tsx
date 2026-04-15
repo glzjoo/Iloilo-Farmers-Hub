@@ -1,7 +1,27 @@
+// ============================================
+// FILE: src/components/home/NowAvailable.tsx 
+// ============================================
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Product } from '../../types';
 import { getNewArrivals } from '../../services/shopService';
+
+// Star display component - whole stars only
+function StarDisplay({ rating }: { rating: number }) {
+    const roundedRating = Math.round(rating);
+    return (
+        <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <span 
+                    key={star} 
+                    className={`text-xs ${star <= roundedRating ? 'text-yellow-400' : 'text-gray-400'}`}
+                >
+                    ★
+                </span>
+            ))}
+        </div>
+    );
+}
 
 export default function NowAvailable() {
     const navigate = useNavigate();
@@ -74,13 +94,18 @@ export default function NowAvailable() {
                             alt={product.name}
                             className="w-full h-full object-cover transition-transform group-hover:scale-105"
                         />
-                        <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center pb-6 pt-16 bg-gradient-to-t from-black/70 to-transparent">
-                            <p className="font-body text-xs font-semibold uppercase tracking-widest text-white/70 mb-1">Now Available</p>
-                            <h3 className="font-heading text-xl font-bold text-white mb-1 capitalize">{product.name}</h3>
-                            <p className="font-body text-white/90 text-sm mb-1">₱{product.price.toFixed(2)} / {product.unit}</p>
+                        <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center pb-6 pt-16 bg-gradient-to-t from-black/60 to-transparent">
+                            <p className="text-sm text-white/80">Now Available</p>
+                            <h3 className="text-xl font-bold text-white mb-1">{product.name}</h3>
+                            <p className="text-white/90 text-sm mb-2">₱{product.price.toFixed(2)} / {product.unit}</p>
+                            
+                            {/* Stars only - no count */}
                             {product.rating > 0 && (
-                                <p className="text-yellow-400 text-xs mb-3">★ {product.rating.toFixed(1)}</p>
+                                <div className="mb-2">
+                                    <StarDisplay rating={product.rating} />
+                                </div>
                             )}
+                            
                             <button 
                                 className="font-body bg-white text-primary font-semibold rounded-full px-6 py-2 text-sm cursor-pointer hover:bg-accent active:scale-95 transition-all duration-200"
                                 onClick={(e) => {

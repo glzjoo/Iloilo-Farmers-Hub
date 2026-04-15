@@ -7,7 +7,7 @@ import { db } from '../lib/firebase';
 import ReviewFarmerDetails from '../components/reviews/ReviewFarmerdetails';
 import defaultProductImage from '../assets/images/item-pictures/okra.png';
 import defaultFarmerImage from '../assets/images/sample-photo-farmer.jpg';
-
+//reviewFarmer
 interface LocationState {
   productId?: string;
   farmerId?: string;
