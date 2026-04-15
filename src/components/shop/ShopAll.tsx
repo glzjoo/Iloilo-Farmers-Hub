@@ -1,5 +1,5 @@
 // ============================================
-// FILE: src/components/shop/ShopAll.tsx (REVISED LAYOUT)
+// FILE: src/components/shop/ShopAll.tsx (FIXED - HIDE DISTANCE IN MANUAL MODE)
 // ============================================
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -291,9 +291,136 @@ export default function ShopAll({
         }
     };
 
-    // NEARBY MODES (unchanged)...
+    // ==========================================
+    // NEARBY FARMERS DISPLAY SECTION
+    // ==========================================
+    
+    // Show nearby farmers when in GPS or Manual mode
+    if (nearbyMode === 'gps' || nearbyMode === 'manual') {
+        // Loading state
+        if (nearbyLoading) {
+            return (
+                <section className="w-full py-8">
+                    <div className="max-w-7xl mx-auto px-6">
+                        <div className="flex justify-center items-center h-64">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                            <span className="ml-3 text-gray-600">
+                                {isUsingManualLocation ? 'Searching farmers...' : 'Finding your location...'}
+                            </span>
+                        </div>
+                    </div>
+                </section>
+            );
+        }
 
+        // Error state
+        if (nearbyError) {
+            return (
+                <section className="w-full py-8">
+                    <div className="max-w-7xl mx-auto px-6">
+                        <div className="text-center py-16">
+                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <p className="text-lg text-red-600 mb-2">Error finding farmers</p>
+                            <p className="text-sm text-gray-500">{nearbyError}</p>
+                        </div>
+                    </div>
+                </section>
+            );
+        }
+
+        // No farmers found
+        if (nearbyFarmers.length === 0) {
+            return (
+                <section className="w-full py-8">
+                    <div className="max-w-7xl mx-auto px-6">
+                        <div className="text-center py-16">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                            </div>
+                            <p className="text-lg text-gray-900 font-medium mb-2">No farmers found</p>
+                            <p className="text-sm text-gray-500 mb-4">
+                                {isUsingManualLocation 
+                                    ? "No verified farmers with active products in this area."
+                                    : "No farmers found within 5km of your location."}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                                Try expanding your search radius or selecting a different location.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+            );
+        }
+
+        // Show nearby farmers grid
+        // KEY CHANGE: Pass hideDistance=true when in manual mode
+        return (
+            <section className="w-full py-4">
+                <div className="max-w-7xl mx-auto px-6">
+                    {/* Header */}
+                    <div className="mb-6">
+                        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Farmers Near You
+                        </h2>
+                        <p className="text-sm text-gray-500 mt-1">
+                            {isUsingManualLocation 
+                                ? `Showing farmers in selected area (${nearbyFarmers.length} found)`
+                                : `Showing farmers within 5km of your location (${nearbyFarmers.length} found)`}
+                        </p>
+                    </div>
+
+                    {/* Farmers Grid - hide distance badge in manual mode */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                        {nearbyFarmers.map((farmer) => (
+                            <FarmerCard 
+                                key={farmer.uid} 
+                                farmer={farmer} 
+                                hideDistance={isUsingManualLocation}  // KEY FIX: Hide distance in manual mode
+                            />
+                        ))}
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
+    // Choosing mode - show message to select GPS or Manual
+    if (nearbyMode === 'choosing') {
+        return (
+            <section className="w-full py-8">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="text-center py-16">
+                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <p className="text-lg text-gray-900 font-medium mb-2">Find Nearby Farmers</p>
+                        <p className="text-sm text-gray-500">
+                            Select a location method from the sidebar to discover farmers near you.
+                        </p>
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
+    // ==========================================
     // SELECTION MODE: REGULAR PRODUCTS RENDER
+    // ==========================================
+    
     if (loading) {
         return (
             <section className="w-full py-8">
