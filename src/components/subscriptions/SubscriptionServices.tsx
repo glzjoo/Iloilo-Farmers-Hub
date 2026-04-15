@@ -34,15 +34,15 @@ const services = [
 
 export default function SubscriptionServices() {
     return (
-        <section className="w-full py-16 px-10">
-            <div className="flex flex-wrap justify-center gap-12 max-w-3xl mx-auto">
+        <section className="w-full py-10 sm:py-16 px-4 sm:px-10">
+            <div className="flex flex-wrap justify-center gap-6 sm:gap-12 max-w-3xl mx-auto">
                 {services.map((service, index) => (
                     <div
                         key={index}
-                        className={`w-72 p-6 h-50 border-2 border-gray-200 rounded-2xl ${index === services.length - 1 ? '' : ''}`}
+                        className={`w-full sm:w-72 p-5 sm:p-6 border-2 border-gray-200 rounded-2xl`}
                     >
                         <img src={service.icon} alt={service.title} className="w-12 h-12 mb-4" />
-                        <h3 className="text-lg font-primary font-bold text-black mb-2">{service.title}</h3>
+                        <h3 className="text-base sm:text-lg font-primary font-bold text-black mb-2">{service.title}</h3>
                         <p className="text-sm font-primary text-gray-600">{service.description}</p>
                     </div>
                 ))}

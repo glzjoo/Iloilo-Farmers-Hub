@@ -53,9 +53,9 @@ export default function NowAvailable() {
     if (loading) {
         return (
             <section className="w-full py-8">
-                <div className="flex flex-wrap gap-4 justify-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto px-4 sm:px-6">
                     {[...Array(4)].map((_, i) => (
-                        <div key={i} className="w-[300px] h-[510px] bg-gray-200 rounded-lg animate-pulse"></div>
+                        <div key={i} className="w-full h-[400px] sm:h-[510px] bg-gray-200 rounded-lg animate-pulse"></div>
                     ))}
                 </div>
             </section>
@@ -65,8 +65,8 @@ export default function NowAvailable() {
     if (error || products.length === 0) {
         return (
             <section className="w-full py-8">
-                <div className="flex flex-wrap gap-4 justify-center">
-                    <div className="text-center py-12 text-gray-500 w-full">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto px-4 sm:px-6">
+                    <div className="text-center py-12 text-gray-500 col-span-full">
                         <p>Check back soon for fresh arrivals!</p>
                         <button
                             onClick={() => navigate('/shop')}
@@ -82,11 +82,11 @@ export default function NowAvailable() {
 
     return (
         <section className="w-full py-8">
-            <div className="flex flex-wrap gap-4 justify-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto px-4 sm:px-6">
                 {products.map((product) => (
                     <div
                         key={product.id}
-                        className="relative w-[300px] h-[510px] rounded-lg overflow-hidden cursor-pointer group"
+                        className="relative w-full h-[400px] sm:h-[510px] rounded-lg overflow-hidden cursor-pointer group"
                         onClick={() => handleProductClick(product.id)}
                     >
                         <img

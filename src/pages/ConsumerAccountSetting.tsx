@@ -8,7 +8,7 @@ export default function ConsumerAccountSetting() {
     const [activeTab, setActiveTab] = useState<'edit-profile' | 'security'>('edit-profile');
 
     return (
-        <section className="w-full max-w-6xl mx-auto px-10 py-8 min-h-screen">
+        <section className="w-full max-w-6xl mx-auto px-4 sm:px-10 py-8 min-h-screen">
             {/* Header */}
             <div className="flex items-center gap-3 mb-8">
                 <img src={settingIcon} alt="" className="w-8 h-8" />
@@ -19,9 +19,9 @@ export default function ConsumerAccountSetting() {
             </div>
 
 
-            <div className="flex gap-6">
-                {/* Sidebar */}
-                <div className="w-[200px] shrink-0">
+            <div className="flex flex-col md:flex-row gap-6">
+                {/* Sidebar — horizontal on mobile, vertical on md+ */}
+                <div className="flex flex-row md:flex-col md:w-[200px] gap-1 overflow-x-auto shrink-0 border-b md:border-b-0 pb-2 md:pb-0">
                     <button
                         onClick={() => setActiveTab('edit-profile')}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-r-lg text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'edit-profile'

@@ -11,9 +11,9 @@ export default function HeroSection() {
                 />
             </div>
 
-            <div className="flex flex-col justify-center bg-gray-50 px-10 py-12 md:px-16">
-                <p className="text-sm uppercase tracking-widest text-gray-500 mb-2">Iloilo City</p>
-                <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight mb-4">
+            <div className="flex flex-col justify-center bg-gray-50 px-6 py-8 sm:px-10 sm:py-12 md:px-16">
+                <p className="text-xs sm:text-sm uppercase tracking-widest text-gray-500 mb-2">Iloilo City</p>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight mb-4">
                     Shop Fresh.<br />Support Local.
                 </h1>
                 <p className="text-gray-500 text-base mb-6 max-w-md">

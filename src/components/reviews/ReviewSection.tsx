@@ -88,11 +88,11 @@ export default function ReviewSection() {
     if (loading) {
         return (
             <section className="w-full py-12">
-                <div className="max-w-7xl mx-auto px-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-10">
                     <div className="flex items-center gap-6 mb-8 border-b border-gray-300 pb-3">
                         <h2 className="text-lg font-bold text-dark border-b-2 border-black pb-1">Product Reviews</h2>
                     </div>
-                    <div className="flex items-start gap-16">
+                    <div className="flex items-start gap-6 sm:gap-16 flex-col sm:flex-row">
                         <div className="flex flex-col items-start animate-pulse">
                             <div className="w-20 h-16 bg-gray-200 rounded mb-2"></div>
                             <div className="w-28 h-4 bg-gray-200 rounded"></div>
@@ -119,7 +119,7 @@ export default function ReviewSection() {
     if (error || reviews.length === 0) {
         return (
             <section className="w-full py-12">
-                <div className="max-w-7xl mx-auto px-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-10">
                     <div className="flex items-center gap-6 mb-8 border-b border-gray-300 pb-3">
                         <h2 className="text-lg font-bold text-dark border-b-2 border-black pb-1">Product Reviews</h2>
                     </div>
@@ -133,12 +133,12 @@ export default function ReviewSection() {
 
     return (
         <section className="w-full py-12">
-            <div className="max-w-7xl mx-auto px-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-10">
                 <div className="flex items-center gap-6 mb-8 border-b border-gray-300 pb-3">
                     <h2 className="text-lg font-bold text-dark cursor-pointer border-b-2 border-black pb-1">Product Reviews</h2>
                 </div>
                 
-                <div className="flex items-start gap-16">
+                <div className="flex items-start gap-6 sm:gap-16 flex-col sm:flex-row">
                     <div className="flex flex-col items-start">
                         <p className="text-6xl font-bold text-dark leading-none">{stats.averageRating.toFixed(2)}</p>
                         <div className="flex items-center mt-2 -ml-1">

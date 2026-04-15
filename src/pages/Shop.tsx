@@ -216,12 +216,12 @@ export default function Shop() {
                 
                 <div className="flex-1 min-w-0">
                     {nearbyMode === 'selection' && (
-                        <div className="flex flex-wrap justify-center gap-2 mb-6">
+                        <div className="flex overflow-x-auto gap-2 mb-6 pb-2 -mx-2 px-2 scrollbar-hide">
                             {CATEGORIES.map(category => (
                                 <button
                                     key={category}
                                     onClick={() => handleTopCategoryClick(category)}
-                                    className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                                    className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${
                                         activeTopCategory === category
                                             ? 'bg-primary text-white border border-primary'
                                             : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'

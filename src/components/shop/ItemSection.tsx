@@ -159,7 +159,7 @@ export default function ItemSection({ productId: propProductId, product: propPro
     if (error || !product) {
         return (
             <section className="w-full py-12">
-                <div className="max-w-4xl mx-auto px-10 text-center">
+                <div className="max-w-4xl mx-auto px-4 sm:px-10 text-center">
                     <p className="text-red-500 text-xl">{error || 'Product not found'}</p>
                     <button
                         onClick={() => navigate('/shop')}
@@ -178,9 +178,9 @@ export default function ItemSection({ productId: propProductId, product: propPro
 
     return (
         <section className="w-full py-12">
-            <div className="max-w-4xl mx-auto px-10 flex gap-10">
+            <div className="max-w-4xl mx-auto px-4 sm:px-10 flex flex-col md:flex-row gap-6 md:gap-10">
 
-                <div className="flex flex-col items-center w-[320px] flex-shrink-0">
+                <div className="flex flex-col items-center w-full md:w-[320px] flex-shrink-0">
                     <div className="w-full h-[260px] rounded-xl overflow-hidden mb-3 bg-gray-100">
                         <img
                             src={product.image || '/placeholder-product.png'}
@@ -191,9 +191,9 @@ export default function ItemSection({ productId: propProductId, product: propPro
                 </div>
 
                 <div className="flex-1">
-                    <div className="flex items-baseline gap-4 mb-1">
-                        <h1 className="text-3xl font-primary font-bold text-black">{product.name}</h1>
-                        <span className="text-2xl font-primary text-gray-600">(₱{product.price} per {product.unit})</span>
+                    <div className="flex flex-wrap items-baseline gap-2 sm:gap-4 mb-1">
+                        <h1 className="text-2xl sm:text-3xl font-primary font-bold text-black">{product.name}</h1>
+                        <span className="text-lg sm:text-2xl font-primary text-gray-600">(₱{product.price} per {product.unit})</span>
                     </div>
                     
                     {/* Updated Rating Display */}
@@ -210,7 +210,7 @@ export default function ItemSection({ productId: propProductId, product: propPro
                         )}
                     </div>
 
-                    <p className="text-3xl font-primary font-bold text-primary mb-4">₱{product.price.toFixed(2)}</p>
+                    <p className="text-2xl sm:text-3xl font-primary font-bold text-primary mb-4">₱{product.price.toFixed(2)}</p>
 
                     <div className="flex gap-4 mb-2">
                         <span className="text-sm font-primary text-gray-500 w-20">Category:</span>
@@ -253,7 +253,7 @@ export default function ItemSection({ productId: propProductId, product: propPro
                         </div>
                     </div>
 
-                    <div className="flex gap-4 mt-16">
+                    <div className="flex flex-wrap gap-3 sm:gap-4 mt-8 md:mt-16">
                         <button
                             onClick={handleAddToCart}
                             disabled={isOutOfStock || addingToCart}

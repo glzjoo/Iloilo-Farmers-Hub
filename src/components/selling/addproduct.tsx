@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import AddProductImage from "./AddProductImage";
+import AddProductImage from "./addproductimage";
 import { useAuth } from "../../context/AuthContext";
 import { addProduct } from "../../services/productService";
 import type { Product } from "../../types";
@@ -113,9 +113,9 @@ export default function AddProduct() {
     };
 
     return (
-        <section className="px-20 py-10">
+        <section className="px-4 sm:px-10 md:px-20 py-6 sm:py-10">
             <div className="mb-6">
-                <h1 className="text-4xl font-bold font-primary">Add New Product</h1>
+                <h1 className="text-2xl sm:text-4xl font-bold font-primary">Add New Product</h1>
                 <p className="mt-2 text-gray-500">Fill in the details for your new product</p>
             </div>
 
@@ -126,10 +126,10 @@ export default function AddProduct() {
             )}
 
             <form onSubmit={handleSubmit}>
-                <div className="flex gap-8 items-start">
+                <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
                     {/* Form fields */}
-                    <div className="w-[55%]">
-                        <div className="grid grid-cols-2 gap-x-10 gap-y-5">
+                    <div className="w-full md:w-[55%]">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 sm:gap-x-10 gap-y-5">
                             {/* Product Name */}
                             <div>
                                 <label className={labelClass}>
@@ -298,7 +298,7 @@ export default function AddProduct() {
                             </div>
 
                             {/* Description */}
-                            <div className="col-span-2">
+                            <div className="col-span-1 sm:col-span-2">
                                 <label className={labelClass}>
                                     Description <span className="text-red-500">*</span>
                                 </label>
@@ -316,7 +316,7 @@ export default function AddProduct() {
                     </div>
 
                     {/* Image upload */}
-                    <div className="w-[35%]">
+                    <div className="w-full md:w-[35%]">
                         <AddProductImage onImageSelect={setSelectedImage} />
 
                         {!selectedImage && (
