@@ -1,8 +1,13 @@
+// ============================================
+// FILE: src/components/cart/ItemsCheckout.tsx (FIXED)
+// ============================================
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { doc, onSnapshot } from 'firebase/firestore';
 import CartItem from './CartItem';
 import { useAuth } from '../../context/AuthContext';
-import { getCart, removeFromCart, updateCartItemQuantity } from '../../services/cartService';
+import { db } from '../../lib/firebase';
+import { removeFromCart, updateCartItemQuantity } from '../../services/cartService';
 import type { CartItem as CartItemType } from '../../types';
 
 export default function ItemsCheckout() {
@@ -14,25 +19,42 @@ export default function ItemsCheckout() {
     const [updatingItem, setUpdatingItem] = useState<string | null>(null);
 
     useEffect(() => {
-        const fetchCart = async () => {
-            if (!user) {
-                setLoading(false);
-                return;
-            }
+        if (!user) {
+            setLoading(false);
+            setCartItems([]);
+            return;
+        }
 
-            try {
-                setLoading(true);
-                const items = await getCart(user.uid);
-                setCartItems(items);
-            } catch (err: any) {
-                setError(err.message || 'Failed to fetch cart');
-            } finally {
+        console.log('Setting up cart listener for user:', user.uid);
+        const cartRef = doc(db, 'carts', user.uid);
+        
+        const unsubscribe = onSnapshot(
+            cartRef,
+            (docSnapshot) => {
+                console.log('Cart snapshot received:', docSnapshot.exists(), docSnapshot.data());
+                if (docSnapshot.exists()) {
+                    const data = docSnapshot.data();
+                    const items = data.items || [];
+                    console.log('Cart items count:', items.length);
+                    setCartItems(items);
+                } else {
+                    console.log('Cart document does not exist yet');
+                    setCartItems([]);
+                }
+                setLoading(false);
+            },
+            (err) => {
+                console.error('Cart listener error:', err);
+                setError('Failed to load cart: ' + err.message);
                 setLoading(false);
             }
+        );
+
+        return () => {
+            console.log('Cleaning up cart listener');
+            unsubscribe();
         };
-
-        fetchCart();
-    }, [user]);
+    }, [user?.uid]); // Only re-run if user ID changes
 
     const handleQuantityChange = async (productId: string, newQuantity: number) => {
         if (!user || newQuantity < 1) return;
@@ -40,11 +62,7 @@ export default function ItemsCheckout() {
         setUpdatingItem(productId);
         try {
             await updateCartItemQuantity(user.uid, productId, newQuantity);
-            setCartItems(prev => prev.map(item =>
-                item.productId === productId
-                    ? { ...item, quantity: newQuantity }
-                    : item
-            ));
+            // State updates automatically via onSnapshot
         } catch (err: any) {
             alert(err.message || 'Failed to update quantity');
         } finally {
@@ -54,12 +72,11 @@ export default function ItemsCheckout() {
 
     const handleRemove = async (productId: string) => {
         if (!user) return;
-
         if (!confirm('Are you sure you want to remove this item?')) return;
 
         try {
             await removeFromCart(user.uid, productId);
-            setCartItems(prev => prev.filter(item => item.productId !== productId));
+            // State updates automatically via onSnapshot
         } catch (err: any) {
             alert(err.message || 'Failed to remove item');
         }

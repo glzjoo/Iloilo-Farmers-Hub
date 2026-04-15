@@ -1,10 +1,11 @@
 // ============================================
-// FILE: src/components/shop/ItemSection.tsx (COMPLETE)
+// FILE: src/components/shop/ItemSection.tsx (FIXED - ADD TO CART ACTUALLY WORKS)
 // ============================================
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import type { Product } from '../../types';
 import { getProductById } from '../../services/shopService';
+import { addToCart } from '../../services/cartService'; // ADD THIS IMPORT
 import { useAuth } from '../../context/AuthContext';
 import ActionGuardModal from '../common/ActionGuardModal';
 
@@ -42,6 +43,7 @@ export default function ItemSection({ productId: propProductId, product: propPro
     const [loading, setLoading] = useState(!propProduct);
     const [error, setError] = useState('');
     const [quantity, setQuantity] = useState(1);
+    const [addingToCart, setAddingToCart] = useState(false); // ADD loading state
     
     const [showCartModal, setShowCartModal] = useState(false);
     const [showMessageModal, setShowMessageModal] = useState(false);
@@ -109,7 +111,8 @@ export default function ItemSection({ productId: propProductId, product: propPro
         });
     };
 
-    const handleAddToCart = () => {
+    // FIXED: Actually calls addToCart service
+    const handleAddToCart = async () => {
         const role = checkUserRole();
         
         if (role !== 'consumer') {
@@ -117,9 +120,30 @@ export default function ItemSection({ productId: propProductId, product: propPro
             return;
         }
 
-        if (!product) return;
-        console.log(`Added ${quantity} ${product.unit} of ${product.name} to cart`);
-        alert(`Added ${quantity} ${product.unit} of ${product.name} to cart`);
+        if (!product || !user) return;
+        
+        setAddingToCart(true);
+        try {
+            const stockValue = parseInt(product.stock.match(/^(\d+)/)?.[1] || '0');
+            
+            await addToCart(user.uid, {
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                unit: product.unit,
+                image: product.image,
+                farmerId: product.farmerId,
+                farmerName: product.farmerName || 'Unknown Farmer',
+                stock: stockValue,
+            }, quantity);
+
+            alert(`Added ${quantity} ${product.unit} of ${product.name} to cart!`);
+        } catch (err: any) {
+            console.error('Add to cart error:', err);
+            alert('Failed to add to cart: ' + err.message);
+        } finally {
+            setAddingToCart(false);
+        }
     };
 
     if (loading) {
@@ -232,10 +256,10 @@ export default function ItemSection({ productId: propProductId, product: propPro
                     <div className="flex gap-4 mt-16">
                         <button
                             onClick={handleAddToCart}
-                            disabled={isOutOfStock}
+                            disabled={isOutOfStock || addingToCart}
                             className="px-8 py-2.5 border-2 border-primary text-primary font-primary font-semibold rounded-full cursor-pointer bg-white hover:bg-green-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300 disabled:cursor-not-allowed"
                         >
-                            {isOutOfStock ? 'Out of Stock' : 'Add to cart'}
+                            {addingToCart ? 'Adding...' : isOutOfStock ? 'Out of Stock' : 'Add to cart'}
                         </button>
                         <button
                             onClick={handleMessageSeller}
