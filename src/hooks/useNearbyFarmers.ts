@@ -18,7 +18,7 @@ import {
   type Coordinates,
 } from '../services/locationService';
 import iloiloBarangays from '../data/iloilo-barangays.json';
-
+//useNearbyFarmers
 interface NearbyFarmerResult extends FarmerWithLocation {
   distance: number;
   formattedDistance: string;

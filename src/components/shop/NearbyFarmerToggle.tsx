@@ -5,7 +5,7 @@ import {
   typedBarangays,
   type Coordinates,
 } from '../../hooks/useNearbyFarmers';
-
+//NearbyFarmerToggle.tsx
 type NearbyMode = 'selection' | 'choosing' | 'gps' | 'manual';
 
 interface NearbyFarmerToggleProps {

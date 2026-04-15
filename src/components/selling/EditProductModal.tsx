@@ -4,7 +4,7 @@ import type { Product } from "../../types";
 import addtocart from '../../assets/icons/add-to-cart.svg';
 import minus from '../../assets/icons/minus.svg';
 import { updateProduct } from "../../services/productService";
-
+//editProductModall
 interface EditProductModalProps {
     product: Product;
     onClose: () => void;
