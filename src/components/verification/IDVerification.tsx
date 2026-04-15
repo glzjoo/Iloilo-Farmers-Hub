@@ -25,7 +25,7 @@ const idVerificationSchema = z.object({
 
 type IDVerificationFormData = z.infer<typeof idVerificationSchema>;
 
-const API_URL = import.meta.env.VITE_VERIFICATION_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_VERIFICATION_API_URL || 'https://asia-southeast1-iloilo-farmers-hub.cloudfunctions.net';
 
 export default function IDVerification() {
   const navigate = useNavigate();
