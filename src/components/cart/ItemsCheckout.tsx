@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
 import CartItem from './CartItem';
+import ConfirmationModal from '../common/ConfirmationModal';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
 import { removeFromCart, updateCartItemQuantity } from '../../services/cartService';
@@ -17,6 +18,7 @@ export default function ItemsCheckout() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [updatingItem, setUpdatingItem] = useState<string | null>(null);
+    const [pendingRemoveProductId, setPendingRemoveProductId] = useState<string | null>(null);
 
     useEffect(() => {
         if (!user) {
@@ -70,12 +72,20 @@ export default function ItemsCheckout() {
         }
     };
 
-    const handleRemove = async (productId: string) => {
-        if (!user) return;
-        if (!confirm('Are you sure you want to remove this item?')) return;
+    const handleRemove = (productId: string) => {
+        setPendingRemoveProductId(productId);
+    };
 
+    const closeRemoveConfirmation = () => {
+        setPendingRemoveProductId(null);
+    };
+
+    const handleConfirmRemove = async () => {
+        if (!user || !pendingRemoveProductId) return;
+
+        setPendingRemoveProductId(null);
         try {
-            await removeFromCart(user.uid, productId);
+            await removeFromCart(user.uid, pendingRemoveProductId);
             // State updates automatically via onSnapshot
         } catch (err: any) {
             alert(err.message || 'Failed to remove item');
@@ -195,6 +205,17 @@ export default function ItemsCheckout() {
                     </>
                 )}
             </div>
+
+            <ConfirmationModal
+                isOpen={Boolean(pendingRemoveProductId)}
+                title="Remove item"
+                message="Are you sure you want to remove this item from your cart?"
+                confirmLabel="Remove"
+                cancelLabel="Keep item"
+                onConfirm={handleConfirmRemove}
+                onCancel={closeRemoveConfirmation}
+                variant="warning"
+            />
         </section>
     );
 }
