@@ -2,6 +2,7 @@ import HeroSection from "../components/home/HeroSection";
 import StatsBar from "../components/layout/StatsBar";
 import BestSellers from "../components/home/BestSellers";
 import NowAvailable from "../components/home/NowAvailable";
+import ReviewSection from "../components/reviews/ReviewSection";
 import SellersNearYou from "../components/home/SellersNearYou";
 
 export default function LandingPage() {
@@ -17,9 +18,11 @@ export default function LandingPage() {
             </div>
 
             {/* NowAvailable with top margin for extra space */}
-            <div className="mt-5 mb-11">
+            <div className="mt-5">
                 <NowAvailable />
             </div>
+
+            <ReviewSection />
         </main>
     );
 }

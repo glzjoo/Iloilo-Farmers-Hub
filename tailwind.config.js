@@ -7,24 +7,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        neutral: {
-          black: '#000000',
-          900: '#1A1A1A',
-          500: '#6B6B6B',
-          300: '#D4D4D4',
-          100: '#F5F5F5',
-          white: '#FFFFFF',
-        },
-
-        primary: '#172E03',
-        secondary: '#68B629',
-        accent: '#E9FADB',
+        primary: '#2E7D32',  // use text-primary
+        dark: '#1E1E1E',  // use text-dark
+        secondary: '#56BB5B',
       },
 
       fontFamily: {
-        primary: ['"Coolvetica"', 'sans-serif'],
-        secondary: ['"Inter"', 'sans-serif'],
-        heading: ['"Coolvetica"', 'sans-serif'],
+        heading: ['"Merriweather Sans"', 'sans-serif'], // use font-heading
+        body: ['"Open Sans"', 'sans-serif'], // use font-body
       },
 
     },
