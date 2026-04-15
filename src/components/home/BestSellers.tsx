@@ -1,3 +1,6 @@
+// ============================================
+// FILE: src/components/home/BestSellers.tsx 
+// ============================================
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import filter from '../../assets/icons/Filter.svg';
@@ -5,6 +8,23 @@ import buyItem from '../../assets/icons/buy-item.svg';
 import addtocart from '../../assets/icons/add-to-cart.svg';
 import type { Product } from '../../types';
 import { getBestSellers } from '../../services/shopService';
+
+// Star display component - whole stars only
+function StarDisplay({ rating }: { rating: number }) {
+    const roundedRating = Math.round(rating);
+    return (
+        <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <span 
+                    key={star} 
+                    className={`text-xs ${star <= roundedRating ? 'text-yellow-500' : 'text-gray-300'}`}
+                >
+                    ★
+                </span>
+            ))}
+        </div>
+    );
+}
 
 export default function BestSellers() {
     const navigate = useNavigate();
@@ -16,7 +36,7 @@ export default function BestSellers() {
         const fetchBestSellers = async () => {
             try {
                 setLoading(true);
-                const fetched = await getBestSellers(15); // Target 15, fallback 10→5
+                const fetched = await getBestSellers(15);
                 setProducts(fetched);
             } catch (err) {
                 console.error('Error loading best sellers:', err);
@@ -33,7 +53,6 @@ export default function BestSellers() {
         navigate(`/item/${productId}`);
     };
 
-    // Loading skeleton
     if (loading) {
         return (
             <section className="w-full py-8">
@@ -55,7 +74,6 @@ export default function BestSellers() {
         );
     }
 
-    // Error state
     if (error || products.length === 0) {
         return (
             <section className="w-full py-8">
@@ -113,8 +131,11 @@ export default function BestSellers() {
                                     <p className="font-body text-leaf text-xs font-semibold">
                                         ₱{product.price.toFixed(2)} / {product.unit}
                                     </p>
+                                    {/* Stars only - no count */}
                                     {product.rating > 0 && (
-                                        <p className="text-xs text-yellow-500">★ {product.rating.toFixed(1)}</p>
+                                        <div className="mt-0.5">
+                                            <StarDisplay rating={product.rating} />
+                                        </div>
                                     )}
                                 </div>
                                 <div className="flex items-center gap-1 ml-2">

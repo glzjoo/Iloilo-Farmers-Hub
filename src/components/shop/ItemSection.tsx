@@ -1,3 +1,6 @@
+// ============================================
+// FILE: src/components/shop/ItemSection.tsx (COMPLETE)
+// ============================================
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import type { Product } from '../../types';
@@ -10,13 +13,29 @@ interface ItemSectionProps {
     product?: Product | null;
 }
 
+// Star display - whole stars only
+function StarDisplay({ rating, size = 'text-lg' }: { rating: number; size?: string }) {
+    const roundedRating = Math.round(rating);
+    return (
+        <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <span 
+                    key={star} 
+                    className={`${size} ${star <= roundedRating ? 'text-yellow-500' : 'text-gray-300'}`}
+                >
+                    ★
+                </span>
+            ))}
+        </div>
+    );
+}
+
 export default function ItemSection({ productId: propProductId, product: propProduct }: ItemSectionProps) {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const { user, userProfile } = useAuth();
     const urlProductId = searchParams.get('id');
     
-    // Use prop if provided, otherwise fall back to URL query param
     const productId = propProductId || urlProductId;
 
     const [product, setProduct] = useState<Product | null>(propProduct || null);
@@ -24,12 +43,10 @@ export default function ItemSection({ productId: propProductId, product: propPro
     const [error, setError] = useState('');
     const [quantity, setQuantity] = useState(1);
     
-    // Modal states
     const [showCartModal, setShowCartModal] = useState(false);
     const [showMessageModal, setShowMessageModal] = useState(false);
 
     useEffect(() => {
-        // If product was passed as prop, don't fetch
         if (propProduct) {
             setProduct(propProduct);
             setLoading(false);
@@ -154,15 +171,20 @@ export default function ItemSection({ productId: propProductId, product: propPro
                         <h1 className="text-3xl font-primary font-bold text-black">{product.name}</h1>
                         <span className="text-2xl font-primary text-gray-600">(₱{product.price} per {product.unit})</span>
                     </div>
-                    <p className="text-sm font-primary text-gray-500 mb-3">
+                    
+                    {/* Updated Rating Display */}
+                    <div className="flex items-center gap-2 mb-3">
                         {product.rating > 0 ? (
                             <>
-                                {product.rating} <span className="text-yellow-500">★</span> | {product.reviewCount} Ratings
+                                <StarDisplay rating={product.rating} />
+                                <span className="text-sm font-primary text-gray-600">
+                                    {product.rating.toFixed(1)} • {product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'}
+                                </span>
                             </>
                         ) : (
-                            'No ratings yet'
+                            <span className="text-sm font-primary text-gray-500">No ratings yet</span>
                         )}
-                    </p>
+                    </div>
 
                     <p className="text-3xl font-primary font-bold text-primary mb-4">₱{product.price.toFixed(2)}</p>
 
@@ -225,7 +247,6 @@ export default function ItemSection({ productId: propProductId, product: propPro
                 </div>
             </div>
 
-            {/* Modals for Add to Cart */}
             <ActionGuardModal
                 isOpen={showCartModal}
                 action="addToCart"
@@ -233,7 +254,6 @@ export default function ItemSection({ productId: propProductId, product: propPro
                 onClose={() => setShowCartModal(false)}
             />
 
-            {/* Modals for Message Seller */}
             <ActionGuardModal
                 isOpen={showMessageModal}
                 action="messageSeller"

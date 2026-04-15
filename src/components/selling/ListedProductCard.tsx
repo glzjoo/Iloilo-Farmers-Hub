@@ -1,3 +1,6 @@
+// ============================================
+// FILE: src/components/selling/ListedProductCard.tsx 
+// ============================================
 import type { Product } from '../../types';
 import edit from '../../assets/images/Edit.svg';
 import deleteIcon from '../../assets/images/delete.svg';
@@ -7,6 +10,23 @@ interface ListedProductCardProps {
     onEdit?: (product: Product) => void;
     onDelete?: (product: Product) => void;
     isDeleting?: boolean;
+}
+
+// Star display component - whole stars only
+function StarDisplay({ rating }: { rating: number }) {
+    const roundedRating = Math.round(rating);
+    return (
+        <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <span 
+                    key={star} 
+                    className={`text-xs ${star <= roundedRating ? 'text-yellow-500' : 'text-gray-300'}`}
+                >
+                    ★
+                </span>
+            ))}
+        </div>
+    );
 }
 
 export default function ListedProductCard({ product, onEdit, onDelete, isDeleting }: ListedProductCardProps) {
@@ -45,10 +65,15 @@ export default function ListedProductCard({ product, onEdit, onDelete, isDeletin
                     {product.description || 'No description'}
                 </p>
 
-                {/* Stock */}
-                <p className="text-sm mt-2">
-                    Stock: <span className="text-primary font-semibold">{product.stock}</span>
-                </p>
+                {/* Stock & Rating Row - Stars only, no count */}
+                <div className="flex items-center justify-between mt-2">
+                    <p className="text-sm">
+                        Stock: <span className="text-primary font-semibold">{product.stock}</span>
+                    </p>
+                    {product.rating > 0 && (
+                        <StarDisplay rating={product.rating} />
+                    )}
+                </div>
 
                 {/* Actions row */}
                 <div className="flex items-center justify-between mt-3">
