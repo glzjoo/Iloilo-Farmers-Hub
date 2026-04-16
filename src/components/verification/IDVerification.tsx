@@ -14,6 +14,7 @@ import IDVerificationSuccessModal from './IDVerificationSuccessModal';
 import IDUploadSection from './IDUploadSection';
 import SelfieCaptureSection from './SelfieCaptureSection';
 import VerificationInfoCard from './VerificationInfoCard';
+import ErrorModal from '../common/ErrorModal'; // Added import
 
 const idVerificationSchema = z.object({
   idType: z.enum(['passport', 'drivers_license', 'national_id', 'farmers_fisheries_id', 'umid', 'other']),
@@ -39,6 +40,7 @@ export default function IDVerification() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false); // Added for modal control
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [idImage, setIdImage] = useState<File | null>(null);
   const [idPreview, setIdPreview] = useState<string | null>(null);
@@ -219,18 +221,30 @@ export default function IDVerification() {
       });
     } catch (error: any) {
       setError(`Failed to save verification: ${error.message}. Please try again.`);
-      setShowSuccessModal(false);
+      setIsErrorModalOpen(true);
+    }
+  };
+
+  // Handle modal close - retry if attempts remain, otherwise navigate back
+  const handleErrorModalClose = () => {
+    setIsErrorModalOpen(false);
+    if (attemptsLeft === 0) {
+      navigate('/farmer-signup', { replace: true });
+    } else {
+      handleRetry();
     }
   };
 
   const onSubmit = async (data: IDVerificationFormData) => {
     if (!idImage || !selfieFile) {
       setError('Please upload your ID and capture a live selfie');
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!tempId) {
       setError('Session expired. Please start signup again.');
+      setIsErrorModalOpen(true);
       return;
     }
 
@@ -280,18 +294,22 @@ export default function IDVerification() {
           `• Correct spelling\n` +
           `• Full first name (not nicknames)`
         );
+        setIsErrorModalOpen(true);
       } else {
         if (attemptsLeft <= 1) {
           setError('Maximum verification attempts reached. Please start registration again.');
-          setTimeout(() => navigate('/farmer-signup', { replace: true }), 3000);
+          setIsErrorModalOpen(true);
+          // Navigation handled in modal close
         } else {
           setError(`Verification failed: ${result.verification?.faceMatch?.message || 'Face does not match ID'}. You have ${attemptsLeft - 1} attempts left.`);
+          setIsErrorModalOpen(true);
         }
       }
 
     } catch (err: any) {
       console.error('Verification error:', err);
       setError(err.message || 'Failed to verify identity. Please try again.');
+      setIsErrorModalOpen(true);
     } finally {
       setIsLoading(false);
     }
@@ -304,6 +322,7 @@ export default function IDVerification() {
     setSelfieFile(null);
     setSelfiePreview(null);
     setError(null);
+    setIsErrorModalOpen(false);
   };
 
   const handleGoBack = () => {
@@ -328,6 +347,22 @@ export default function IDVerification() {
     );
   }
 
+  // Determine modal title based on error content
+  const getErrorTitle = () => {
+    if (!error) return 'Error';
+    if (error.includes('Name mismatch')) return 'Name Mismatch Detected';
+    if (error.includes('Maximum verification attempts')) return 'Maximum Attempts Reached';
+    if (error.includes('Session expired')) return 'Session Expired';
+    return 'Verification Failed';
+  };
+
+  // Determine button label based on attempts left
+  const getErrorButtonLabel = () => {
+    if (attemptsLeft === 0) return 'Back to Registration';
+    if (error?.includes('Session expired')) return 'Back to Registration';
+    return 'Try Again';
+  };
+
   return (
     <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-10">
       {showCamera && (
@@ -345,6 +380,15 @@ export default function IDVerification() {
         />
       )}
 
+      {/* Error Modal - Replaces inline error display */}
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        title={getErrorTitle()}
+        message={error}
+        buttonLabel={getErrorButtonLabel()}
+        onClose={handleErrorModalClose}
+      />
+
       <div className="text-center mb-8">
         <img src={logo} className="w-16 h-16 rounded-full object-cover mx-auto mb-4" alt="Logo" />
         <h1 className="font-primary font-bold text-2xl text-gray-800">Farmer ID Verification</h1>
@@ -358,30 +402,12 @@ export default function IDVerification() {
 
       <VerificationInfoCard farmerData={farmerData} />
 
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm font-primary whitespace-pre-line">{error}</p>
-          {attemptsLeft > 0 && attemptsLeft < 3 && (
-            <button 
-              onClick={handleRetry}
-              className="mt-2 text-sm text-primary hover:underline font-medium"
-            >
-              Try with different photos
-            </button>
-          )}
-        </div>
-      )}
-
-      {verificationResult && !verificationResult.verified && (
-        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-yellow-600 text-xl">⚠</span>
-            <h3 className="font-semibold text-yellow-800">Verification Failed</h3>
-          </div>
-          <div className="text-sm text-gray-700 space-y-1">
-            <p>Face Match Score: {verificationResult.verification?.faceMatch?.score}% (Required: 80%)</p>
-            <p>Attempts remaining: {attemptsLeft}</p>
-          </div>
+      {/* Attempts remaining indicator - shown when errors have occurred but modal is closed */}
+      {attemptsLeft < 3 && !isErrorModalOpen && (
+        <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-yellow-800 text-sm font-primary text-center">
+            Attempts remaining: {attemptsLeft}
+          </p>
         </div>
       )}
 

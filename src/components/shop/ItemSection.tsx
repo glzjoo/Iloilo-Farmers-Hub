@@ -8,6 +8,7 @@ import { getProductById } from '../../services/shopService';
 import { addToCart } from '../../services/cartService'; // ADD THIS IMPORT
 import { useAuth } from '../../context/AuthContext';
 import ActionGuardModal from '../common/ActionGuardModal';
+import ErrorModal from '../common/ErrorModal';
 
 interface ItemSectionProps {
     productId?: string | null;
@@ -42,9 +43,10 @@ export default function ItemSection({ productId: propProductId, product: propPro
     const [product, setProduct] = useState<Product | null>(propProduct || null);
     const [loading, setLoading] = useState(!propProduct);
     const [error, setError] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [addingToCart, setAddingToCart] = useState(false); // ADD loading state
-    
+
     const [showCartModal, setShowCartModal] = useState(false);
     const [showMessageModal, setShowMessageModal] = useState(false);
 
@@ -140,7 +142,7 @@ export default function ItemSection({ productId: propProductId, product: propPro
             alert(`Added ${quantity} ${product.unit} of ${product.name} to cart!`);
         } catch (err: any) {
             console.error('Add to cart error:', err);
-            alert('Failed to add to cart: ' + err.message);
+            setErrorMessage(err.message || 'Failed to add to cart');
         } finally {
             setAddingToCart(false);
         }
@@ -283,6 +285,13 @@ export default function ItemSection({ productId: propProductId, product: propPro
                 action="messageSeller"
                 userRole={checkUserRole()}
                 onClose={() => setShowMessageModal(false)}
+            />
+
+            <ErrorModal
+                isOpen={Boolean(errorMessage)}
+                title="Cart error"
+                message={errorMessage}
+                onClose={() => setErrorMessage('')}
             />
         </section>
     );

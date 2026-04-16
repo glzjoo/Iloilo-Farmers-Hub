@@ -5,6 +5,8 @@ import mylisting from '../../assets/icons/mylisting.svg';
 import searchIcon from '../../assets/icons/search.svg';
 import ListedProductCard from './ListedProductCard';
 import EditProductModal from './EditProductModal';
+import ConfirmationModal from '../common/ConfirmationModal';
+import ErrorModal from '../common/ErrorModal';
 import type { Product } from '../../types';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
@@ -16,8 +18,10 @@ export default function ListingProducts() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [actionError, setActionError] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
     useEffect(() => {
         if (!user) {
@@ -63,15 +67,25 @@ export default function ListingProducts() {
         setEditingProduct(product);
     };
 
-    const handleDelete = async (product: Product) => {
-        if (!confirm(`Are you sure you want to delete "${product.name}"?`)) return;
-        
+    const handleDelete = (product: Product) => {
+        setProductToDelete(product);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!productToDelete) return;
+
         try {
-            await deleteDoc(doc(db, 'products', product.id));
+            await deleteDoc(doc(db, 'products', productToDelete.id));
             // onSnapshot will automatically update the list
         } catch (err: any) {
             alert('Failed to delete product: ' + err.message);
+        } finally {
+            setProductToDelete(null);
         }
+    };
+
+    const cancelDelete = () => {
+        setProductToDelete(null);
     };
 
     const handleSaveEdit = async (updatedProduct: Product) => {
@@ -89,7 +103,7 @@ export default function ListingProducts() {
             });
             setEditingProduct(null);
         } catch (err: any) {
-            alert('Failed to update product: ' + err.message);
+            setActionError('Failed to update product: ' + err.message);
         }
     };
 
@@ -171,7 +185,23 @@ export default function ListingProducts() {
                     ))}
                 </div>
             )}
+            <ConfirmationModal
+                isOpen={Boolean(productToDelete)}
+                title="Delete product"
+                message={productToDelete ? `Are you sure you want to delete "${productToDelete.name}"? This action cannot be undone.` : 'Are you sure you want to delete this product?'}
+                confirmLabel="Delete"
+                cancelLabel="Cancel"
+                onConfirm={handleConfirmDelete}
+                onCancel={cancelDelete}
+                variant="warning"
+            />
 
+            <ErrorModal
+                isOpen={Boolean(actionError)}
+                title="Action failed"
+                message={actionError}
+                onClose={() => setActionError('')}
+            />
             {/* Edit Product Modal */}
             {editingProduct && (
                 <EditProductModal

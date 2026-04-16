@@ -4,6 +4,7 @@ import AddProductImage from "./addproductimage";
 import { useAuth } from "../../context/AuthContext";
 import { addProduct } from "../../services/productService";
 import type { Product } from "../../types";
+import ErrorModal from '../common/ErrorModal';
 import addtocart from '../../assets/icons/add-to-cart.svg';
 import minus from '../../assets/icons/minus.svg';
 
@@ -119,11 +120,12 @@ export default function AddProduct() {
                 <p className="mt-2 text-gray-500">Fill in the details for your new product</p>
             </div>
 
-            {error && (
-                <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-                    {error}
-                </div>
-            )}
+            <ErrorModal
+                isOpen={Boolean(error)}
+                title="Product error"
+                message={error}
+                onClose={() => setError('')}
+            />
 
             <form onSubmit={handleSubmit}>
                 <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
