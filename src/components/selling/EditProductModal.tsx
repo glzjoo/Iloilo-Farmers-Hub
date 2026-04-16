@@ -81,7 +81,7 @@ export default function EditProductModal({ product, onClose, onUpdateSuccess }: 
             onClick={onClose}
         >
             <div
-                className="bg-white rounded-2xl shadow-xl w-full max-w-[900px] max-h-[90vh] overflow-y-auto px-12 py-8"
+                className="bg-white rounded-2xl shadow-xl w-full max-w-[900px] max-h-[90vh] overflow-y-auto px-4 sm:px-12 py-6 sm:py-8 mx-4"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="mb-6">
@@ -96,9 +96,9 @@ export default function EditProductModal({ product, onClose, onUpdateSuccess }: 
                 )}
 
                 <form onSubmit={handleSubmit}>
-                    <div className="flex gap-8 items-start">
-                        <div className="w-[55%]">
-                            <div className="grid grid-cols-2 gap-x-10 gap-y-5">
+                    <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
+                        <div className="w-full md:w-[55%]">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 sm:gap-x-10 gap-y-5">
                                 {/* Product Name */}
                                 <div>
                                     <label className={labelClass}>Product Name *</label>
@@ -249,7 +249,7 @@ export default function EditProductModal({ product, onClose, onUpdateSuccess }: 
                                 </div>
 
                                 {/* Description */}
-                                <div className="col-span-2">
+                                <div className="col-span-1 sm:col-span-2">
                                     <label className={labelClass}>Description</label>
                                     <textarea
                                         value={description}
@@ -263,7 +263,7 @@ export default function EditProductModal({ product, onClose, onUpdateSuccess }: 
                         </div>
 
                         {/* Image upload */}
-                        <div className="w-[35%]">
+                        <div className="w-full md:w-[35%]">
                             <AddProductImage
                                 initialImage={product.image}
                                 onImageSelect={setNewImageFile}

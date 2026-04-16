@@ -9,8 +9,8 @@ import type { FarmerWithLocation } from '../../types';
 import FarmerCard from '../shop/FarmerCard';
 
 interface FarmerWithDistance extends FarmerWithLocation {
-  distance: number;
-  formattedDistance: string;
+    distance: number;
+    formattedDistance: string;
 }
 
 export default function SellersNearYou() {
@@ -34,7 +34,7 @@ export default function SellersNearYou() {
                 );
 
                 const snapshot = await getDocs(farmersQuery);
-                
+
                 if (snapshot.empty) {
                     setFarmers([]);
                     setLoading(false);
@@ -60,10 +60,10 @@ export default function SellersNearYou() {
 
                 // Take first 5 random farmers
                 const randomFarmers = allFarmers.slice(0, 5);
-                
+
                 // Sort by distance for consistent display
                 randomFarmers.sort((a, b) => a.distance - b.distance);
-                
+
                 setFarmers(randomFarmers);
 
             } catch (err: any) {
@@ -113,7 +113,7 @@ export default function SellersNearYou() {
         <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-12">
             <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-bold text-gray-900">Sellers Near You</h2>
-                <button 
+                <button
                     onClick={handleViewAll}
                     className="text-sm text-primary hover:text-green-700 font-medium flex items-center gap-1"
                 >
@@ -126,8 +126,8 @@ export default function SellersNearYou() {
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
                 {farmers.map((farmer) => (
-                    <FarmerCard 
-                        key={farmer.uid} 
+                    <FarmerCard
+                        key={farmer.uid}
                         farmer={farmer}
                         hideDistance={true}  // KEY CHANGE: Hide distance badges
                     />
