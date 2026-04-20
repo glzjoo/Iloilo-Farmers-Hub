@@ -1,5 +1,5 @@
 import * as functions from 'firebase-functions/v1';
-import * as Busboy from 'busboy';
+import Busboy from 'busboy';
 import { db, storage, visionClient } from './config';
 import { 
   checkRateLimit, 
@@ -24,8 +24,10 @@ export const verifyFarmerId = functions
   })
   .https.onRequest(async (req, res) => {
     
+    // Set CORS headers immediately for ALL responses
+    res.set(corsHeaders);
+    
     if (req.method === 'OPTIONS') {
-      res.set(corsHeaders);
       res.status(204).send('');
       return;
     }
@@ -41,7 +43,7 @@ export const verifyFarmerId = functions
       return;
     }
 
-    const bb = new (Busboy as any)({ headers: req.headers });
+    const bb = Busboy({ headers: req.headers });
     const files: { [key: string]: Buffer } = {};
     const fields: { [key: string]: string } = {};
 
@@ -95,7 +97,7 @@ export const verifyFarmerId = functions
           lastAttemptAt: new Date()
         });
 
-        const idBuffer = files.idImage;
+        const idBuffer = files.idImage;        
         const selfieBuffer = files.selfieImage;
         const preprocessedBuffer = await preprocessImage(idBuffer);
 
@@ -105,6 +107,13 @@ export const verifyFarmerId = functions
         // Run OCR
         const [ocrResult] = await visionClient.documentTextDetection(preprocessedBuffer);
         const extractedText = ocrResult.fullTextAnnotation?.text || '';
+
+        // DEBUG LOG - Check what Vision API returns
+        console.log('=== OCR DEBUG ===');
+        console.log('Extracted text length:', extractedText.length);
+        console.log('Extracted text preview:', extractedText.substring(0, 500));
+        console.log('Full annotation:', JSON.stringify(ocrResult.fullTextAnnotation, null, 2).substring(0, 1000));
+        console.log('==================');        
 
         // Determine ID type and extract data
         const detectedType = detectIDType(extractedText);
@@ -128,9 +137,9 @@ export const verifyFarmerId = functions
           return `https://storage.googleapis.com/${bucket.name}/${path}`;
         };
 
-        const [idCardUrl, selfieUrl] = await Promise.all([
+        const [IdCardUrl, selfieUrl] = await Promise.all([
           uploadImage(idBuffer, `id-card-${timestamp}.jpg`),
-          uploadImage(selfieBuffer, `selfie-${timestamp}.jpg`)
+          uploadImage(selfieBuffer, `selfie-${timestamp}.jpg`)  
         ]);
 
         incrementCounters();
@@ -145,36 +154,34 @@ export const verifyFarmerId = functions
             extractedData: extractedData,
             verified: isVerified,
             attemptedAt: new Date(),
-            idCardUrl: idCardUrl,
+            IdCardUrl: IdCardUrl,
             selfieUrl: selfieUrl
           }
         });
 
-        res.set(corsHeaders);
         res.json({
           success: true,
           verified: isVerified,
           tempId: tempId,
           verification: {
             faceMatch: faceResult.faceMatch,
-            idData: extractedData,
-            idType: idType || extractedData?.idType || 'Unknown',
+            IdData: extractedData,
+            IdType: idType || extractedData?.idType || 'Unknown',
             checks: {
               faceMatchPassed: faceResult.faceMatch.passed,
-              idDataExtracted: hasIdData
+              IdDataExtracted: hasIdData
             }
           },
-          idCardUrl: idCardUrl,
+          IdCardUrl: IdCardUrl,
           selfieUrl: selfieUrl,
           rateLimit: {
-            dailyRemaining: 300 - (global as any).rateLimits?.daily?.count || 300,
-            monthlyRemaining: 900 - (global as any).rateLimits?.monthly?.count || 900
+            dailyRemaining: Math.max(0, 300 - (global as any).rateLimits?.daily?.count || 0),
+            monthlyRemaining: Math.max(0, 900 - (global as any).rateLimits?.monthly?.count || 0)
           }
         });
 
       } catch (error: any) {
         console.error('Verification error:', error);
-        res.set(corsHeaders);
         res.status(500).json({ 
           success: false, 
           error: error.message || 'Verification failed',
@@ -185,7 +192,6 @@ export const verifyFarmerId = functions
 
     bb.on('error', (err: any) => {
       console.error('Busboy error:', err);
-      res.set(corsHeaders);
       res.status(400).json({ success: false, error: 'Invalid form data' });
     });
 

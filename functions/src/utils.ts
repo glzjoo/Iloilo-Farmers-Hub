@@ -1,4 +1,5 @@
-import * as sharp from 'sharp';
+//utils.ts
+import sharp from 'sharp';
 import axios from 'axios';
 import FormData from 'form-data';
 import { FACEPP_API_KEY, FACEPP_API_SECRET, FACEPP_BASE_URL } from './config';
@@ -29,10 +30,10 @@ export function incrementCounters() {
 
 export async function preprocessImage(buffer: Buffer) {
   try {
-    return await (sharp as any)(buffer)
+    return await sharp(buffer)
       .resize(2000, 1500, { fit: 'inside', withoutEnlargement: false })
-      .modulate({ brightness: 1.1, contrast: 1.3 })
-      .sharpen({ sigma: 1.5, flat: 1, jagged: 2 })
+      .modulate({ brightness: 1.1, saturation: 1.3 })
+      .sharpen({ sigma: 1.5, m1: 1, m2: 2 })
       .grayscale()
       .median(3)
       .jpeg({ quality: 95, progressive: true })
