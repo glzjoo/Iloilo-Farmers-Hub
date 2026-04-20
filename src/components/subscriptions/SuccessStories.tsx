@@ -23,14 +23,14 @@ const stories = [
 
 export default function SuccessStories() {
     return (
-        <section className="w-full py-16 px-10">
+        <section className="w-full py-10 sm:py-16 px-4 sm:px-10">
             <div className="max-w-7xl mx-auto mb-10">
-                <h1 className="text-3xl text-center font-primary font-bold text-black mb-2">Success Stories from Fellow Farmers</h1>
-                <p className="text-lg text-center font-primary text-gray-600">Hear from farmers who have transformed their business with Iloilo Farmers Hub</p>
+                <h1 className="text-2xl sm:text-3xl text-center font-primary font-bold text-black mb-2">Success Stories from Fellow Farmers</h1>
+                <p className="text-base sm:text-lg text-center font-primary text-gray-600">Hear from farmers who have transformed their business with Iloilo Farmers Hub</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
                 {stories.map((story, i) => (
-                    <div key={i} className="border border-gray-200 p-6" style={{ borderRadius: '40px' }}>
+                    <div key={i} className="border border-gray-200 p-5 sm:p-6" style={{ borderRadius: '40px' }}>
                         <div className="flex items-center gap-3 mb-4">
                             <img src={story.image} alt={story.name} className="w-10 h-10 rounded-full object-cover" />
                             <div>

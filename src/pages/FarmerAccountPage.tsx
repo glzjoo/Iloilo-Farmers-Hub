@@ -76,14 +76,14 @@ export default function FarmerAccountPage() {
 
     if (loading) {
         return (
-            <section className="max-w-6xl mx-auto px-10 py-8">
+            <section className="max-w-6xl mx-auto px-4 sm:px-10 py-8">
                 <p className="text-gray-500">Loading...</p>
             </section>
         );
     }
 
     return (
-        <section className="w-full max-w-6xl mx-auto px-10 py-8 min-h-screen">
+        <section className="w-full max-w-6xl mx-auto px-4 sm:px-10 py-8 min-h-screen">
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
                 <img src={accountSettingsIcon} alt="" className="w-8 h-8" />
@@ -94,8 +94,8 @@ export default function FarmerAccountPage() {
             </div>
 
             {/* Profile Card */}
-            <div className="border border-gray-200 rounded-xl p-6 mb-6">
-                <div className="flex items-center gap-6">
+            <div className="border border-gray-200 rounded-xl p-4 sm:p-6 mb-6">
+                <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                     <div className="w-20 h-20 rounded-xl bg-gray-200 overflow-hidden flex items-center justify-center shrink-0">
                         {profile?.profileImage ? (
                             <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
@@ -115,14 +115,14 @@ export default function FarmerAccountPage() {
                     </div>
 
                     {/* Reviews */}
-                    <div className="text-center px-6 border-l border-gray-200">
-                        <p className="text-lg font-bold font-primary">N/A</p>
+                    <div className="text-center px-4 sm:px-6 border-l border-gray-200">
+                        <p className="text-base sm:text-lg font-bold font-primary">N/A</p>
                         <p className="text-xs text-gray-500">No review yet</p>
                     </div>
 
                     {/* Join Date */}
-                    <div className="text-center px-6 border-l border-gray-200">
-                        <p className="text-lg font-bold font-primary">{getJoinDate()}</p>
+                    <div className="text-center px-4 sm:px-6 border-l border-gray-200">
+                        <p className="text-base sm:text-lg font-bold font-primary">{getJoinDate()}</p>
                         <p className="text-xs text-gray-500">Joined</p>
                     </div>
 
@@ -142,7 +142,7 @@ export default function FarmerAccountPage() {
                 </div>
 
                 {/* Farm Description */}
-                <div className="mt-4 md:ml-24 pr-4">
+                <div className="mt-4 pr-4">
                     <p className="text-sm text-gray-500 leading-relaxed">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
                 </div>
             </div>

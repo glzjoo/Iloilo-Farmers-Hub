@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Report } from '../../components/admin/adminTypes';
+import ErrorModal from '../../components/common/ErrorModal';
 import { getStatusBadge } from '../../components/admin/adminTypes';
 import AdminReports from '../../components/admin/reports';
 import UserDetailModal from '../../components/admin/userDetailModal';
@@ -12,6 +13,7 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
     const [showUserDetail, setShowUserDetail] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
     const [showConversation, setShowConversation] = useState(false);
     const [suspendModal, setSuspendModal] = useState<{ report: Report; type: 'temporary' | 'permanent' } | null>(null);
 
@@ -50,7 +52,7 @@ export default function AdminDashboard() {
             }
         } catch (error) {
             console.error('Failed to suspend user:', error);
-            alert('Failed to suspend user. Please try again.');
+            setErrorMessage('Failed to suspend user. Please try again.');
         }
 
         // Update local state
@@ -74,7 +76,7 @@ export default function AdminDashboard() {
             }
         } catch (error) {
             console.error('Failed to reactivate user:', error);
-            alert('Failed to reactivate user. Please try again.');
+            setErrorMessage('Failed to reactivate user. Please try again.');
         }
         setReports(prev => prev.map(r =>
             r.id === reportId ? { ...r, status: 'Resolved' } : r
@@ -134,6 +136,13 @@ export default function AdminDashboard() {
                     onConfirm={confirmSuspend}
                 />
             )}
+
+            <ErrorModal
+                isOpen={Boolean(errorMessage)}
+                title="Action failed"
+                message={errorMessage}
+                onClose={() => setErrorMessage('')}
+            />
         </div>
     );
 }

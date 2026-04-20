@@ -5,6 +5,8 @@ import mylisting from '../../assets/icons/mylisting.svg';
 import searchIcon from '../../assets/icons/search.svg';
 import ListedProductCard from './ListedProductCard';
 import EditProductModal from './EditProductModal';
+import ConfirmationModal from '../common/ConfirmationModal';
+import ErrorModal from '../common/ErrorModal';
 import type { Product } from '../../types';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
@@ -16,8 +18,10 @@ export default function ListingProducts() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [actionError, setActionError] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
     useEffect(() => {
         if (!user) {
@@ -63,15 +67,25 @@ export default function ListingProducts() {
         setEditingProduct(product);
     };
 
-    const handleDelete = async (product: Product) => {
-        if (!confirm(`Are you sure you want to delete "${product.name}"?`)) return;
-        
+    const handleDelete = (product: Product) => {
+        setProductToDelete(product);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!productToDelete) return;
+
         try {
-            await deleteDoc(doc(db, 'products', product.id));
+            await deleteDoc(doc(db, 'products', productToDelete.id));
             // onSnapshot will automatically update the list
         } catch (err: any) {
             alert('Failed to delete product: ' + err.message);
+        } finally {
+            setProductToDelete(null);
         }
+    };
+
+    const cancelDelete = () => {
+        setProductToDelete(null);
     };
 
     const handleSaveEdit = async (updatedProduct: Product) => {
@@ -89,7 +103,7 @@ export default function ListingProducts() {
             });
             setEditingProduct(null);
         } catch (err: any) {
-            alert('Failed to update product: ' + err.message);
+            setActionError('Failed to update product: ' + err.message);
         }
     };
 
@@ -108,7 +122,7 @@ export default function ListingProducts() {
 
     if (loading) {
         return (
-            <section className="max-w-7xl mx-auto px-10 py-8">
+            <section className="max-w-7xl mx-auto px-4 sm:px-10 py-8">
                 <div className="flex justify-center items-center h-64">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                 </div>
@@ -117,17 +131,19 @@ export default function ListingProducts() {
     }
 
     return (
-        <section className="max-w-7xl mx-auto px-10 py-8">
-            <div className="flex items-center gap-4 mb-2">
-                <img src={mylisting} alt="My Listing" className="w-8 h-8" />
-                <h1 className="text-3xl font-bold">My Listing</h1>
-                <div className="relative ml-6">
+        <section className="max-w-7xl mx-auto px-4 sm:px-10 py-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-2">
+                <div className="flex items-center gap-4">
+                    <img src={mylisting} alt="My Listing" className="w-8 h-8" />
+                    <h1 className="text-2xl sm:text-3xl font-bold">My Listing</h1>
+                </div>
+                <div className="relative w-full sm:ml-6 sm:w-auto">
                     <input
                         type="text"
                         placeholder="Search products..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-4 pr-10 py-2 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent w-[400px] text-sm"
+                        className="pl-4 pr-10 py-2 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent w-full sm:w-[300px] md:w-[400px] text-sm"
                     />
                     <img src={searchIcon} alt="Search" className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 opacity-50" />
                 </div>
@@ -158,7 +174,7 @@ export default function ListingProducts() {
                     )}
                 </div>
             ) : (
-                <div className="grid grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {filteredProducts.map((product) => (
                         <ListedProductCard
                             key={product.id}
@@ -169,7 +185,23 @@ export default function ListingProducts() {
                     ))}
                 </div>
             )}
+            <ConfirmationModal
+                isOpen={Boolean(productToDelete)}
+                title="Delete product"
+                message={productToDelete ? `Are you sure you want to delete "${productToDelete.name}"? This action cannot be undone.` : 'Are you sure you want to delete this product?'}
+                confirmLabel="Delete"
+                cancelLabel="Cancel"
+                onConfirm={handleConfirmDelete}
+                onCancel={cancelDelete}
+                variant="warning"
+            />
 
+            <ErrorModal
+                isOpen={Boolean(actionError)}
+                title="Action failed"
+                message={actionError}
+                onClose={() => setActionError('')}
+            />
             {/* Edit Product Modal */}
             {editingProduct && (
                 <EditProductModal

@@ -40,7 +40,7 @@ const isWithinTimeWindow = (msg1: any, msg2: any, minutes: number = 5) => {
   return diffMs <= minutes * 60 * 1000;
 };
 
-const MAX_OFFERS_PER_CONSUMER = 5;
+const MAX_OFFERS_PER_CONSUMER = 100;
 
 export default function MessagesLayout({ conversationId, onBack, productContext, onCloseProductContext }: MessagesLayoutProps) {
   const { user, userProfile } = useAuth();

@@ -3,6 +3,8 @@ import searchIcon from '../../assets/icons/search.svg';
 import filterIcon from '../../assets/icons/Filter.svg';
 import ListedProductCard from '../selling/ListedProductCard';
 import EditProductModal from '../selling/EditProductModal';
+import ConfirmationModal from '../common/ConfirmationModal';
+import ErrorModal from '../common/ErrorModal';
 import type { Product } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { getFarmerProducts, deleteProduct } from '../../services/productService';
@@ -16,6 +18,8 @@ export default function MyAccountFarmerListing() {
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+    const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+    const [modalError, setModalError] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const [activeFilters, setActiveFilters] = useState({ category: 'All', status: 'All', sortBy: 'Newest' });
 
@@ -42,20 +46,27 @@ export default function MyAccountFarmerListing() {
         setEditingProduct(product);
     };
 
-    const handleDelete = async (product: Product) => {
-        if (!window.confirm(`Are you sure you want to delete "${product.name}"?`)) {
-            return;
-        }
+    const handleDelete = (product: Product) => {
+        setProductToDelete(product);
+    };
 
-        setDeleteLoading(product.id);
+    const handleConfirmDelete = async () => {
+        if (!productToDelete) return;
+
+        setDeleteLoading(productToDelete.id);
         try {
-            await deleteProduct(product.id, product.image);
-            setProducts(prev => prev.filter(p => p.id !== product.id));
+            await deleteProduct(productToDelete.id, productToDelete.image);
+            setProducts(prev => prev.filter(p => p.id !== productToDelete.id));
         } catch (err: any) {
-            alert(err.message || 'Failed to delete product');
+            setModalError(err.message || 'Failed to delete product');
         } finally {
             setDeleteLoading(null);
+            setProductToDelete(null);
         }
+    };
+
+    const cancelDelete = () => {
+        setProductToDelete(null);
     };
 
     const handleUpdateSuccess = (updatedProduct: Product) => {
@@ -164,6 +175,24 @@ export default function MyAccountFarmerListing() {
                     ))}
                 </div>
             )}
+
+            <ConfirmationModal
+                isOpen={Boolean(productToDelete)}
+                title="Delete listing"
+                message={productToDelete ? `Are you sure you want to delete "${productToDelete.name}"? This action cannot be undone.` : 'Are you sure you want to delete this listing?'}
+                confirmLabel="Delete"
+                cancelLabel="Cancel"
+                onConfirm={handleConfirmDelete}
+                onCancel={cancelDelete}
+                variant="warning"
+            />
+
+            <ErrorModal
+                isOpen={Boolean(modalError)}
+                title="Delete error"
+                message={modalError}
+                onClose={() => setModalError('')}
+            />
 
             {/* Edit Product Modal */}
             {editingProduct && (

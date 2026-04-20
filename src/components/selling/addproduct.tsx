@@ -4,6 +4,7 @@ import AddProductImage from "./addproductimage";
 import { useAuth } from "../../context/AuthContext";
 import { addProduct } from "../../services/productService";
 import type { Product } from "../../types";
+import ErrorModal from '../common/ErrorModal';
 import addtocart from '../../assets/icons/add-to-cart.svg';
 import minus from '../../assets/icons/minus.svg';
 
@@ -113,23 +114,24 @@ export default function AddProduct() {
     };
 
     return (
-        <section className="px-20 py-10">
+        <section className="px-4 sm:px-10 md:px-20 py-6 sm:py-10">
             <div className="mb-6">
-                <h1 className="text-4xl font-bold font-primary">Add New Product</h1>
+                <h1 className="text-2xl sm:text-4xl font-bold font-primary">Add New Product</h1>
                 <p className="mt-2 text-gray-500">Fill in the details for your new product</p>
             </div>
 
-            {error && (
-                <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-                    {error}
-                </div>
-            )}
+            <ErrorModal
+                isOpen={Boolean(error)}
+                title="Product error"
+                message={error}
+                onClose={() => setError('')}
+            />
 
             <form onSubmit={handleSubmit}>
-                <div className="flex gap-8 items-start">
+                <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
                     {/* Form fields */}
-                    <div className="w-[55%]">
-                        <div className="grid grid-cols-2 gap-x-10 gap-y-5">
+                    <div className="w-full md:w-[55%]">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 sm:gap-x-10 gap-y-5">
                             {/* Product Name */}
                             <div>
                                 <label className={labelClass}>
@@ -298,7 +300,7 @@ export default function AddProduct() {
                             </div>
 
                             {/* Description */}
-                            <div className="col-span-2">
+                            <div className="col-span-1 sm:col-span-2">
                                 <label className={labelClass}>
                                     Description <span className="text-red-500">*</span>
                                 </label>
@@ -316,7 +318,7 @@ export default function AddProduct() {
                     </div>
 
                     {/* Image upload */}
-                    <div className="w-[35%]">
+                    <div className="w-full md:w-[35%]">
                         <AddProductImage onImageSelect={setSelectedImage} />
 
                         {!selectedImage && (
