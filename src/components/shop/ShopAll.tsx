@@ -85,7 +85,7 @@ export default function ShopAll({
     nearbyLoading = false,
     nearbyError = null,
     isUsingManualLocation = false,
-    hasSearched,
+    hasSearched: _hasSearched,
 }: ShopAllProps) {
     const navigate = useNavigate();
     const { user, userProfile } = useAuth();

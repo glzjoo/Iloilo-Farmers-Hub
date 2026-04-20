@@ -21,7 +21,7 @@ export default function CartItem({
     unit,
     image, 
     farmerName,
-    farmerId,
+    farmerId: _farmerId,
     onQuantityChange,
     onRemove,
     onMessageSeller,

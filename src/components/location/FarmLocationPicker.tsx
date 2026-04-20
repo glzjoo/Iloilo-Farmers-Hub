@@ -11,7 +11,6 @@ import {
   detectLocationFromCoordinates,
   calculateDistance,
   SERVICE_AREA_RADIUS_KM,
-  PROXIMITY_RADIUS_KM,
   DETECTION_CONFIDENCE_THRESHOLD_KM,
   SUPPORTED_CITIES,
 } from '../../services/locationService';
@@ -48,7 +47,7 @@ interface FarmLocationPickerProps {
   error?: string;
 }
 
-export default function FarmLocationPicker({ value, onChange, error }: FarmLocationPickerProps) {
+export default function FarmLocationPicker({ value: _value, onChange, error }: FarmLocationPickerProps) {
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
@@ -68,7 +67,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
   const [showUncertainDetection, setShowUncertainDetection] = useState(false);
   const [pendingGPSCoords, setPendingGPSCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [detectedLocation, setDetectedLocation] = useState<{ city: string; barangay: string } | null>(null);
-  const [detectionDistance, setDetectionDistance] = useState<number>(0);
+  const [_detectionDistance, setDetectionDistance] = useState<number>(0);
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);

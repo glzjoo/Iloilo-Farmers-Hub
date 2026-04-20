@@ -8,7 +8,6 @@ import {
     updateDoc,
     doc,
     increment,
-    type QuerySnapshot,
     type DocumentData
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';

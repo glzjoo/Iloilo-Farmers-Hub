@@ -26,7 +26,6 @@ export default function FarmerOtpVerification() {
   const [countdown, setCountdown] = useState(60);
   const [confirmationResult, setConfirmationResult] = useState<any>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [verificationResult, setVerificationResult] = useState<any>(null);
 
   // Send OTP on mount
   useEffect(() => {
@@ -113,7 +112,7 @@ export default function FarmerOtpVerification() {
       setError('');
 
       // Step 1: Verify OTP
-      const firebaseUser = await verifyOTP(confirmationResult, code);
+      await verifyOTP(confirmationResult, code);
       
       // Step 2: Complete farmer signup
       await completeFarmerSignup(tempId, confirmationResult, code);

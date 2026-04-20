@@ -42,7 +42,7 @@ export default function Shop() {
     const [sortBy, setSortBy] = useState<string>('trending');
     const [priceRange, setPriceRange] = useState<{ min: number; max: number } | null>(null);
     const [trendingItems, setTrendingItems] = useState<{id: string; name: string; image: string}[]>([]);
-    const [trendingLoading, setTrendingLoading] = useState(false);
+    const [_trendingLoading, setTrendingLoading] = useState(false);
     const [trendingError, setTrendingError] = useState<string | null>(null);
 
     // Nearby farmers state
