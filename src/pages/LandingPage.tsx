@@ -21,8 +21,6 @@ export default function LandingPage() {
             <div className="mt-5">
                 <NowAvailable />
             </div>
-
-            <ReviewSection />
         </main>
     );
 }
