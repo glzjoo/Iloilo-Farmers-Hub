@@ -3,7 +3,8 @@ import type { Report } from './adminTypes';
 
 interface AdminReportsProps {
     reports: Report[];
-    onSuspend: (report: Report, type: 'temporary' | 'permanent') => void;
+    onSuspend: (report: Report, type: '1 week suspension' | '30 days suspension' | 'permanent') => void;
+    onWarning: (report: Report) => void;
     onReactivate: (reportId: string) => void;
     onViewUser: (report: Report) => void;
     onViewConversation: (report: Report) => void;
@@ -14,6 +15,7 @@ interface AdminReportsProps {
 export default function AdminReports({
     reports,
     onSuspend,
+    onWarning,
     onReactivate,
     onViewUser,
     onViewConversation,
@@ -23,23 +25,37 @@ export default function AdminReports({
     const [filterStatus, setFilterStatus] = useState<string>('All');
     const [searchQuery, setSearchQuery] = useState('');
 
+
+    const statusCounts = {
+        All: reports.length,
+        Pending: reports.filter(r => r.status === 'Pending').length,
+        '1st Warning': reports.filter(r => r.status === '1st Warning').length,
+        '1 week': reports.filter(r => r.status === '1 week suspension').length,
+        '30 days': reports.filter(r => r.status === '30 days suspension').length,
+        Banned: reports.filter(r => r.status === 'Permanently Banned').length,
+        Resolved: reports.filter(r => r.status === 'Resolved').length,
+    };
+
+    // Map display labels back to actual status values for filtering
+    const statusFilterMap: Record<string, string> = {
+        'All': 'All',
+        'Pending': 'Pending',
+        '1st Warning': '1st Warning',
+        '1 week': '1 week suspension',
+        '30 days': '30 days suspension',
+        'Banned': 'Permanently Banned',
+        'Resolved': 'Resolved',
+    };
+
     const filteredReports = reports.filter(r => {
-        const matchesStatus = filterStatus === 'All' || r.status === filterStatus;
+        const actualStatus = statusFilterMap[filterStatus] || filterStatus;
+        const matchesStatus = actualStatus === 'All' || r.status === actualStatus;
         const matchesSearch = searchQuery === '' ||
             r.reportedUser.toLowerCase().includes(searchQuery.toLowerCase()) ||
             r.reportedBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
             r.id.toLowerCase().includes(searchQuery.toLowerCase());
         return matchesStatus && matchesSearch;
     });
-
-    const statusCounts = {
-        All: reports.length,
-        Pending: reports.filter(r => r.status === 'Pending').length,
-        Warning: reports.filter(r => r.status === 'Warning').length,
-        Suspended: reports.filter(r => r.status === 'Suspended').length,
-        'Permanently Banned': reports.filter(r => r.status === 'Permanently Banned').length,
-        Resolved: reports.filter(r => r.status === 'Resolved').length,
-    };
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -74,7 +90,6 @@ export default function AdminReports({
                 </div>
             </div>
 
-            {/* Main Content */}
             <div className="max-w-[1400px] mx-auto px-3 sm:px-6 py-4 sm:py-6">
                 {/* Page Title */}
                 <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
@@ -85,8 +100,8 @@ export default function AdminReports({
                     </div>
                 </div>
 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4 sm:mb-6">
+                {/* Stats */}
+                <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3 mb-4 sm:mb-6">
                     {Object.entries(statusCounts).map(([status, count]) => (
                         <button
                             key={status}
@@ -117,7 +132,7 @@ export default function AdminReports({
                         />
                     </div>
 
-                    {/* Desktop Table - hidden on mobile */}
+                    {/* Desktop Table hidden on mobile */}
                     <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
@@ -168,20 +183,44 @@ export default function AdminReports({
                                             <td className="px-4 py-3">{getStatusBadge(report.status)}</td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                                    {report.status !== 'Suspended' && report.status !== 'Permanently Banned' && (
+                                                    {report.status === 'Pending' && (
                                                         <button
-                                                            onClick={() => onSuspend(report, 'temporary')}
-                                                            className="px-2.5 py-1 bg-orange-500 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-orange-600 transition-colors"
+                                                            onClick={() => onWarning(report)}
+                                                            className="px-2.5 py-1 bg-yellow-500 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-yellow-600 transition-colors"
                                                         >
-                                                            Suspend
+                                                            1st Warning
                                                         </button>
                                                     )}
-                                                    {(report.status === 'Suspended' || report.status === 'Warning' || report.status === 'Permanently Banned') && (
+                                                    {report.status !== '1 week suspension' && report.status !== '30 days suspension' && report.status !== 'Permanently Banned' && (
+                                                        <button
+                                                            onClick={() => onSuspend(report, '1 week suspension')}
+                                                            className="px-2.5 py-1 bg-orange-500 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-orange-600 transition-colors"
+                                                        >
+                                                            1 Week
+                                                        </button>
+                                                    )}
+                                                    {report.status !== '1 week suspension' && report.status !== '30 days suspension' && report.status !== 'Permanently Banned' && (
+                                                        <button
+                                                            onClick={() => onSuspend(report, '30 days suspension')}
+                                                            className="px-2.5 py-1 bg-red-500 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-red-600 transition-colors"
+                                                        >
+                                                            30 Days
+                                                        </button>
+                                                    )}
+                                                    {report.status !== '1 week suspension' && report.status !== '30 days suspension' && report.status !== 'Permanently Banned' && (
+                                                        <button
+                                                            onClick={() => onSuspend(report, 'permanent')}
+                                                            className="px-2.5 py-1 bg-red-700 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-red-800 transition-colors"
+                                                        >
+                                                            Ban
+                                                        </button>
+                                                    )}
+                                                    {(report.status === '1st Warning' || report.status === '1 week suspension' || report.status === '30 days suspension' || report.status === 'Permanently Banned') && (
                                                         <button
                                                             onClick={() => onReactivate(report.id)}
                                                             className="px-2.5 py-1 bg-green-600 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-green-700 transition-colors"
                                                         >
-                                                            Reactivate
+                                                            Unban
                                                         </button>
                                                     )}
                                                     <button
@@ -198,15 +237,6 @@ export default function AdminReports({
                                                     >
                                                         💬
                                                     </button>
-                                                    {report.status !== 'Permanently Banned' && (
-                                                        <button
-                                                            onClick={() => onSuspend(report, 'permanent')}
-                                                            className="px-1.5 py-1 bg-transparent text-gray-400 text-base border-none cursor-pointer hover:text-red-600 transition-colors"
-                                                            title="Permanently Ban"
-                                                        >
-                                                            ⛔
-                                                        </button>
-                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -271,21 +301,45 @@ export default function AdminReports({
                                         </div>
 
                                         {/* Card Actions */}
-                                        <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
-                                            {report.status !== 'Suspended' && report.status !== 'Permanently Banned' && (
+                                        <div className="flex items-center gap-2 pt-2 border-t border-gray-100 flex-wrap">
+                                            {report.status === 'Pending' && (
                                                 <button
-                                                    onClick={() => onSuspend(report, 'temporary')}
-                                                    className="px-3 py-1.5 bg-orange-500 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-orange-600 transition-colors"
+                                                    onClick={() => onWarning(report)}
+                                                    className="px-3 py-1.5 bg-yellow-500 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-yellow-600 transition-colors"
                                                 >
-                                                    Suspend
+                                                    1st Warning
                                                 </button>
                                             )}
-                                            {(report.status === 'Suspended' || report.status === 'Warning' || report.status === 'Permanently Banned') && (
+                                            {report.status !== '1 week suspension' && report.status !== '30 days suspension' && report.status !== 'Permanently Banned' && (
+                                                <button
+                                                    onClick={() => onSuspend(report, '1 week suspension')}
+                                                    className="px-3 py-1.5 bg-orange-500 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-orange-600 transition-colors"
+                                                >
+                                                    1 Week
+                                                </button>
+                                            )}
+                                            {report.status !== '1 week suspension' && report.status !== '30 days suspension' && report.status !== 'Permanently Banned' && (
+                                                <button
+                                                    onClick={() => onSuspend(report, '30 days suspension')}
+                                                    className="px-3 py-1.5 bg-red-500 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-red-600 transition-colors"
+                                                >
+                                                    30 Days
+                                                </button>
+                                            )}
+                                            {report.status !== '1 week suspension' && report.status !== '30 days suspension' && report.status !== 'Permanently Banned' && (
+                                                <button
+                                                    onClick={() => onSuspend(report, 'permanent')}
+                                                    className="px-3 py-1.5 bg-red-700 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-red-800 transition-colors"
+                                                >
+                                                    Ban
+                                                </button>
+                                            )}
+                                            {(report.status === '1st Warning' || report.status === '1 week suspension' || report.status === '30 days suspension' || report.status === 'Permanently Banned') && (
                                                 <button
                                                     onClick={() => onReactivate(report.id)}
                                                     className="px-3 py-1.5 bg-green-600 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-green-700 transition-colors"
                                                 >
-                                                    Reactivate
+                                                    Unban
                                                 </button>
                                             )}
                                             <div className="flex-1" />
@@ -303,15 +357,6 @@ export default function AdminReports({
                                             >
                                                 💬
                                             </button>
-                                            {report.status !== 'Permanently Banned' && (
-                                                <button
-                                                    onClick={() => onSuspend(report, 'permanent')}
-                                                    className="w-8 h-8 flex items-center justify-center bg-gray-100 text-gray-400 text-base rounded-lg border-none cursor-pointer hover:text-red-600 hover:bg-red-50 transition-colors"
-                                                    title="Permanently Ban"
-                                                >
-                                                    ⛔
-                                                </button>
-                                            )}
                                         </div>
                                     </div>
                                 ))}

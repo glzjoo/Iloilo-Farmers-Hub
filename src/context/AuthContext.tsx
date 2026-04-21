@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<ExtendedUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [suspensionInfo, setSuspensionInfo] = useState<{
-    type: 'temporary' | 'permanent';
+    type: 'warning' | '1 week suspension' | '30 days suspension' | 'permanent';
     suspendedUntil?: Date | null;
   } | null>(null);
 
@@ -147,12 +147,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Check if user is suspended
             const userData = userDoc.data();
             if (userData.suspended) {
-              const suspensionType = userData.suspensionType || 'temporary';
+              const suspensionType = userData.suspensionType || 'permanent';
               const suspendedUntil = userData.suspendedUntil?.toDate?.();
 
-              // For temporary suspensions, check if the suspension has expired
-              if (suspensionType === 'temporary' && suspendedUntil && new Date() > suspendedUntil) {
-                // Suspension expired — allow login (auto-unsuspend handled elsewhere)
+              // For timed suspensions, check if the suspension has expired
+              if ((suspensionType === '1 week suspension' || suspensionType === '30 days suspension') && suspendedUntil && new Date() > suspendedUntil) {
+                // Suspension expired — allow login
               } else {
                 // Still suspended — force sign out
                 await signOut(auth);

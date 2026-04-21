@@ -17,7 +17,7 @@ export default function AdminDashboard() {
     const [showUserDetail, setShowUserDetail] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [showConversation, setShowConversation] = useState(false);
-    const [suspendModal, setSuspendModal] = useState<{ report: Report; type: 'temporary' | 'permanent' } | null>(null);
+    const [suspendModal, setSuspendModal] = useState<{ report: Report; type: '1 week suspension' | '30 days suspension' | 'permanent' } | null>(null);
 
     // Fetch reports from Firestore
     useEffect(() => {
@@ -34,18 +34,42 @@ export default function AdminDashboard() {
         fetchReports();
     }, []);
 
-    const handleSuspend = (report: Report, type: 'temporary' | 'permanent') => {
+    const handleSuspend = (report: Report, type: '1 week suspension' | '30 days suspension' | 'permanent') => {
         setSuspendModal({ report, type });
+    };
+
+    const handleWarning = async (report: Report) => {
+        try {
+            if (report.firestoreId) {
+                await updateReportStatus(report.firestoreId, '1st Warning');
+            }
+            if (report.reportedUserId) {
+                await suspendUser(report.reportedUserId, 'warning');
+            }
+        } catch (error) {
+            console.error('Failed to issue warning:', error);
+            setErrorMessage('Failed to issue warning. Please try again.');
+        }
+        setReports(prev => prev.map(r =>
+            r.id === report.id ? { ...r, status: '1st Warning' } : r
+        ));
     };
 
     const confirmSuspend = async () => {
         if (!suspendModal) return;
-        const newStatus = suspendModal.type === 'permanent' ? 'Permanently Banned' : 'Suspended';
+
+        // Map suspension type to report status
+        const statusMap: Record<string, Report['status']> = {
+            '1 week suspension': '1 week suspension',
+            '30 days suspension': '30 days suspension',
+            'permanent': 'Permanently Banned',
+        };
+        const newStatus = statusMap[suspendModal.type];
 
         try {
             // Update report status in Firestore
             if (suspendModal.report.firestoreId) {
-                await updateReportStatus(suspendModal.report.firestoreId, newStatus as Report['status']);
+                await updateReportStatus(suspendModal.report.firestoreId, newStatus);
             }
 
             // Suspend the actual user account
@@ -60,7 +84,7 @@ export default function AdminDashboard() {
         // Update local state
         setReports(prev => prev.map(r =>
             r.id === suspendModal.report.id
-                ? { ...r, status: newStatus as Report['status'] }
+                ? { ...r, status: newStatus }
                 : r
         ));
         setSuspendModal(null);
@@ -116,6 +140,7 @@ export default function AdminDashboard() {
             <AdminReports
                 reports={reports}
                 onSuspend={handleSuspend}
+                onWarning={handleWarning}
                 onReactivate={handleReactivate}
                 onViewUser={handleViewUser}
                 onViewConversation={handleViewConversation}
