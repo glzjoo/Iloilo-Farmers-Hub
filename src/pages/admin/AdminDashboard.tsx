@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Report } from '../../components/admin/adminTypes';
 import ErrorModal from '../../components/common/ErrorModal';
 import { getStatusBadge } from '../../components/admin/adminTypes';
@@ -9,6 +10,7 @@ import SuspendModal from '../../components/admin/SuspendModal';
 import { getReports, updateReportStatus, suspendUser, unsuspendUser } from '../../services/reportService';
 
 export default function AdminDashboard() {
+    const navigate = useNavigate();
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
@@ -88,6 +90,11 @@ export default function AdminDashboard() {
         setShowUserDetail(true);
     };
 
+    const handleLogout = () => {
+        sessionStorage.removeItem('isAdmin');
+        navigate('/admin/login');
+    };
+
     const handleViewConversation = (report: Report) => {
         setSelectedReport(report);
         setShowConversation(true);
@@ -113,6 +120,7 @@ export default function AdminDashboard() {
                 onViewUser={handleViewUser}
                 onViewConversation={handleViewConversation}
                 getStatusBadge={getStatusBadge}
+                onLogout={handleLogout}
             />
 
             {/* Modals */}
