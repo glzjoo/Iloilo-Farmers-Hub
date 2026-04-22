@@ -99,15 +99,26 @@ export const updateReportStatus = async (
  */
 export const suspendUser = async (
     userId: string,
-    type: 'temporary' | 'permanent'
+    type: 'warning' | '1 week suspension' | '30 days suspension' | 'permanent'
 ): Promise<void> => {
+    const getSuspendedUntil = () => {
+        switch (type) {
+            case 'warning':
+                return null; // Warning only, no suspension period
+            case '1 week suspension':
+                return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            case '30 days suspension':
+                return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            case 'permanent':
+                return null; // Permanent, no end date
+        }
+    };
+
     const suspensionData = {
-        suspended: true,
+        suspended: type !== 'warning',
         suspensionType: type,
         suspendedAt: serverTimestamp(),
-        suspendedUntil: type === 'temporary'
-            ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-            : null,
+        suspendedUntil: getSuspendedUntil(),
     };
 
     const collections = ['users', 'farmers', 'consumers'];

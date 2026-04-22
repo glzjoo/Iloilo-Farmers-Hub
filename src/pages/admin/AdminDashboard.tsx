@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Report } from '../../components/admin/adminTypes';
 import ErrorModal from '../../components/common/ErrorModal';
 import { getStatusBadge } from '../../components/admin/adminTypes';
@@ -9,13 +10,14 @@ import SuspendModal from '../../components/admin/SuspendModal';
 import { getReports, updateReportStatus, suspendUser, unsuspendUser } from '../../services/reportService';
 
 export default function AdminDashboard() {
+    const navigate = useNavigate();
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
     const [showUserDetail, setShowUserDetail] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [showConversation, setShowConversation] = useState(false);
-    const [suspendModal, setSuspendModal] = useState<{ report: Report; type: 'temporary' | 'permanent' } | null>(null);
+    const [suspendModal, setSuspendModal] = useState<{ report: Report; type: 'warning' | '1 week suspension' | '30 days suspension' | 'permanent' } | null>(null);
 
     // Fetch reports from Firestore
     useEffect(() => {
@@ -32,33 +34,45 @@ export default function AdminDashboard() {
         fetchReports();
     }, []);
 
-    const handleSuspend = (report: Report, type: 'temporary' | 'permanent') => {
+    const handleSuspend = (report: Report, type: 'warning' | '1 week suspension' | '30 days suspension' | 'permanent') => {
         setSuspendModal({ report, type });
+    };
+
+    const handleWarning = (report: Report) => {
+        setSuspendModal({ report, type: 'warning' });
     };
 
     const confirmSuspend = async () => {
         if (!suspendModal) return;
-        const newStatus = suspendModal.type === 'permanent' ? 'Permanently Banned' : 'Suspended';
+
+        // Map suspension type to report status
+        const statusMap: Record<string, Report['status']> = {
+            'warning': '1st Warning',
+            '1 week suspension': '1 week suspension',
+            '30 days suspension': '30 days suspension',
+            'permanent': 'Permanently Banned',
+        };
+        const newStatus = statusMap[suspendModal.type];
 
         try {
             // Update report status in Firestore
             if (suspendModal.report.firestoreId) {
-                await updateReportStatus(suspendModal.report.firestoreId, newStatus as Report['status']);
+                await updateReportStatus(suspendModal.report.firestoreId, newStatus);
             }
 
-            // Suspend the actual user account
+            // Suspend/warn the actual user account
             if (suspendModal.report.reportedUserId) {
                 await suspendUser(suspendModal.report.reportedUserId, suspendModal.type);
             }
         } catch (error) {
-            console.error('Failed to suspend user:', error);
-            setErrorMessage('Failed to suspend user. Please try again.');
+            console.error('Failed to process action:', error);
+            setErrorMessage('Failed to process action. Please try again.');
         }
 
         // Update local state
         setReports(prev => prev.map(r =>
             r.id === suspendModal.report.id
-                ? { ...r, status: newStatus as Report['status'] }
+                ? { ...r, status: newStatus }
                 : r
         ));
         setSuspendModal(null);
@@ -88,6 +102,11 @@ export default function AdminDashboard() {
         setShowUserDetail(true);
     };
 
+    const handleLogout = () => {
+        sessionStorage.removeItem('isAdmin');
+        navigate('/admin/login');
+    };
+
     const handleViewConversation = (report: Report) => {
         setSelectedReport(report);
         setShowConversation(true);
@@ -109,10 +128,12 @@ export default function AdminDashboard() {
             <AdminReports
                 reports={reports}
                 onSuspend={handleSuspend}
+                onWarning={handleWarning}
                 onReactivate={handleReactivate}
                 onViewUser={handleViewUser}
                 onViewConversation={handleViewConversation}
                 getStatusBadge={getStatusBadge}
+                onLogout={handleLogout}
             />
 
             {/* Modals */}

@@ -13,7 +13,6 @@ import { auth, db } from '../lib/firebase';
 import type { UserProfile, Consumer, Farmer } from '../types';
 import type { ConsumerSignupData, FarmerSignupData } from '../lib/validations';
 import SuspensionNoticeModal from '../components/admin/SuspensionNoticeModal';
-//authcontext.tsx
 // Extended profile that combines auth + role-specific data
 interface ExtendedUserProfile extends UserProfile {
   firstName?: string;
@@ -91,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<ExtendedUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [suspensionInfo, setSuspensionInfo] = useState<{
-    type: 'temporary' | 'permanent';
+    type: 'warning' | '1 week suspension' | '30 days suspension' | 'permanent';
     suspendedUntil?: Date | null;
   } | null>(null);
 
@@ -145,15 +144,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (userDoc.exists()) {
             const baseProfile = userDoc.data() as UserProfile;
 
-            // Check if user is suspended
+            // Check if user is suspended or warned
             const userData = userDoc.data();
+            const suspensionType = userData.suspensionType;
+
+            // Handle warning — show notice but allow login
+            if (suspensionType === 'warning' && !userData.suspended) {
+              setSuspensionInfo({
+                type: 'warning',
+                suspendedUntil: null,
+              });
+              // Don't return — allow login to proceed
+            }
+
             if (userData.suspended) {
-              const suspensionType = userData.suspensionType || 'temporary';
               const suspendedUntil = userData.suspendedUntil?.toDate?.();
 
-              // For temporary suspensions, check if the suspension has expired
-              if (suspensionType === 'temporary' && suspendedUntil && new Date() > suspendedUntil) {
-                // Suspension expired — allow login (auto-unsuspend handled elsewhere)
+              // For timed suspensions, check if the suspension has expired
+              if ((suspensionType === '1 week suspension' || suspensionType === '30 days suspension') && suspendedUntil && new Date() > suspendedUntil) {
+                // Suspension expired — allow login
               } else {
                 // Still suspended — force sign out
                 await signOut(auth);
@@ -162,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setLoading(false);
 
                 setSuspensionInfo({
-                  type: suspensionType,
+                  type: suspensionType || 'permanent',
                   suspendedUntil: suspendedUntil || null,
                 });
                 return;
