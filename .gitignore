@@ -38,4 +38,4 @@ vision-key.json
 server/vision-key.json
 server/firebase-service-account.json
 
-
+.firebase/
