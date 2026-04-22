@@ -17,7 +17,7 @@ export default function AdminDashboard() {
     const [showUserDetail, setShowUserDetail] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [showConversation, setShowConversation] = useState(false);
-    const [suspendModal, setSuspendModal] = useState<{ report: Report; type: '1 week suspension' | '30 days suspension' | 'permanent' } | null>(null);
+    const [suspendModal, setSuspendModal] = useState<{ report: Report; type: 'warning' | '1 week suspension' | '30 days suspension' | 'permanent' } | null>(null);
 
     // Fetch reports from Firestore
     useEffect(() => {
@@ -34,25 +34,12 @@ export default function AdminDashboard() {
         fetchReports();
     }, []);
 
-    const handleSuspend = (report: Report, type: '1 week suspension' | '30 days suspension' | 'permanent') => {
+    const handleSuspend = (report: Report, type: 'warning' | '1 week suspension' | '30 days suspension' | 'permanent') => {
         setSuspendModal({ report, type });
     };
 
-    const handleWarning = async (report: Report) => {
-        try {
-            if (report.firestoreId) {
-                await updateReportStatus(report.firestoreId, '1st Warning');
-            }
-            if (report.reportedUserId) {
-                await suspendUser(report.reportedUserId, 'warning');
-            }
-        } catch (error) {
-            console.error('Failed to issue warning:', error);
-            setErrorMessage('Failed to issue warning. Please try again.');
-        }
-        setReports(prev => prev.map(r =>
-            r.id === report.id ? { ...r, status: '1st Warning' } : r
-        ));
+    const handleWarning = (report: Report) => {
+        setSuspendModal({ report, type: 'warning' });
     };
 
     const confirmSuspend = async () => {
@@ -60,6 +47,7 @@ export default function AdminDashboard() {
 
         // Map suspension type to report status
         const statusMap: Record<string, Report['status']> = {
+            'warning': '1st Warning',
             '1 week suspension': '1 week suspension',
             '30 days suspension': '30 days suspension',
             'permanent': 'Permanently Banned',
@@ -72,13 +60,13 @@ export default function AdminDashboard() {
                 await updateReportStatus(suspendModal.report.firestoreId, newStatus);
             }
 
-            // Suspend the actual user account
+            // Suspend/warn the actual user account
             if (suspendModal.report.reportedUserId) {
                 await suspendUser(suspendModal.report.reportedUserId, suspendModal.type);
             }
         } catch (error) {
-            console.error('Failed to suspend user:', error);
-            setErrorMessage('Failed to suspend user. Please try again.');
+            console.error('Failed to process action:', error);
+            setErrorMessage('Failed to process action. Please try again.');
         }
 
         // Update local state

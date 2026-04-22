@@ -144,10 +144,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (userDoc.exists()) {
             const baseProfile = userDoc.data() as UserProfile;
 
-            // Check if user is suspended
+            // Check if user is suspended or warned
             const userData = userDoc.data();
+            const suspensionType = userData.suspensionType;
+
+            // Handle warning — show notice but allow login
+            if (suspensionType === 'warning' && !userData.suspended) {
+              setSuspensionInfo({
+                type: 'warning',
+                suspendedUntil: null,
+              });
+              // Don't return — allow login to proceed
+            }
+
             if (userData.suspended) {
-              const suspensionType = userData.suspensionType || 'permanent';
               const suspendedUntil = userData.suspendedUntil?.toDate?.();
 
               // For timed suspensions, check if the suspension has expired
@@ -161,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setLoading(false);
 
                 setSuspensionInfo({
-                  type: suspensionType,
+                  type: suspensionType || 'permanent',
                   suspendedUntil: suspendedUntil || null,
                 });
                 return;

@@ -2,7 +2,7 @@ import type { Report } from './adminTypes';
 
 interface SuspendModalProps {
     report: Report;
-    type: '1 week suspension' | '30 days suspension' | 'permanent';
+    type: 'warning' | '1 week suspension' | '30 days suspension' | 'permanent';
     onClose: () => void;
     onConfirm: () => void;
 }
@@ -11,6 +11,15 @@ interface SuspendModalProps {
 //this is what the users will see
 
 const modalConfig = {
+    'warning': {
+        icon: '⚠️',
+        iconBg: 'bg-yellow-100',
+        title: 'Issue Warning to User?',
+        description: 'issue a warning to',
+        detail: 'The user will be notified about the violation. No suspension will be applied yet.',
+        buttonText: 'Issue Warning',
+        buttonClass: 'bg-yellow-500 hover:bg-yellow-600',
+    },
     '1 week suspension': {
         icon: '🚫',
         iconBg: 'bg-orange-100',

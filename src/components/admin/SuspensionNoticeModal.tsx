@@ -6,7 +6,7 @@ interface SuspensionModalProps {
     onClose: () => void;
 }
 
-//what consumers users can see
+//what consumers users can see hehe
 export default function SuspensionModal({ type, suspendedUntil, onClose }: SuspensionModalProps) {
     const [countdown, setCountdown] = useState('');
 
@@ -70,7 +70,7 @@ export default function SuspensionModal({ type, suspendedUntil, onClose }: Suspe
                     icon: '🚫',
                     title: 'Account Suspended — 30 Days',
                     description: (
-                        <p className="text-gray-800 text-sm text-center leading-relaxed">
+                        <p className="text-gray-800 text-sm text-center leading -relaxed">
                             Your account has been <strong className="text-red-600">suspended for 30 days</strong> due to repeated violations.
                         </p>
                     ),
