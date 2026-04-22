@@ -86,12 +86,14 @@ const resources = {
       "my_listing_desc": "Tan-awon/I-edit ang imo mga listahan",
       "settings": "Mga Setting",
       "sell": "Magbaligya",
+      "edit_profile": "Edit Profile",
 
       "lang_english": "English",
       "lang_filipino": "Filipino",
       "lang_hiligaynon": "Hiligaynon",
 
       "search": "Pangita",
+
     }
   }
 };

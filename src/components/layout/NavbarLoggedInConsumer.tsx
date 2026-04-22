@@ -65,139 +65,141 @@ export default function NavbarLoggedInConsumer() {
     }
 
     return (
-        <header className="w-full sticky top-0 z-50">
-            <nav className="bg-primary w-full">
-                <div className="max-w-7xl mx-auto flex justify-end px-4 sm:px-6 pt-2">
-                    <LanguageSwitcher />
-                </div>
+        <>
+            <header className={`w-full sticky top-0 z-50 ${location.pathname === '/messages' ? 'hidden md:block' : ''}`}>
+                <nav className="bg-primary w-full">
+                    <div className="max-w-7xl mx-auto flex justify-end px-4 sm:px-6 pt-2">
+                        <LanguageSwitcher />
+                    </div>
 
-                <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 pb-3 sm:pb-4 pt-1 gap-2 sm:gap-3">
-                    <Link to="/" className="flex items-center gap-2 text-white no-underline shrink-0">
-                        <img src={logoOnly} className="h-8 w-auto md:hidden" alt="Iloilo Farmers Hub" />
-                        <img src={logo} className="h-8 w-auto hidden md:block" alt="Iloilo Farmers Hub" />
-                    </Link>
-
-                    <SearchBar />
-
-                    {/* Desktop actions */}
-                    <div className="hidden md:flex items-center gap-3 shrink-0">
-                        {/* Cart Icon */}
-                        <Link to="/cart">
-                            <button className="bg-transparent border-none cursor-pointer p-1">
-                                <img src={cartIcon} className="w-7 h-7 brightness-0 invert" />
-                            </button>
+                    <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 pb-3 sm:pb-4 pt-1 gap-2 sm:gap-3">
+                        <Link to="/" className="flex items-center gap-2 text-white no-underline shrink-0">
+                            <img src={logoOnly} className="h-8 w-auto md:hidden" alt="Iloilo Farmers Hub" />
+                            <img src={logo} className="h-8 w-auto hidden md:block" alt="Iloilo Farmers Hub" />
                         </Link>
 
-                        {/* Profile button */}
-                        <div className="relative">
+                        <SearchBar />
+
+                        {/* Desktop actions */}
+                        <div className="hidden md:flex items-center gap-3 shrink-0">
+                            {/* Cart Icon */}
+                            <Link to="/cart">
+                                <button className="bg-transparent border-none cursor-pointer p-1">
+                                    <img src={cartIcon} className="w-7 h-7 brightness-0 invert" />
+                                </button>
+                            </Link>
+
+                            {/* Profile button */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setShowDropdown(!showDropdown)}
+                                    className="flex items-center gap-2 bg-transparent border-none cursor-pointer text-white"
+                                >
+                                    <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center overflow-hidden">
+                                        {photoUrl ? (
+                                            <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <span className="text-primary font-bold text-sm">{initial}</span>
+                                        )}
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-sm font-semibold text-white leading-tight">
+                                            {displayName}
+                                        </p>
+                                        <p className="text-xs text-green-200 leading-tight">{contactInfo}</p>
+                                    </div>
+                                    <span className="text-white text-xs">▾</span>
+                                </button>
+
+                                {/* Dropdown menu */}
+                                {showDropdown && (
+                                    <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-lg overflow-hidden z-50">
+                                        <div className="bg-primary p-4 flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                                {photoUrl ? (
+                                                    <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <span className="text-primary font-bold">{initial}</span>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="text-white font-semibold text-sm">{displayName}</p>
+                                                <p className="text-green-200 text-xs">{contactInfo}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="py-2">
+                                            {/* Messages */}
+                                            <Link to="/messages" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
+                                                <img src={messagesIcon} className="w-7 h-7" />
+                                                <div>
+                                                    <p className="text-base font-bold text-black">{t('messages')}</p>
+                                                    <p className="text-xs text-gray-400">{t('no_unread')}</p>
+                                                </div>
+                                            </Link>
+
+                                            {/* Settings */}
+                                            <Link to="/consumer-account-setting" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
+                                                <img src={settingIcon} className="w-7 h-7" />
+                                                <div>
+                                                    <p className="text-base font-bold text-black">{t('settings')}</p>
+                                                </div>
+                                            </Link>
+
+                                            <button
+                                                onClick={() => { logout(); navigate('/'); setShowDropdown(false); }}
+                                                className="flex items-center gap-4 w-full px-5 py-3.5 bg-transparent border-none cursor-pointer hover:bg-gray-50 text-left"
+                                            >
+                                                <img src={logOutIcon} className="w-7 h-7" />
+                                                <div>
+                                                    <p className="text-base font-bold text-red-500">{t('log_out')}</p>
+                                                    <p className="text-xs text-red-400">{t('log_out_desc')}</p>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Mobile: cart + avatar + hamburger */}
+                        <div className="flex md:hidden items-center gap-2 shrink-0">
+                            <Link to="/cart" className="flex items-center p-1 no-underline">
+                                <img src={cartIcon} className="w-6 h-6 brightness-0 invert" />
+                            </Link>
+                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden">
+                                {photoUrl ? (
+                                    <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    <span className="text-primary font-bold text-xs">{initial}</span>
+                                )}
+                            </div>
                             <button
-                                onClick={() => setShowDropdown(!showDropdown)}
-                                className="flex items-center gap-2 bg-transparent border-none cursor-pointer text-white"
+                                onClick={() => setDrawerOpen(true)}
+                                className="bg-transparent border-none cursor-pointer p-1 text-white"
+                                aria-label="Open menu"
                             >
-                                <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center overflow-hidden">
-                                    {photoUrl ? (
-                                        <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="text-primary font-bold text-sm">{initial}</span>
-                                    )}
-                                </div>
-                                <div className="text-left">
-                                    <p className="text-sm font-semibold text-white leading-tight">
-                                        {displayName}
-                                    </p>
-                                    <p className="text-xs text-green-200 leading-tight">{contactInfo}</p>
-                                </div>
-                                <span className="text-white text-xs">▾</span>
+                                <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
                             </button>
-
-                            {/* Dropdown menu */}
-                            {showDropdown && (
-                                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-lg overflow-hidden z-50">
-                                    <div className="bg-primary p-4 flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                            {photoUrl ? (
-                                                <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <span className="text-primary font-bold">{initial}</span>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <p className="text-white font-semibold text-sm">{displayName}</p>
-                                            <p className="text-green-200 text-xs">{contactInfo}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="py-2">
-                                        {/* Messages */}
-                                        <Link to="/messages" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
-                                            <img src={messagesIcon} className="w-7 h-7" />
-                                            <div>
-                                                <p className="text-base font-bold text-black">{t('messages')}</p>
-                                                <p className="text-xs text-gray-400">{t('no_unread')}</p>
-                                            </div>
-                                        </Link>
-
-                                        {/* Settings */}
-                                        <Link to="/consumer-account-setting" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
-                                            <img src={settingIcon} className="w-7 h-7" />
-                                            <div>
-                                                <p className="text-base font-bold text-black">{t('settings')}</p>
-                                            </div>
-                                        </Link>
-
-                                        <button
-                                            onClick={() => { logout(); navigate('/'); setShowDropdown(false); }}
-                                            className="flex items-center gap-4 w-full px-5 py-3.5 bg-transparent border-none cursor-pointer hover:bg-gray-50 text-left"
-                                        >
-                                            <img src={logOutIcon} className="w-7 h-7" />
-                                            <div>
-                                                <p className="text-base font-bold text-red-500">{t('log_out')}</p>
-                                                <p className="text-xs text-red-400">{t('log_out_desc')}</p>
-                                            </div>
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
+                </nav>
 
-                    {/* Mobile: cart + avatar + hamburger */}
-                    <div className="flex md:hidden items-center gap-2 shrink-0">
-                        <Link to="/cart" className="flex items-center p-1 no-underline">
-                            <img src={cartIcon} className="w-6 h-6 brightness-0 invert" />
-                        </Link>
-                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden">
-                            {photoUrl ? (
-                                <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
-                            ) : (
-                                <span className="text-primary font-bold text-xs">{initial}</span>
-                            )}
-                        </div>
-                        <button
-                            onClick={() => setDrawerOpen(true)}
-                            className="bg-transparent border-none cursor-pointer p-1 text-white"
-                            aria-label="Open menu"
-                        >
-                            <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                            </svg>
-                        </button>
+                {/* Desktop consumer navigation */}
+                <div className="hidden md:block bg-white border-b border-gray-200 shadow-sm">
+                    <div className="max-w-7xl mx-auto relative flex items-center justify-center gap-10 px-6 py-3">
+                        <Link to="/" className={linkClass('/')}>{t('nav_home')}</Link>
+                        <Link to="/shop" className={linkClass('/shop')}>{t('nav_shop')}</Link>
+                        <Link to="/subscriptions" className={linkClass('/subscriptions')}>{t('nav_subscriptions')}</Link>
+                        <Link to="/become-a-seller" className={linkClass('/become-a-seller')}>{t('nav_become_seller')}</Link>
+                        <Link to="/about" className={linkClass('/about')}>{t('nav_about')}</Link>
                     </div>
                 </div>
-            </nav>
+            </header>
 
-            {/* Desktop consumer navigation */}
-            <div className="hidden md:block bg-white border-b border-gray-200 shadow-sm">
-                <div className="max-w-7xl mx-auto relative flex items-center justify-center gap-10 px-6 py-3">
-                    <Link to="/" className={linkClass('/')}>{t('nav_home')}</Link>
-                    <Link to="/shop" className={linkClass('/shop')}>{t('nav_shop')}</Link>
-                    <Link to="/subscriptions" className={linkClass('/subscriptions')}>{t('nav_subscriptions')}</Link>
-                    <Link to="/become-a-seller" className={linkClass('/become-a-seller')}>{t('nav_become_seller')}</Link>
-                    <Link to="/about" className={linkClass('/about')}>{t('nav_about')}</Link>
-                </div>
-            </div>
-
-            {/* Mobile slide-out drawer */}
+            {/* Mobile slide-out drawer (NOW OUTSIDE HEADER) */}
             {drawerOpen && (
                 <div className="fixed inset-0 z-[100] md:hidden">
                     {/* Backdrop */}
@@ -272,6 +274,6 @@ export default function NavbarLoggedInConsumer() {
                     </div>
                 </div>
             )}
-        </header>
+        </>
     );
 }

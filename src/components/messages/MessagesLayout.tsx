@@ -537,7 +537,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
   const currentProductContext = productContext || fetchedProductContext;
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
+    <div className="flex flex-col w-full h-[100dvh] fixed inset-0 z-50 md:relative md:inset-auto md:h-full bg-white overflow-hidden overscroll-none">
 
       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-gray-50 flex-shrink-0 z-20">
         {onBack && (
@@ -666,7 +666,11 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
         />
       )}
 
-      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-1 bg-white z-10">
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto overscroll-contain min-h-0 p-4 space-y-1 bg-white z-10"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -757,7 +761,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
         </div>
       )}
 
-      <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0 z-20">
+      <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0 z-0">
         <form
           onSubmit={handleSend}
           className="flex items-center gap-3"
