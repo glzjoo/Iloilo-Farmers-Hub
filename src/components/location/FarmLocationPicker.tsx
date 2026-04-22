@@ -430,7 +430,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
             Province
@@ -439,7 +439,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
             type="text"
             value={selectedProvince}
             disabled
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary bg-gray-100 text-gray-600"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base font-primary bg-gray-100 text-gray-600"
           />
         </div>
 
@@ -456,7 +456,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
               setPinSource(null);
               lastNotifiedLocation.current = '';
             }}
-            className={`w-full border rounded-lg px-4 py-2.5 text-sm font-primary outline-none transition-colors ${
+            className={`w-full border rounded-lg px-4 py-3 text-base font-primary outline-none transition-colors ${
               error ? 'border-red-500 bg-red-50' : 'border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary'
             }`}
           >
@@ -482,7 +482,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
               lastNotifiedLocation.current = '';
             }}
             disabled={!selectedCity}
-            className={`w-full border rounded-lg px-4 py-2.5 text-sm font-primary outline-none transition-colors ${
+            className={`w-full border rounded-lg px-4 py-3 text-base font-primary outline-none transition-colors ${
               error ? 'border-red-500 bg-red-50' : 'border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary'
             } ${!selectedCity ? 'bg-gray-100 cursor-not-allowed' : ''}`}
           >
