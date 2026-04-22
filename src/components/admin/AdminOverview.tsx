@@ -1,188 +1,257 @@
 // src/components/admin/AdminOverview.tsx
-import type { Report } from './adminTypes';
-import { getStatusBadge } from './adminTypes';
+import { useEffect, useState } from 'react';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from 'recharts';
+import {
+  getTotalUserCounts,
+  getMonthlyUserRegistrations,
+  getDashboardStats,
+  type UserCounts,
+  type MonthlyRegistration,
+  type DashboardStats,
+} from '../../services/analyticsService';
 
-interface AdminOverviewProps {
-  reports: Report[];
-  onViewReport: (report: Report) => void;
-}
+const COLORS = {
+  farmers: '#10B981',
+  consumers: '#6366F1',
+  line: '#10B981',
+};
 
-export default function AdminOverview({ reports, onViewReport }: AdminOverviewProps) {
-  const now = new Date();
-  const today = now.toISOString().split('T')[0];
+export default function AdminOverview() {
+  const [userCounts, setUserCounts] = useState<UserCounts>({ farmers: 0, consumers: 0, total: 0 });
+  const [monthlyData, setMonthlyData] = useState<MonthlyRegistration[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({
+    revenue: 0,
+    revenueChangePercent: 0,
+    ordersCount: 0,
+    ordersChangePercent: 0,
+    newCustomersThisMonth: 0,
+    newCustomersChangePercent: 0,
+    activeProducts: 0,
+    productsChangePercent: 0,
+  });
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
 
-  const stats = {
-    total: reports.length,
-    pending: reports.filter(r => r.status === 'Pending').length,
-    resolvedToday: reports.filter(r => r.status === 'Resolved' && r.date.startsWith(today)).length,
-    warned: reports.filter(r => r.status === '1st Warning').length,
-    suspended: reports.filter(r => r.status === '1 week suspension' || r.status === '30 days suspension').length,
-    banned: reports.filter(r => r.status === 'Permanently Banned').length,
-  };
+  // Fetch analytics data on mount
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      setLoadingAnalytics(true);
+      try {
+        const [counts, monthly, dashboardStats] = await Promise.all([
+          getTotalUserCounts(),
+          getMonthlyUserRegistrations(),
+          getDashboardStats(),
+        ]);
+        setUserCounts(counts);
+        setMonthlyData(monthly);
+        setStats(dashboardStats);
+      } catch (err) {
+        console.error('Failed to load analytics:', err);
+      } finally {
+        setLoadingAnalytics(false);
+      }
+    };
+    fetchAnalytics();
+  }, []);
 
-  const recentPending = reports
-    .filter(r => r.status === 'Pending')
-    .slice(0, 5);
-
-  const topReported = [...reports]
-    .sort((a, b) => b.reportCount - a.reportCount)
-    .slice(0, 5);
+  const totalUsersData = [
+    { name: 'Farmers', value: userCounts.farmers, color: COLORS.farmers },
+    { name: 'Consumers', value: userCounts.consumers, color: COLORS.consumers },
+  ];
 
   const statCards = [
-    { 
-      label: 'Total Reports', 
-      value: stats.total, 
-      color: 'bg-blue-500', 
+    {
+      title: 'Total Farmer Revenue',
+      subtitle: '(Last 30 Days)',
+      value: stats.revenue > 0 ? `$${stats.revenue.toLocaleString()}` : '$0.00',
+      change: `${stats.revenueChangePercent >= 0 ? '↑' : '↓'} Revenue ${stats.revenueChangePercent >= 0 ? 'up' : 'down'} (previous 30 days)`,
+      changeType: stats.revenueChangePercent >= 0 ? ('up' as const) : ('down' as const),
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-      )
+      ),
     },
-    { 
-      label: 'Pending', 
-      value: stats.pending, 
-      color: 'bg-yellow-500', 
+    {
+      title: 'Total Orders',
+      subtitle: '(Last 30 Days)',
+      value: stats.ordersCount.toLocaleString(),
+      change: `${stats.ordersChangePercent >= 0 ? '↑' : '↓'} Order ${stats.ordersChangePercent >= 0 ? 'up' : 'down'} (previous 30 days)`,
+      changeType: stats.ordersChangePercent >= 0 ? ('up' as const) : ('down' as const),
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
         </svg>
-      )
+      ),
     },
-    { 
-      label: 'Resolved Today', 
-      value: stats.resolvedToday, 
-      color: 'bg-green-500', 
+    {
+      title: 'New Customers',
+      subtitle: '(Last 30 Days)',
+      value: stats.newCustomersThisMonth.toLocaleString(),
+      change: `${stats.newCustomersChangePercent >= 0 ? '↑' : '↓'} Customer ${stats.newCustomersChangePercent >= 0 ? 'up' : 'down'} (previous 30 days)`,
+      changeType: stats.newCustomersChangePercent >= 0 ? ('up' as const) : ('down' as const),
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
-      )
+      ),
     },
-    { 
-      label: 'Active Warnings', 
-      value: stats.warned, 
-      color: 'bg-orange-500', 
+    {
+      title: 'Total Active Products',
+      subtitle: '(Last 30 Days)',
+      value: stats.activeProducts.toLocaleString(),
+      change: `${stats.productsChangePercent >= 0 ? '↑' : '↓'} Delivery ${stats.productsChangePercent >= 0 ? 'up' : 'down'} (previous 30 days)`,
+      changeType: stats.productsChangePercent >= 0 ? ('up' as const) : ('down' as const),
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
-      )
-    },
-    { 
-      label: 'Suspended', 
-      value: stats.suspended, 
-      color: 'bg-red-500', 
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-        </svg>
-      )
-    },
-    { 
-      label: 'Banned', 
-      value: stats.banned, 
-      color: 'bg-red-700', 
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-        </svg>
-      )
+      ),
     },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {statCards.map((card) => (
-          <div key={card.label} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-400">{card.icon}</span>
-              <div className={`w-2 h-2 rounded-full ${card.color}`} />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{card.label}</p>
+      {/* Top Row: Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Donut Chart - Total Users */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+          <h3 className="text-sm font-medium text-gray-900 mb-6">Total Users</h3>
+          <div className="h-64">
+            {loadingAnalytics ? (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm">Loading...</div>
+            ) : userCounts.total === 0 ? (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm">No users yet</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={totalUsersData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {totalUsersData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => [`${value ?? 0}`, 'Users']}
+                    contentStyle={{
+                      borderRadius: '8px',
+                      border: 'none',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
-        ))}
+          <div className="flex justify-center gap-6 mt-4">
+            {totalUsersData.map((item) => (
+              <div key={item.name} className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                <span className="text-sm text-gray-600">{item.name}</span>
+                <span className="text-sm font-bold text-gray-900">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Line Chart - User Registration Per Month */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm lg:col-span-2">
+          <h3 className="text-sm font-medium text-gray-900 mb-6">User Registration</h3>
+          <div className="h-64">
+            {loadingAnalytics ? (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm">Loading...</div>
+            ) : monthlyData.every((d) => d.users === 0) ? (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm">No registration data</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <XAxis
+                    dataKey="month"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: '8px',
+                      border: 'none',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                    formatter={(value) => [`${value ?? 0}`, 'Users']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="users"
+                    stroke={COLORS.line}
+                    strokeWidth={3}
+                    dot={false}
+                    activeDot={{ r: 6, fill: COLORS.line }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+          <div className="flex justify-center gap-6 mt-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-emerald-500" />
+              <span className="text-sm text-gray-600">Monthly Unique Visitors Summary</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Pending Reports */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="font-bold text-gray-900">Pending Reports</h3>
-            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium">
-              {stats.pending} total
-            </span>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {recentPending.length === 0 ? (
-              <div className="px-5 py-8 text-center text-gray-400 text-sm">
-                No pending reports
-                <svg className="w-8 h-8 mx-auto mt-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+      {/* Bottom Row: Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((card) => (
+          <div key={card.title} className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h4 className="text-sm font-medium text-gray-900">{card.title}</h4>
+                <p className="text-xs text-gray-500 mt-0.5">{card.subtitle}</p>
               </div>
-            ) : (
-              topReported.map((report) => (
-                <button
-                  key={report.id}
-                  onClick={() => onViewReport(report)}
-                  className="w-full px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left border-none bg-transparent cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-sm font-bold text-red-600 flex-shrink-0">
-                    {report.reportedUser.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-gray-900 truncate">{report.reportedUser}</p>
-                    <p className="text-xs text-gray-500">{report.type} &bull; {report.date}</p>
-                  </div>
-                  {getStatusBadge(report.status)}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Top Reported Users */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="font-bold text-gray-900">Most Reported Users</h3>
-            <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">
-              Needs attention
-            </span>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {topReported.length === 0 ? (
-              <div className="px-5 py-8 text-center text-gray-400 text-sm">
-                No reports yet
-                <svg className="w-8 h-8 mx-auto mt-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+              <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center">
+                {card.icon}
               </div>
-            ) : (
-              topReported.map((report) => (
-                <button
-                  key={report.id}
-                  onClick={() => onViewReport(report)}
-                  className="w-full px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left border-none bg-transparent cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-sm font-bold text-orange-600 flex-shrink-0">
-                    {report.reportedUser.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-gray-900 truncate">{report.reportedUser}</p>
-                    <p className="text-xs text-gray-500">{report.reportCount} reports &bull; {report.role}</p>
-                  </div>
-                  <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
-                    {report.reportCount}
-                  </span>
-                </button>
-              ))
-            )}
+            </div>
+            <p className="text-2xl font-bold text-gray-900 mb-2">
+              {loadingAnalytics ? '...' : card.value}
+            </p>
+            <p
+              className={`text-xs font-medium ${
+                card.changeType === 'up' ? 'text-emerald-500' : 'text-red-500'
+              }`}
+            >
+              {card.change}
+            </p>
+            <button className="mt-4 text-xs text-indigo-600 font-medium hover:text-indigo-700 transition-colors border-none bg-transparent cursor-pointer">
+              Full Details
+            </button>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );
