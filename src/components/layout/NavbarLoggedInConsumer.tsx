@@ -1,4 +1,5 @@
 import logo from '../../assets/icons/Logo.svg';
+import logoOnly from '../../assets/icons/LogoOnly.svg';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -67,14 +68,13 @@ export default function NavbarLoggedInConsumer() {
         <header className="w-full sticky top-0 z-50">
             <nav className="bg-primary w-full">
                 <div className="max-w-7xl mx-auto flex justify-end px-4 sm:px-6 pt-2">
-                    <div className="hidden md:block">
-                        <LanguageSwitcher />
-                    </div>
+                    <LanguageSwitcher />
                 </div>
 
-                <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 pb-4 pt-1 gap-3">
+                <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 pb-3 sm:pb-4 pt-1 gap-2 sm:gap-3">
                     <Link to="/" className="flex items-center gap-2 text-white no-underline shrink-0">
-                        <img src={logo} className="h-8 w-auto" />
+                        <img src={logoOnly} className="h-8 w-auto md:hidden" alt="Iloilo Farmers Hub" />
+                        <img src={logo} className="h-8 w-auto hidden md:block" alt="Iloilo Farmers Hub" />
                     </Link>
 
                     <SearchBar />

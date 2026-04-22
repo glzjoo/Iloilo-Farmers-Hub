@@ -381,9 +381,9 @@ export default function FarmerSignup() {
             />
             <label htmlFor="agreeToTerms" className="text-sm font-primary text-gray-600 cursor-pointer leading-relaxed">
               By continuing, you agree to our{' '}
-              <Link to="/terms" className="text-primary underline hover:text-green-700">Terms & Conditions</Link>
+              <a href="https://drive.google.com/file/d/1Uy0uO4AbXiqpCRrLDYglutc4mPFAJhgi/view" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-green-700">Terms & Conditions</a>
               {' '}and{' '}
-              <Link to="/privacy" className="text-primary underline hover:text-green-700">Privacy Policy</Link>
+              <a href="https://drive.google.com/file/d/1Uy0uO4AbXiqpCRrLDYglutc4mPFAJhgi/view" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-green-700">Privacy Policy</a>
             </label>
           </div>
           {errors.agreeToTerms && (
