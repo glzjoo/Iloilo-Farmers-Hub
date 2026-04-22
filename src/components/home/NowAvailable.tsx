@@ -1,7 +1,27 @@
+// ============================================
+// FILE: src/components/home/NowAvailable.tsx 
+// ============================================
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Product } from '../../types';
 import { getNewArrivals } from '../../services/shopService';
+
+// Star display component - whole stars only
+function StarDisplay({ rating }: { rating: number }) {
+    const roundedRating = Math.round(rating);
+    return (
+        <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <span
+                    key={star}
+                    className={`text-xs ${star <= roundedRating ? 'text-yellow-400' : 'text-gray-400'}`}
+                >
+                    ★
+                </span>
+            ))}
+        </div>
+    );
+}
 
 export default function NowAvailable() {
     const navigate = useNavigate();
@@ -33,9 +53,9 @@ export default function NowAvailable() {
     if (loading) {
         return (
             <section className="w-full py-8">
-                <div className="flex flex-wrap gap-4 justify-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto px-4 sm:px-6">
                     {[...Array(4)].map((_, i) => (
-                        <div key={i} className="w-[300px] h-[510px] bg-gray-200 rounded-lg animate-pulse"></div>
+                        <div key={i} className="w-full h-[400px] sm:h-[510px] bg-gray-200 rounded-lg animate-pulse"></div>
                     ))}
                 </div>
             </section>
@@ -45,10 +65,10 @@ export default function NowAvailable() {
     if (error || products.length === 0) {
         return (
             <section className="w-full py-8">
-                <div className="flex flex-wrap gap-4 justify-center">
-                    <div className="text-center py-12 text-gray-500 w-full">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto px-4 sm:px-6">
+                    <div className="text-center py-12 text-gray-500 col-span-full">
                         <p>Check back soon for fresh arrivals!</p>
-                        <button 
+                        <button
                             onClick={() => navigate('/shop')}
                             className="mt-2 text-primary hover:underline"
                         >
@@ -62,15 +82,15 @@ export default function NowAvailable() {
 
     return (
         <section className="w-full py-8">
-            <div className="flex flex-wrap gap-4 justify-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto px-4 sm:px-6">
                 {products.map((product) => (
-                    <div 
-                        key={product.id} 
-                        className="relative w-[300px] h-[510px] rounded-lg overflow-hidden cursor-pointer group"
+                    <div
+                        key={product.id}
+                        className="relative w-full h-[400px] sm:h-[510px] rounded-lg overflow-hidden cursor-pointer group"
                         onClick={() => handleProductClick(product.id)}
                     >
-                        <img 
-                            src={product.image || '/placeholder-product.png'} 
+                        <img
+                            src={product.image || '/placeholder-product.png'}
                             alt={product.name}
                             className="w-full h-full object-cover transition-transform group-hover:scale-105"
                         />
@@ -78,10 +98,15 @@ export default function NowAvailable() {
                             <p className="text-sm text-white/80">Now Available</p>
                             <h3 className="text-xl font-bold text-white mb-1">{product.name}</h3>
                             <p className="text-white/90 text-sm mb-2">₱{product.price.toFixed(2)} / {product.unit}</p>
+
+                            {/* Stars only - no count */}
                             {product.rating > 0 && (
-                                <p className="text-yellow-400 text-xs mb-2">★ {product.rating.toFixed(1)}</p>
+                                <div className="mb-2">
+                                    <StarDisplay rating={product.rating} />
+                                </div>
                             )}
-                            <button 
+
+                            <button
                                 className="bg-white text-primary font-bold rounded-full px-6 py-2 text-lg cursor-pointer hover:bg-gray-100 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();

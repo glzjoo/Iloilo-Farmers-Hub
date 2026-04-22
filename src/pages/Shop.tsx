@@ -4,6 +4,10 @@ import ShopAll from "../components/shop/ShopAll";
 import SidebarFilter from "../components/shop/SidebarFilter";
 import type { ProductQueryOptions } from "../services/shopService";
 import { getTrendingItems } from "../services/shopService";
+import { useNearbyFarmers } from "../hooks/useNearbyFarmers";
+
+//Shop.tsx page
+type NearbyMode = 'selection' | 'choosing' | 'gps' | 'manual';
 
 const CATEGORIES = ['All', 'Vegetables', 'Fruits', 'Rice', 'Corn', 'Livestock', 'Poultry', 'Fishery', 'Other'];
 
@@ -33,39 +37,46 @@ export default function Shop() {
     const navigate = useNavigate();
     const searchQuery = searchParams.get('q') || '';
     
-    // UI state
     const [activeTopCategory, setActiveTopCategory] = useState<string>('All');
     const [sidebarCategories, setSidebarCategories] = useState<string[]>([]);
     const [sortBy, setSortBy] = useState<string>('trending');
     const [priceRange, setPriceRange] = useState<{ min: number; max: number } | null>(null);
     const [trendingItems, setTrendingItems] = useState<{id: string; name: string; image: string}[]>([]);
-    // FIXED: Add loading and error states for trending fetch
     const [trendingLoading, setTrendingLoading] = useState(false);
     const [trendingError, setTrendingError] = useState<string | null>(null);
 
-    // Fetch trending items on mount with error handling
+    // Nearby farmers state
+    const [nearbyMode, setNearbyMode] = useState<NearbyMode>('selection');
+    const [hasSearched, setHasSearched] = useState(false);
+    
+    const {
+        farmers: nearbyFarmers,
+        loading: nearbyLoading,
+        error: nearbyError,
+        locationError: nearbyLocationError,
+        requestLocation,
+        isUsingManualLocation,
+        setManualLocation,
+    } = useNearbyFarmers({ radiusKm: 5, requireActiveProducts: true });
+
     useEffect(() => {
         const fetchTrending = async () => {
             try {
                 setTrendingLoading(true);
                 setTrendingError(null);
-                
                 const items = await getTrendingItems(4);
                 setTrendingItems(items);
             } catch (err) {
                 console.error('Failed to fetch trending items:', err);
                 setTrendingError('Failed to load trending items');
-                // Keep empty array as fallback
                 setTrendingItems([]);
             } finally {
                 setTrendingLoading(false);
             }
         };
-        
         fetchTrending();
     }, []);
 
-    // Combine all filters
     const queryOptions: ProductQueryOptions = useMemo(() => {
         let categories: string[] = [];
         
@@ -104,7 +115,7 @@ export default function Shop() {
         if (categories.length === 0) {
             setActiveTopCategory('All');
         } else {
-            const matchingTop = Object.entries(topToSidebarMap).find(([top, sides]) => 
+            const matchingTop = Object.entries(topToSidebarMap).find(([_top, sides]) => 
                 sides.length === categories.length && 
                 sides.every(s => categories.includes(s))
             );
@@ -131,6 +142,42 @@ export default function Shop() {
         navigate(`/item/${productId}`);
     }, [navigate]);
 
+    // Nearby farmers handlers - REVISED
+    const handleFindFarmersClick = useCallback(() => {
+        setNearbyMode('choosing'); // Show choice between GPS and Manual
+        setHasSearched(false);
+    }, []);
+
+    const handleNearbyBack = useCallback(() => {
+        setNearbyMode('selection');
+        setHasSearched(false);
+        setManualLocation(null);
+    }, [setManualLocation]);
+
+    const handleEnableGPS = useCallback(() => {
+        setNearbyMode('gps');
+        setHasSearched(true); // Mark as searched immediately (attempted)
+        requestLocation();
+    }, [requestLocation]);
+
+    const handleEnableManual = useCallback(() => {
+        setNearbyMode('manual');
+        // Don't mark as searched yet, wait for Apply
+    }, []);
+
+    const handleLocationSelect = useCallback((coords: { lat: number; lng: number } | null, city?: string, barangay?: string) => {
+    setHasSearched(true);   
+    setManualLocation(coords, city, barangay); // Pass city/barangay
+    }, [setManualLocation]);
+
+    // Auto-fallback to manual if GPS denied
+    useEffect(() => {
+        if (nearbyMode === 'gps' && nearbyLocationError && !isUsingManualLocation) {
+            // GPS failed, auto-switch to manual
+            setNearbyMode('manual');
+        }
+    }, [nearbyMode, nearbyLocationError, isUsingManualLocation]);
+
     const hasActiveFilters = activeTopCategory !== 'All' || 
                             sidebarCategories.length > 0 || 
                             sortBy !== 'trending' ||
@@ -139,7 +186,6 @@ export default function Shop() {
     return (
         <div className="w-full pb-10 mt-10 mb-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-start gap-4 md:gap-8">
-                {/* Sidebar */}
                 <div className="w-[220px] lg:w-[250px] flex-shrink-0 hidden md:block">
                     <SidebarFilter 
                         categories={sidebarCategories}
@@ -152,37 +198,50 @@ export default function Shop() {
                         hasFilters={hasActiveFilters}
                         trendingItems={trendingItems}
                         onTrendingClick={handleTrendingClick}
+                        nearbyMode={nearbyMode}
+                        onFindFarmersClick={handleFindFarmersClick}
+                        onNearbyBack={handleNearbyBack}
+                        onEnableGPS={handleEnableGPS}
+                        onEnableManual={handleEnableManual}
+                        onLocationSelect={handleLocationSelect}
+                        nearbyLocationError={nearbyLocationError}
+                        nearbyLoading={nearbyLoading}
                     />
-                    {/* FIXED: Show error if trending failed */}
-                    {trendingError && (
+                    {trendingError && nearbyMode === 'selection' && (
                         <div className="mt-2 p-2 bg-red-50 text-red-600 text-xs rounded">
                             {trendingError}
                         </div>
                     )}
                 </div>
                 
-                {/* Main Content */}
                 <div className="flex-1 min-w-0">
-                    {/* Top Category Buttons */}
-                    <div className="flex flex-wrap justify-center gap-2 mb-6">
-                        {CATEGORIES.map(category => (
-                            <button
-                                key={category}
-                                onClick={() => handleTopCategoryClick(category)}
-                                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-                                    activeTopCategory === category
-                                        ? 'bg-primary text-white border border-primary'
-                                        : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                                }`}
-                            >
-                                {category}
-                            </button>
-                        ))}
-                    </div>
+                    {nearbyMode === 'selection' && (
+                        <div className="flex overflow-x-auto gap-2 mb-6 pb-2 -mx-2 px-2 scrollbar-hide">
+                            {CATEGORIES.map(category => (
+                                <button
+                                    key={category}
+                                    onClick={() => handleTopCategoryClick(category)}
+                                    className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                                        activeTopCategory === category
+                                            ? 'bg-primary text-white border border-primary'
+                                            : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    {category}
+                                </button>
+                            ))}
+                        </div>
+                    )}
 
                     <ShopAll 
                         searchQuery={searchQuery} 
                         queryOptions={queryOptions}
+                        nearbyFarmers={nearbyFarmers}
+                        nearbyMode={nearbyMode}
+                        nearbyLoading={nearbyLoading}
+                        nearbyError={nearbyError}
+                        isUsingManualLocation={isUsingManualLocation}
+                        hasSearched={hasSearched}
                     />
                 </div>
             </div>

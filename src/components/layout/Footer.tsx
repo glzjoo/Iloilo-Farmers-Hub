@@ -17,15 +17,15 @@ const description = [
 export default function Footer() {
     return (
         <footer className="w-full bg-primary text-white py-10">
-            <div className="max-w-7xl mx-auto px-6 flex items-center justify-around gap-15">
-                <div className="max-w-sm ">
+            <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center md:items-start justify-around gap-8 md:gap-15">
+                <div className="max-w-sm">
                     <img src={logo} className="w-20 h-20 mb-4 mx-auto" />
                     <h2 className=" font-primary text-center text-xl font-bold text-white mb-2">ILOILO FARMERS HUB</h2>
                     <p className="text-justify text-sm text-white/80 leading-relaxed">Connects local farmers and consumers through a simple online marketplace. Farmers can showcase and sell their fresh produce directly, while buyers enjoy easy access to local goods at fair prices.</p>
                 </div>
 
                 {/*Link Columns */}
-                <div className="flex gap-16">
+                <div className="flex flex-col sm:flex-row gap-8 sm:gap-16 text-center sm:text-left">
                     {description.map((stat, i) => (
                         <div key={i}>
                             <h3 className="text-lg font-bold text-white mb-3">{stat.title}</h3>

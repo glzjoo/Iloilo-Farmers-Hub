@@ -131,10 +131,10 @@ export default function EditProfileFarmer() {
     }
 
     return (
-        <div className="border border-gray-200 rounded-xl p-8">
+        <div className="border border-gray-200 rounded-xl p-4 sm:p-8">
             <h1 className="text-xl font-bold font-primary">Edit Profile</h1>
             <p className="text-sm text-gray-400 mb-6">Only you can see this</p>
-            <div className="flex items-start gap-8 mb-8 border border-gray-200 rounded-xl p-6">
+            <div className="flex flex-col md:flex-row items-start gap-6 md:gap-8 mb-8 border border-gray-200 rounded-xl p-4 sm:p-6">
                 <div className="flex items-start gap-5 flex-1">
                     {/* Profile Photo */}
                     <div className="relative shrink-0">
@@ -178,7 +178,7 @@ export default function EditProfileFarmer() {
                 </div>
 
                 {/* Verified Info */}
-                <div className="border-l border-gray-200 pl-8 min-w-[220px]">
+                <div className="md:border-l border-gray-200 md:pl-8 w-full md:min-w-[220px] md:w-auto">
                     <div className="mb-4">
                         <h4 className="text-sm font-bold text-gray-800">Verified ID Name</h4>
                         <p className="text-sm text-gray-500 mt-0.5">{verifiedName}</p>
@@ -191,7 +191,7 @@ export default function EditProfileFarmer() {
             </div>
 
             {/* Form Fields */}
-            <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                 <div>
                     <label className={labelClass}>First Name</label>
                     <input

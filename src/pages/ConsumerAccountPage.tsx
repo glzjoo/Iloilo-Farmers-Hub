@@ -5,7 +5,7 @@ import { db } from '../lib/firebase';
 import accountSettingsIcon from '../assets/icons/account-settings.svg';
 import shareIcon from '../assets/icons/share.svg';
 import ProfileInfoSectionConsumer from '../components/Profile/ProfileInfoSectionConsumer';
-
+//consumerAccountPage.tsx
 interface ConsumerProfile {
     firstName: string;
     lastName: string;
@@ -75,14 +75,14 @@ export default function ConsumerAccountPage() {
 
     if (loading) {
         return (
-            <section className="max-w-6xl mx-auto px-10 py-8">
+            <section className="max-w-6xl mx-auto px-4 sm:px-10 py-8">
                 <p className="text-gray-500">Loading...</p>
             </section>
         );
     }
 
     return (
-        <section className="w-full max-w-6xl mx-auto px-10 py-8 min-h-screen">
+        <section className="w-full max-w-6xl mx-auto px-4 sm:px-10 py-8 min-h-screen">
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
                 <img src={accountSettingsIcon} alt="" className="w-8 h-8" />
@@ -95,8 +95,8 @@ export default function ConsumerAccountPage() {
             </div>
 
             {/* Profile Card */}
-            <div className="border border-gray-200 rounded-xl p-6 mb-6">
-                <div className="flex items-center gap-6">
+            <div className="border border-gray-200 rounded-xl p-4 sm:p-6 mb-6">
+                <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                     <div className="w-20 h-20 rounded-xl bg-gray-200 overflow-hidden flex items-center justify-center shrink-0">
                         {profile?.profileImage ? (
                             <img
@@ -127,7 +127,7 @@ export default function ConsumerAccountPage() {
                         </button>
                     </div>
 
-                    <div className="text-center px-6 border-l border-gray-200">
+                    <div className="text-center px-4 sm:px-6 border-l border-gray-200">
                         <p className="text-lg font-bold font-primary">
                             {getJoinDate()}
                         </p>
