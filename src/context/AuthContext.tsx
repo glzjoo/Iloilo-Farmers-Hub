@@ -234,16 +234,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('1. Phone normalized:', normalizedPhone);
       console.log('2. Auth exists:', !!auth);
 
-      // Check if reCAPTCHA container exists
-      let container = document.getElementById('recaptcha-container');
-      if (!container) {
-        container = document.createElement('div');
-        container.id = 'recaptcha-container';
-        document.body.appendChild(container);
-        console.log('3. Created reCAPTCHA container');
+      // Always remove old container and create a fresh one
+      const oldContainer = document.getElementById('recaptcha-container');
+      if (oldContainer) {
+        oldContainer.remove();
+        console.log('3. Removed old reCAPTCHA container');
       }
 
-      // Reset the ref (don't try to clear, just create new)
+      const container = document.createElement('div');
+      container.id = 'recaptcha-container';
+      document.body.appendChild(container);
+      console.log('3. Created fresh reCAPTCHA container');
+
+      // Reset the ref
       recaptchaVerifierRef.current = null;
 
       // Import and create reCAPTCHA

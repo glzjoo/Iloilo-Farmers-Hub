@@ -36,19 +36,19 @@ export default function Shop() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const searchQuery = searchParams.get('q') || '';
-    
+
     const [activeTopCategory, setActiveTopCategory] = useState<string>('All');
     const [sidebarCategories, setSidebarCategories] = useState<string[]>([]);
     const [sortBy, setSortBy] = useState<string>('trending');
     const [priceRange, setPriceRange] = useState<{ min: number; max: number } | null>(null);
-    const [trendingItems, setTrendingItems] = useState<{id: string; name: string; image: string}[]>([]);
+    const [trendingItems, setTrendingItems] = useState<{ id: string; name: string; image: string }[]>([]);
     const [trendingLoading, setTrendingLoading] = useState(false);
     const [trendingError, setTrendingError] = useState<string | null>(null);
 
     // Nearby farmers state
     const [nearbyMode, setNearbyMode] = useState<NearbyMode>('selection');
     const [hasSearched, setHasSearched] = useState(false);
-    
+
     const {
         farmers: nearbyFarmers,
         loading: nearbyLoading,
@@ -79,18 +79,18 @@ export default function Shop() {
 
     const queryOptions: ProductQueryOptions = useMemo(() => {
         let categories: string[] = [];
-        
+
         if (activeTopCategory !== 'All') {
             categories = [activeTopCategory];
         }
-        
+
         if (sidebarCategories.length > 0) {
             const dbCategories = sidebarCategories
                 .flatMap(c => sidebarToDbMap[c] || [])
                 .filter(Boolean);
             categories = [...new Set([...categories, ...dbCategories])];
         }
-        
+
         return {
             categories: categories.length > 0 ? categories : undefined,
             sortBy: sortBy as ProductQueryOptions['sortBy'] || 'trending',
@@ -115,8 +115,8 @@ export default function Shop() {
         if (categories.length === 0) {
             setActiveTopCategory('All');
         } else {
-            const matchingTop = Object.entries(topToSidebarMap).find(([_top, sides]) => 
-                sides.length === categories.length && 
+            const matchingTop = Object.entries(topToSidebarMap).find(([_top, sides]) =>
+                sides.length === categories.length &&
                 sides.every(s => categories.includes(s))
             );
             setActiveTopCategory(matchingTop ? matchingTop[0] : 'All');
@@ -166,8 +166,8 @@ export default function Shop() {
     }, []);
 
     const handleLocationSelect = useCallback((coords: { lat: number; lng: number } | null, city?: string, barangay?: string) => {
-    setHasSearched(true);   
-    setManualLocation(coords, city, barangay); // Pass city/barangay
+        setHasSearched(true);
+        setManualLocation(coords, city, barangay); // Pass city/barangay
     }, [setManualLocation]);
 
     // Auto-fallback to manual if GPS denied
@@ -178,16 +178,16 @@ export default function Shop() {
         }
     }, [nearbyMode, nearbyLocationError, isUsingManualLocation]);
 
-    const hasActiveFilters = activeTopCategory !== 'All' || 
-                            sidebarCategories.length > 0 || 
-                            sortBy !== 'trending' ||
-                            priceRange !== null;
+    const hasActiveFilters = activeTopCategory !== 'All' ||
+        sidebarCategories.length > 0 ||
+        sortBy !== 'trending' ||
+        priceRange !== null;
 
     return (
         <div className="w-full pb-10 mt-10 mb-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-start gap-4 md:gap-8">
                 <div className="w-[220px] lg:w-[250px] flex-shrink-0 hidden md:block">
-                    <SidebarFilter 
+                    <SidebarFilter
                         categories={sidebarCategories}
                         onCategoryChange={handleSidebarCategoryChange}
                         sortBy={sortBy}
@@ -213,7 +213,7 @@ export default function Shop() {
                         </div>
                     )}
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                     {nearbyMode === 'selection' && (
                         <div className="flex overflow-x-auto gap-2 mb-6 pb-2 -mx-2 px-2 scrollbar-hide">
@@ -221,11 +221,10 @@ export default function Shop() {
                                 <button
                                     key={category}
                                     onClick={() => handleTopCategoryClick(category)}
-                                    className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${
-                                        activeTopCategory === category
+                                    className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${activeTopCategory === category
                                             ? 'bg-primary text-white border border-primary'
                                             : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                                    }`}
+                                        }`}
                                 >
                                     {category}
                                 </button>
@@ -233,8 +232,8 @@ export default function Shop() {
                         </div>
                     )}
 
-                    <ShopAll 
-                        searchQuery={searchQuery} 
+                    <ShopAll
+                        searchQuery={searchQuery}
                         queryOptions={queryOptions}
                         nearbyFarmers={nearbyFarmers}
                         nearbyMode={nearbyMode}

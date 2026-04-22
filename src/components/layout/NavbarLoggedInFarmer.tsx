@@ -7,7 +7,6 @@ import messagesIcon from '../../assets/icons/messages.svg';
 import accountSettingsIcon from '../../assets/icons/account-settings.svg';
 import logOutIcon from '../../assets/icons/log-out.svg';
 import { useAuth } from '../../context/AuthContext';
-import SearchBar from '../Search/SearchBar';
 import mylisting from '../../assets/icons/mylisting.svg';
 import settingIcon from '../../assets/icons/settings.svg';
 import LanguageSwitcher from './LanguageSwitcher';

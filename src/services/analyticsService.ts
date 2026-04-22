@@ -2,8 +2,6 @@
 import {
   collection,
   getDocs,
-  query,
-  where,
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -63,13 +61,13 @@ export const getMonthlyUserRegistrations = async (): Promise<MonthlyRegistration
 
     // Query farmers and consumers for createdAt
     const collections = ['farmers', 'consumers'];
-    
+
     for (const colName of collections) {
       const snap = await getDocs(collection(db, colName));
       snap.forEach((doc) => {
         const data = doc.data();
         const createdAt = data.createdAt?.toDate?.() || data.createdAt;
-        
+
         if (createdAt instanceof Date) {
           if (createdAt.getFullYear() === currentYear) {
             monthlyCounts[createdAt.getMonth()]++;
@@ -119,10 +117,10 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
       const data = doc.data();
       const createdAt = data.createdAt?.toDate?.() || data.createdAt;
       let date: Date | null = null;
-      
+
       if (createdAt instanceof Date) date = createdAt;
       else if (createdAt instanceof Timestamp) date = createdAt.toDate();
-      
+
       if (date && date >= startOfMonth) {
         newCustomers++;
       }

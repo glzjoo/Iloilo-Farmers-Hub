@@ -14,7 +14,7 @@ interface LocationState {
 export default function FarmerOtpVerification() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { sendOTP, verifyOTP, completeFarmerSignup } = useAuth();
+  const { sendOTP, completeFarmerSignup } = useAuth();
 
   const { tempId, phoneNumber } = (location.state as LocationState) || {};
 
@@ -26,7 +26,6 @@ export default function FarmerOtpVerification() {
   const [countdown, setCountdown] = useState(60);
   const [confirmationResult, setConfirmationResult] = useState<any>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [verificationResult, setVerificationResult] = useState<any>(null);
 
   // Send OTP on mount
   useEffect(() => {
@@ -118,10 +117,7 @@ export default function FarmerOtpVerification() {
       setLoading(true);
       setError('');
 
-      // Step 1: Verify OTP
-      const firebaseUser = await verifyOTP(confirmationResult, code);
-
-      // Step 2: Complete farmer signup
+      // completeFarmerSignup already verifies the OTP and creates the account
       await completeFarmerSignup(tempId, confirmationResult, code);
 
       // Show success modal
