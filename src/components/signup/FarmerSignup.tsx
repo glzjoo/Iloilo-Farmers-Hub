@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import logo from '../../assets/icons/logo.png';
+import logo from '../../assets/icons/logo-only-green.svg'
 import SignupToggle from './SignupToggle';
 import FarmLocationPicker from '../location/FarmLocationPicker';
 import { farmerSignupSchema, type FarmerSignupData } from '../../lib/validations';
@@ -55,7 +55,7 @@ export default function FarmerSignup() {
           ? customFarmType.trim() as any
           : data.farmType,
       };
-      
+
       console.log('Calling prepareFarmerSignup with data:', submitData);
       const tempId = await prepareFarmerSignup(submitData);
       console.log('Got tempId, navigating...', tempId);
@@ -102,8 +102,8 @@ export default function FarmerSignup() {
       <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-10">
         <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
           <div className="flex items-center gap-3">
-            <img src={logo} className="w-11 h-11 rounded-full object-cover" alt="Logo" />
-            <span className="font-primary font-bold text-2xl">Farmer's Information</span>
+            <img src={logo} className="w-11 h-11 object-contain" alt="Logo" />
+            <span className="font-primary text-primary font-bold text-2xl">Farmer's Information</span>
           </div>
           <SignupToggle />
         </div>
@@ -114,9 +114,10 @@ export default function FarmerSignup() {
           </div>
         )}
 
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-blue-700 text-sm font-primary">
-            <span className="font-bold">Next Steps:</span> 1) Verify your identity with ID + selfie, 2) We'll send OTP to your phone to create your account. <span className="font-semibold">No password needed!</span>
+        <div className="mb-6 p-4 bg-primary/10 border border-primary/40 rounded-lg">
+          <p className="text-primary text-sm font-primary">
+            <span className="font-bold text-primary">Next Steps:</span> <br />
+            1) Verify your identity with ID + selfie, <br />2) We'll send a 6-digit OTP to your provided phone number to create your account.
           </p>
         </div>
 
@@ -264,7 +265,7 @@ export default function FarmerSignup() {
             />
             {farmLocation?.coordinates && (
               <p className="mt-2 text-sm text-green-600 font-primary">
-                Location set: {farmLocation.barangay}, {farmLocation.city} 
+                Location set: {farmLocation.barangay}, {farmLocation.city}
                 ({farmLocation.coordinates.lat.toFixed(4)}, {farmLocation.coordinates.lng.toFixed(4)})
                 {farmLocation.accuracy === 'gps' && ' • GPS'}
                 {farmLocation.accuracy === 'manual_pin' && ' • Manual pin'}

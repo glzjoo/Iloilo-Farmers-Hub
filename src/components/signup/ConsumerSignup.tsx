@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ConfirmationResult } from 'firebase/auth'; // Added type
-import logo from '../../assets/icons/logo.png';
+import logo from '../../assets/icons/logo-only-green.svg';
 import SignupToggle from './SignupToggle';
 import { consumerSignupSchema, type ConsumerSignupData } from '../../lib/validations';
 import { useAuth } from '../../context/AuthContext';
@@ -13,10 +13,10 @@ export default function ConsumerSignup() {
   const navigate = useNavigate();
   const { sendOTP } = useAuth();
   const { sanitizeName, sanitizeEmail, sanitizePhone } = useSanitizedInput();
-  
+
   // Store confirmation result in ref (not state) to persist across renders
   const confirmationRef = useRef<ConfirmationResult | null>(null);
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [firebaseError, setFirebaseError] = useState<string | null>(null);
 
@@ -47,22 +47,22 @@ export default function ConsumerSignup() {
   const onSubmit = async (data: ConsumerSignupData) => {
     setIsLoading(true);
     setFirebaseError(null);
-    
+
     try {
       // Send OTP and store confirmation in ref
       const confirmation = await sendOTP(data.phoneNo);
       confirmationRef.current = confirmation;
-      
+
       // Store in sessionStorage for OTP page to access
       sessionStorage.setItem('consumerSignupData', JSON.stringify(data));
       sessionStorage.setItem('consumerConfirmation', 'true'); // Flag that confirmation exists
-      
+
       // Navigate to OTP page - don't pass confirmation in state (not serializable)
-      navigate('/consumer/otp-verification', { 
-        state: { 
+      navigate('/consumer/otp-verification', {
+        state: {
           phoneNumber: data.phoneNo,
           flow: 'signup'
-        } 
+        }
       });
     } catch (error: any) {
       console.error('OTP error:', error);
@@ -79,8 +79,8 @@ export default function ConsumerSignup() {
 
   const getInputClass = (fieldName: keyof ConsumerSignupData) => {
     const baseClass = "w-full border rounded-lg px-4 py-2.5 text-sm font-primary outline-none transition-colors";
-    return errors[fieldName] 
-      ? `${baseClass} border-red-500 focus:border-red-500 bg-red-50` 
+    return errors[fieldName]
+      ? `${baseClass} border-red-500 focus:border-red-500 bg-red-50`
       : `${baseClass} border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary`;
   };
 
@@ -90,16 +90,16 @@ export default function ConsumerSignup() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
           <div className="flex items-center gap-3">
-            <img src={logo} className="w-11 h-11 rounded-full object-cover" alt="Logo" />
-            <span className="font-primary font-bold text-2xl">Consumer's Information</span>
+            <img src={logo} className="w-11 h-11 object-contain" alt="Logo" />
+            <span className="font-primary text-primary font-bold text-2xl">Consumer's Information</span>
           </div>
           <SignupToggle />
         </div>
 
         {/* Info Banner */}
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-blue-700 text-sm font-primary">
-            📱 We'll send a 6-digit OTP to your phone number to verify your account. No password needed!
+        <div className="mb-6 p-4 bg-primary/10 border border-primary/40 rounded-lg">
+          <p className="text-primary text-sm font-primary">
+            📱 We'll send a 6-digit OTP to verify your phone number
           </p>
         </div>
 
@@ -299,7 +299,7 @@ export default function ConsumerSignup() {
             >
               Clear All
             </button>
-            
+
             <button
               type="submit"
               disabled={isLoading || phoneNo?.length !== 11}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from '../../context/AuthContext';
-import logo from '../../assets/icons/logo.png';
+import logo from '../../assets/icons/logo-Green.svg';
 
 export default function LoginSection() {
     const navigate = useNavigate();
@@ -53,12 +53,12 @@ export default function LoginSection() {
         <section className="flex items-center justify-center py-16 px-4">
             <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
                 <div className="flex items-center justify-center gap-2 mb-4">
-                    <img src={logo} className="w-11 h-11 rounded-full object-cover" alt="Logo" />
-                    <span className="font-primary font-bold text-lg tracking-wide whitespace-nowrap">ILOILO FARMERS HUB</span>
+                    <img src={logo} className="w-80 h-25" alt="Logo" />
+
                 </div>
 
-                <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-blue-700 text-xs font-primary text-center">
+                <div className="mb-6 p-3 bg-primary/10 border border-primary rounded-lg">
+                    <p className="text-primary text-xs font-primary text-center">
                         📱 Enter your phone number. We'll send a 6-digit OTP to verify your identity.
                     </p>
                 </div>

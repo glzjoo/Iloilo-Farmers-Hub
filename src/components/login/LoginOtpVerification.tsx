@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from '../../context/AuthContext';
-import logo from '../../assets/icons/logo.png';
+import logo from '../../assets/icons/logo-Green.svg'
 
 interface LocationState {
   phoneNo: string;  // Changed from phoneNumber
@@ -144,13 +144,13 @@ export default function LoginOtpVerification() {
   return (
     <section className="flex items-center justify-center py-16 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <img src={logo} className="w-11 h-11 rounded-full object-cover" alt="Logo" />
-          <span className="font-primary font-bold text-lg tracking-wide whitespace-nowrap">ILOILO FARMERS HUB</span>
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <img src={logo} className="w-22 h-22 object-contain" alt="Logo" />
+
         </div>
 
         <div className="text-center mb-6">
-          <h2 className="text-xl font-primary font-bold text-gray-800 mb-1">Verify Your Phone</h2>
+          <h2 className="text-lg font-primary font-bold text-gray-800 mb-1">Verify Your Phone</h2>
           <p className="text-sm font-primary text-gray-500">
             Enter the 6-digit code sent to<br />
             <span className="font-semibold text-gray-700">{formatPhone(phoneNo)}</span>  {/* Changed from phoneNumber */}
