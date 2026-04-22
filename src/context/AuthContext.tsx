@@ -149,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const suspensionType = userData.suspensionType;
 
             // Handle warning — show notice but allow login
-            if (suspensionType === 'warning' && !userData.suspended) {
+            if (suspensionType === 'warning' && !userData.suspended && !userData.warningAcknowledged) {
               setSuspensionInfo({
                 type: 'warning',
                 suspendedUntil: null,
@@ -666,7 +666,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         <SuspensionNoticeModal
           type={suspensionInfo.type}
           suspendedUntil={suspensionInfo.suspendedUntil}
-          onClose={() => setSuspensionInfo(null)}
+          onClose={async () => {
+            if (suspensionInfo.type === 'warning' && user) {
+              try {
+                await updateDoc(doc(db, 'users', user.uid), {
+                  warningAcknowledged: true
+                });
+              } catch (e) {
+                console.error('Failed to acknowledge warning', e);
+              }
+            }
+            setSuspensionInfo(null);
+          }}
         />
       )}
     </AuthContext.Provider>

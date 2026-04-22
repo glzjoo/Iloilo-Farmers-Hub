@@ -11,6 +11,7 @@ const resources = {
       "nav_become_seller": "BECOME A SELLER",
       "nav_about": "ABOUT US",
 
+
       // Auth
       "sign_up": "Sign Up",
       "login": "Login",
@@ -25,6 +26,7 @@ const resources = {
       "my_listing_desc": "View/Edit your listings",
       "settings": "Settings",
       "sell": "Sell",
+      "edit_profile": "Edit Profile",
 
       // Language names
       "lang_english": "English",
@@ -37,6 +39,7 @@ const resources = {
   },
   fil: {
     translation: {
+      //navebars
       "nav_home": "HOME",
       "nav_shop": "MAMILI",
       "nav_subscriptions": "MGA SUBSCRIPTION",
