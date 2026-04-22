@@ -12,9 +12,9 @@ export default function LoginOtpVerification() {
   const navigate = useNavigate();
   const location = useLocation();
   const { sendOTP, verifyOTP } = useAuth();
-  
+
   const { phoneNo } = (location.state as LocationState) || {};  // Changed from phoneNumber
-  
+
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
@@ -22,9 +22,12 @@ export default function LoginOtpVerification() {
   const [sending, setSending] = useState(false);
   const [countdown, setCountdown] = useState(60);
 
+
+
+
   useEffect(() => {
     if (!phoneNo) {  // Changed from phoneNumber
-      navigate('/login', { 
+      navigate('/login', {
         replace: true,
         state: { error: 'Please enter your phone number first' }
       });
@@ -97,7 +100,7 @@ export default function LoginOtpVerification() {
 
       const confirmation = await sendOTP(phoneNo);  // Changed from phoneNumber
       const user = await verifyOTP(confirmation, code);
-      
+
       if (!user) {
         throw new Error('Login failed. Please try again.');
       }
@@ -106,7 +109,7 @@ export default function LoginOtpVerification() {
       sessionStorage.removeItem('loginPhone');
 
       navigate('/', { replace: true });
-      
+
     } catch (err: any) {
       setError(err.message || 'Invalid code. Please try again.');
       setOtp(['', '', '', '', '', '']);

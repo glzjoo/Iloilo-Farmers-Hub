@@ -75,6 +75,14 @@ export default function LoginSection() {
                                 const digitsOnly = e.target.value.replace(/\D/g, '');
                                 setPhone(digitsOnly);
                             }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    if (!loading && phone.replace(/\D/g, '').length >= 10) {
+                                        handleLogin();
+                                    }
+                                }
+                            }}
                             inputMode="numeric"
                             pattern="[0-9]*"
                             maxLength={12}
@@ -90,6 +98,7 @@ export default function LoginSection() {
                     )}
 
                     <button
+                        type="button"
                         onClick={handleLogin}
                         disabled={loading || phone.replace(/\D/g, '').length < 10}
                         className="w-full bg-primary text-white font-primary font-semibold py-3 rounded-full border-none cursor-pointer hover:bg-green-700 mt-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
