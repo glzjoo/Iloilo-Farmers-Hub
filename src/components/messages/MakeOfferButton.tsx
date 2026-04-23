@@ -27,7 +27,6 @@ export default function MakeOfferButton({
   remainingOffers,
   orderStatus,
   onConfirmReceived,
-  conversationId: _conversationId,
   productId,
   farmerId,
 }: MakeOfferButtonProps) {

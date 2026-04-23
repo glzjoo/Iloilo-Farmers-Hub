@@ -136,14 +136,15 @@ export default function SearchBar() {
                 </button>
             </div>
 
-            {/* Mobile: search icon trigger */}
+            {/* Mobile: inline search pill (Shopee/Lazada pattern) */}
             <button
                 onClick={() => setMobileExpanded(true)}
-                className="md:hidden bg-transparent border-none cursor-pointer p-1 shrink-0"
+                className="md:hidden flex items-center gap-2 bg-white rounded-full px-3 py-1.5 flex-1 min-w-0 border-none cursor-pointer h-9"
                 aria-label="Open search"
                 type="button"
             >
-                <img src={searchIcon} className="w-6 h-6 brightness-0 invert" alt="Search" />
+                <img src={searchIcon} className="w-4 h-4 opacity-40 shrink-0" alt="" />
+                <span className="text-gray-400 text-sm truncate text-left">Search products...</span>
             </button>
 
             {/* Mobile: expanded search overlay */}

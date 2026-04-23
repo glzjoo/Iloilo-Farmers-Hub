@@ -9,23 +9,22 @@ interface CartItemProps {
     farmerId: string;
     onQuantityChange: (productId: string, quantity: number) => void;
     onRemove: (productId: string) => void;
-    onMessageSeller: () => void; 
+    onMessageSeller: () => void;
     isUpdating?: boolean;
 }
-//cartItem.tsx
-export default function CartItem({ 
+
+export default function CartItem({
     productId,
-    name, 
-    price, 
-    quantity, 
+    name,
+    price,
+    quantity,
     unit,
-    image, 
+    image,
     farmerName,
-    farmerId: _farmerId,
     onQuantityChange,
     onRemove,
     onMessageSeller,
-    isUpdating 
+    isUpdating
 }: CartItemProps) {
     return (
         <div className="flex items-center gap-6 py-6 border-b border-gray-200">
@@ -62,13 +61,13 @@ export default function CartItem({
             </p>
 
             <div className="flex flex-col gap-2 flex-shrink-0">
-                <button 
+                <button
                     onClick={() => onRemove(productId)}
                     className="px-4 py-1.5 bg-red-600 text-white text-sm font-primary font-medium rounded-full cursor-pointer border-none hover:bg-red-700"
                 >
                     Remove
                 </button>
-                <button 
+                <button
                     onClick={onMessageSeller}
                     className="px-4 py-1.5 bg-primary text-white text-sm font-primary font-medium rounded-full cursor-pointer border-none hover:bg-green-700"
                 >

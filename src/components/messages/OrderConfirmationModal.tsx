@@ -55,7 +55,7 @@ export default function OrderConfirmationModal({
           where('productId', '==', product.id)
         );
         const cartSnap = await getDocs(q);
-        
+
         if (!cartSnap.empty) {
           const cartData = cartSnap.docs[0].data();
           setQuantity(cartData.quantity || 1);
@@ -127,31 +127,31 @@ export default function OrderConfirmationModal({
 
               {/* Order Summary */}
               <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2">
-                  <div className="flex items-center gap-3 mb-4">
-                    <label className="text-sm font-medium text-gray-700">Quantity:</label>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
-                      >
-                        -
-                      </button>
-                      <input
-                        type="number"
-                        value={quantity}
-                        onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                        className="w-16 text-center border border-gray-300 rounded-lg py-1"
-                        min="1"
-                      />
-                      <button 
-                        onClick={() => setQuantity(quantity + 1)}
-                        className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
-                      >
-                        +
-                      </button>
-                    </div>
-                    <span className="text-sm text-gray-500">{product.unit}</span>
+                <div className="flex items-center gap-3 mb-4">
+                  <label className="text-sm font-medium text-gray-700">Quantity:</label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      value={quantity}
+                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-16 text-center border border-gray-300 rounded-lg py-1"
+                      min="1"
+                    />
+                    <button
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+                    >
+                      +
+                    </button>
                   </div>
+                  <span className="text-sm text-gray-500">{product.unit}</span>
+                </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Price per unit:</span>
                   <span>₱{pricePerUnit.toFixed(2)}</span>

@@ -1,3 +1,4 @@
+// src/context/AuthContext.tsx
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
 import {
   onAuthStateChanged,
@@ -13,18 +14,15 @@ import { auth, db } from '../lib/firebase';
 import type { UserProfile, Consumer, Farmer } from '../types';
 import type { ConsumerSignupData, FarmerSignupData } from '../lib/validations';
 import SuspensionNoticeModal from '../components/admin/SuspensionNoticeModal';
-//authcontext.tsx
-// Extended profile that combines auth + role-specific data
+
 interface ExtendedUserProfile extends UserProfile {
   firstName?: string;
   lastName?: string;
   profileImage?: string;
   phoneNo?: string;
-  // Farmer-specific fields
   farmName?: string;
   farmType?: string;
   verificationStatus?: string;
-  // Consumer-specific fields
   interest?: string;
   address?: string;
 }
@@ -34,26 +32,17 @@ interface AuthContextType {
   userProfile: ExtendedUserProfile | null;
   loading: boolean;
   isLoggedIn: boolean;
-
-  // OTP Flow
   sendOTP: (phoneNo: string) => Promise<ConfirmationResult>;
   verifyOTP: (confirmation: ConfirmationResult, otp: string) => Promise<FirebaseUser>;
-
   logout: () => Promise<void>;
-
-  // Signup (passwordless OTP flow)
   signUpConsumer: (data: ConsumerSignupData, confirmation: ConfirmationResult, otp: string) => Promise<void>;
-
-  // Farmer signup flow (3-step: form -> ID verification -> OTP)
   prepareFarmerSignup: (data: FarmerSignupData) => Promise<string>;
   storeVerificationData: (tempId: string, verificationData: VerificationData) => Promise<void>;
   completeFarmerSignup: (tempId: string, confirmation: ConfirmationResult, otp: string) => Promise<void>;
   getPendingFarmerData: (tempId: string) => Promise<FarmerSignupData | null>;
-
   refreshProfile: () => Promise<void>;
 }
 
-// ID Verification data structure (from your existing ID verification)
 interface VerificationData {
   idType?: string;
   idNumber?: string;
@@ -63,19 +52,15 @@ interface VerificationData {
   faceMatchPassed?: boolean;
   idCardImageUrl?: string;
   selfieImageUrl?: string;
-  [key: string]: any; // For additional fields from your existing verification
+  [key: string]: any;
 }
 
-// Farmer with location data
 interface FarmerWithLocation extends Farmer {
   farmLocation?: {
     province: string;
     city: string;
     barangay: string;
-    coordinates: {
-      lat: number;
-      lng: number;
-    };
+    coordinates: { lat: number; lng: number };
     accuracy: 'gps' | 'manual_pin' | 'barangay_centroid';
   };
   farmAddressDetails?: string;
@@ -91,11 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<ExtendedUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [suspensionInfo, setSuspensionInfo] = useState<{
-    type: 'temporary' | 'permanent';
+    type: 'warning' | '1 week suspension' | '30 days suspension' | 'permanent';
     suspendedUntil?: Date | null;
   } | null>(null);
 
-  // Store reCAPTCHA verifier
   const recaptchaVerifierRef = useRef<ApplicationVerifier | null>(null);
 
   const fetchCompleteProfile = async (firebaseUser: FirebaseUser, baseProfile: UserProfile): Promise<ExtendedUserProfile> => {
@@ -131,7 +115,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error fetching role-specific profile:', error);
     }
-
     return baseProfile;
   };
 
@@ -144,25 +127,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
             const baseProfile = userDoc.data() as UserProfile;
-
-            // Check if user is suspended
             const userData = userDoc.data();
+            const suspensionType = userData.suspensionType;
+
+            // Handle warning — show notice but allow login
+            if (suspensionType === 'warning' && !userData.suspended && !userData.warningAcknowledged) {
+              setSuspensionInfo({
+                type: 'warning',
+                suspendedUntil: null,
+              });
+              // Don't return — allow login to proceed
+            }
+
             if (userData.suspended) {
-              const suspensionType = userData.suspensionType || 'temporary';
               const suspendedUntil = userData.suspendedUntil?.toDate?.();
 
-              // For temporary suspensions, check if the suspension has expired
-              if (suspensionType === 'temporary' && suspendedUntil && new Date() > suspendedUntil) {
-                // Suspension expired — allow login (auto-unsuspend handled elsewhere)
+              if ((suspensionType === '1 week suspension' || suspensionType === '30 days suspension') && suspendedUntil && new Date() > suspendedUntil) {
+                // Suspension expired — allow login
               } else {
-                // Still suspended — force sign out
                 await signOut(auth);
                 setUser(null);
                 setUserProfile(null);
                 setLoading(false);
-
                 setSuspensionInfo({
-                  type: suspensionType,
+                  type: suspensionType || 'permanent',
                   suspendedUntil: suspendedUntil || null,
                 });
                 return;
@@ -178,14 +166,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUserProfile(null);
       }
-
       setLoading(false);
     });
 
     return () => {
       unsubscribe();
-      // Cleanup reCAPTCHA on unmount
       if (recaptchaVerifierRef.current) {
+        try {
+          (recaptchaVerifierRef.current as any).clear();
+        } catch (e) {
+          // ignore
+        }
         recaptchaVerifierRef.current = null;
       }
     };
@@ -193,7 +184,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshProfile = async () => {
     if (!user) return;
-
     try {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
@@ -206,83 +196,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-
-  // Send OTP to phone number
+  // FIXED: Proper reCAPTCHA cleanup
   const sendOTP = async (phoneNo: string): Promise<ConfirmationResult> => {
-    let normalizedPhone = '';
-
-    try {
-      // Normalize phone first
-      normalizedPhone = phoneNo.replace(/\s/g, '');
-      if (normalizedPhone.startsWith('0')) {
-        normalizedPhone = '+63' + normalizedPhone.substring(1);
-      }
-      if (!normalizedPhone.startsWith('+')) {
-        normalizedPhone = '+' + normalizedPhone;
-      }
+    let normalizedPhone = phoneNo.replace(/\s/g, '');
+    if (normalizedPhone.startsWith('0')) {
+      normalizedPhone = '+63' + normalizedPhone.substring(1);
+    }
+    if (!normalizedPhone.startsWith('+')) {
+      normalizedPhone = '+' + normalizedPhone;
+    }
 
       console.log('=== SEND OTP DEBUG ===');
       console.log('1. Phone normalized:', normalizedPhone);
       console.log('2. Auth exists:', !!auth);
 
-      // Check if reCAPTCHA container exists
-      let container = document.getElementById('recaptcha-container');
-      if (!container) {
-        container = document.createElement('div');
-        container.id = 'recaptcha-container';
-        document.body.appendChild(container);
-        console.log('3. Created reCAPTCHA container');
+      // Always remove old container and create a fresh one
+      const oldContainer = document.getElementById('recaptcha-container');
+      if (oldContainer) {
+        oldContainer.remove();
+        console.log('3. Removed old reCAPTCHA container');
       }
 
-      // Reset the ref (don't try to clear, just create new)
+      const container = document.createElement('div');
+      container.id = 'recaptcha-container';
+      document.body.appendChild(container);
+      console.log('3. Created fresh reCAPTCHA container');
+
+      // Reset the ref
       recaptchaVerifierRef.current = null;
-
-      // Import and create reCAPTCHA
-      console.log('4. Importing RecaptchaVerifier...');
-      const { RecaptchaVerifier } = await import('firebase/auth');
-
-      console.log('5. Creating RecaptchaVerifier with auth:', auth);
-      console.log('6. Auth app name:', auth?.app?.name);
-
-      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-        callback: (response: any) => {
-          console.log('reCAPTCHA verified:', response);
-        },
-        'expired-callback': () => {
-          console.log('reCAPTCHA expired');
-        }
-      });
-
-      console.log('7. RecaptchaVerifier created:', !!recaptchaVerifierRef.current);
-
-      console.log('8. Calling signInWithPhoneNumber...');
-      console.log('   - auth:', auth);
-      console.log('   - phone:', normalizedPhone);
-      console.log('   - verifier:', recaptchaVerifierRef.current);
-
-      const confirmationResult = await signInWithPhoneNumber(
-        auth,
-        normalizedPhone,
-        recaptchaVerifierRef.current
-      );
-
-      console.log('9. OTP sent successfully!');
-      return confirmationResult;
-
-    } catch (error: any) {
-      console.error('=== SEND OTP FAILED ===');
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
-      console.error('Stack:', error.stack);
-
-      recaptchaVerifierRef.current = null;
-
-      throw new Error(`Failed to send OTP: ${error.message}`);
     }
+
+    // FIX 2: Ensure container exists and is empty
+    let container = document.getElementById('recaptcha-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'recaptcha-container';
+      document.body.appendChild(container);
+    } else {
+      container.innerHTML = '';
+    }
+
+    const { RecaptchaVerifier } = await import('firebase/auth');
+
+    recaptchaVerifierRef.current = new RecaptchaVerifier(auth, container, {
+      size: 'invisible',
+      callback: () => {
+        console.log('reCAPTCHA verified');
+      },
+      'expired-callback': () => {
+        console.log('reCAPTCHA expired - user should resend OTP');
+      },
+    });
+
+    return await signInWithPhoneNumber(auth, normalizedPhone, recaptchaVerifierRef.current);
   };
 
-  // Verify OTP and return the user (for chaining with account creation)
+  // FIXED: Better error handling with code-expired
   const verifyOTP = async (confirmation: ConfirmationResult, otp: string): Promise<FirebaseUser> => {
     try {
       const result = await confirmation.confirm(otp);
@@ -292,33 +261,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const errorMessages: Record<string, string> = {
         'auth/invalid-verification-code': 'Invalid OTP. Please check and try again.',
-        'auth/code-expired': 'OTP has expired. Please request a new one.',
+        'auth/code-expired': 'This code has expired. Please request a new OTP.',
+        'auth/invalid-verification-id': 'Session expired. Please resend the OTP.',
       };
 
       throw new Error(errorMessages[error.code] || 'Failed to verify OTP. Please try again.');
     }
   };
 
-  // Consumer signup with OTP verification (passwordless)
   const signUpConsumer = async (
     data: ConsumerSignupData,
     confirmation: ConfirmationResult,
     otp: string
   ): Promise<void> => {
     try {
-      // Step 1: Verify OTP (this creates the Firebase Auth user)
       const firebaseUser = await verifyOTP(confirmation, otp);
-
       if (!firebaseUser) {
         throw new Error('Failed to create account. Please try again.');
       }
 
-      // Step 2: Update profile
       await updateProfile(firebaseUser, {
         displayName: `${data.firstName} ${data.lastName}`,
       });
 
-      // Step 3: Create Firestore records
       const userProfileData: UserProfile = {
         uid: firebaseUser.uid,
         email: data.email || null,
@@ -350,7 +315,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }),
       ]);
 
-      // Set local state
       setUserProfile({
         ...userProfileData,
         firstName: data.firstName,
@@ -358,11 +322,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         phoneNo: data.phoneNo,
         profileImage: '',
       });
-
     } catch (error: any) {
       console.error('Consumer signup error:', error);
-
-      // Cleanup if needed
       if (auth.currentUser) {
         try {
           await auth.currentUser.delete();
@@ -370,20 +331,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error('Failed to cleanup auth user:', deleteError);
         }
       }
-
       throw error;
     }
   };
 
-  // Prepare farmer signup - Store data temporarily before ID verification
   const prepareFarmerSignup = async (data: FarmerSignupData): Promise<string> => {
     try {
-      // Simple timestamp + random ID (works in all browsers)
       const tempId = `farmer_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
 
-      console.log('Generated tempId:', tempId);
-
-      // UPDATED: Include new location fields
       const pendingData = {
         tempId,
         farmerData: {
@@ -403,15 +358,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       };
 
-      console.log('Saving to Firestore...', pendingData);
-
-      // Store in Firestore
       const docRef = doc(db, 'pendingFarmers', tempId);
       await setDoc(docRef, pendingData);
 
-      console.log('Firestore save successful');
-
-      // Also store in sessionStorage as backup
       try {
         sessionStorage.setItem('farmerSignupTempId', tempId);
         sessionStorage.setItem(`farmerSignup_${tempId}`, JSON.stringify({
@@ -419,22 +368,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           idVerified: false,
           timestamp: Date.now(),
         }));
-        console.log('sessionStorage backup saved');
       } catch (e) {
-        console.warn('sessionStorage failed (might be disabled):', e);
+        console.warn('sessionStorage failed:', e);
       }
 
       return tempId;
-
     } catch (error: any) {
-      console.error('=== prepareFarmerSignup FAILED ===', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
+      console.error('prepareFarmerSignup FAILED:', error);
       throw new Error(`Failed to initialize signup: ${error.message}`);
     }
   };
 
-  // Store ID verification data after ID verification step
   const storeVerificationData = async (tempId: string, verificationData: VerificationData): Promise<void> => {
     try {
       const pendingRef = doc(db, 'pendingFarmers', tempId);
@@ -450,7 +394,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         verifiedAt: serverTimestamp(),
       });
 
-      // Update sessionStorage too
       const sessionData = sessionStorage.getItem(`farmerSignup_${tempId}`);
       if (sessionData) {
         const parsed = JSON.parse(sessionData);
@@ -464,22 +407,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Get pending farmer data (useful for checking session status)
   const getPendingFarmerData = async (tempId: string): Promise<FarmerSignupData | null> => {
     try {
-      // Try Firestore first
       const pendingDoc = await getDoc(doc(db, 'pendingFarmers', tempId));
       if (pendingDoc.exists()) {
         return pendingDoc.data().farmerData as FarmerSignupData;
       }
-
-      // Fallback to sessionStorage
       const sessionData = sessionStorage.getItem(`farmerSignup_${tempId}`);
       if (sessionData) {
         const parsed = JSON.parse(sessionData);
         return parsed.farmerData as FarmerSignupData;
       }
-
       return null;
     } catch (error) {
       console.error('Get pending farmer data error:', error);
@@ -487,7 +425,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Complete farmer signup after OTP verification
   const completeFarmerSignup = async (
     tempId: string,
     confirmation: ConfirmationResult,
@@ -495,7 +432,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ): Promise<void> => {
     try {
       const pendingDoc = await getDoc(doc(db, 'pendingFarmers', tempId));
-
       if (!pendingDoc.exists()) {
         throw new Error('Signup session expired. Please start over.');
       }
@@ -504,7 +440,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data: FarmerSignupData = pendingData.farmerData;
       const verificationData: VerificationData = pendingData.verificationData || {};
 
-      // Step 1: Verify OTP (creates Firebase Auth account)
       const result = await confirmation.confirm(otp);
       const firebaseUser = result.user;
 
@@ -512,14 +447,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Failed to create account. Please try again.');
       }
 
-      console.log('Firebase user created:', firebaseUser.uid);
-
-      // Step 2: Update profile
       await updateProfile(firebaseUser, {
         displayName: `${data.firstName} ${data.lastName}`,
       });
 
-      // Step 3: Create Firestore records with explicit auth context
       const userProfileData: UserProfile = {
         uid: firebaseUser.uid,
         email: data.email || null,
@@ -528,13 +459,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         createdAt: new Date(),
       };
 
-      // Generate geohash for location-based queries
       const geofireCommon = await import('geofire-common');
       const geohash = data.farmLocation?.coordinates
         ? geofireCommon.geohashForLocation([data.farmLocation.coordinates.lat, data.farmLocation.coordinates.lng])
         : null;
 
-      // UPDATED: Build address from location
       const displayAddress = data.farmLocation
         ? `${data.farmLocation.barangay}, ${data.farmLocation.city}, ${data.farmLocation.province}`
         : 'Address not provided';
@@ -551,57 +480,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         createdAt: new Date(),
         farmName: data.farmName,
         farmType: data.farmType,
-        farmLocation: data.farmLocation, // Will be undefined if not provided
+        farmLocation: data.farmLocation,
         farmAddressDetails: data.farmAddressDetails || '',
-        locationGeohash: geohash, // Will be null if no coordinates
+        locationGeohash: geohash,
         locationUpdatedAt: data.farmLocation ? new Date() : undefined,
         nextLocationUpdateAt: data.farmLocation ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) : undefined,
       };
 
       const sanitize = (val: any) => val === undefined ? null : val;
 
-      // Use Promise.all with individual error handling
-      try {
-        await setDoc(doc(db, 'users', firebaseUser.uid), {
-          ...userProfileData,
-          createdAt: serverTimestamp(),
+      await setDoc(doc(db, 'users', firebaseUser.uid), {
+        ...userProfileData,
+        createdAt: serverTimestamp(),
+        verifiedAt: serverTimestamp(),
+      });
+
+      await setDoc(doc(db, 'farmers', firebaseUser.uid), {
+        ...farmerData,
+        verificationStatus: 'verified',
+        verificationData: {
+          faceMatchScore: sanitize(verificationData.faceMatchScore),
+          faceMatchPassed: sanitize(verificationData.faceMatchPassed),
+          extractedIdNumber: sanitize(verificationData.idNumber),
+          extractedFullName: sanitize(verificationData.fullName),
+          extractedAddress: sanitize(verificationData.extractedAddress),
+          idCardImageUrl: sanitize(verificationData.idCardImageUrl),
+          selfieImageUrl: sanitize(verificationData.selfieImageUrl),
           verifiedAt: serverTimestamp(),
-        });
-        console.log('Users document created');
-      } catch (userError: any) {
-        console.error('Failed to create users doc:', userError);
-        throw new Error(`Failed to create user profile: ${userError.message}`);
-      }
+          verifiedBy: 'face++_cloudVision',
+        },
+        createdAt: serverTimestamp(),
+      });
 
-      try {
-        await setDoc(doc(db, 'farmers', firebaseUser.uid), {
-          ...farmerData,
-          verificationStatus: 'verified',
-          verificationData: {
-            faceMatchScore: sanitize(verificationData.faceMatchScore),
-            faceMatchPassed: sanitize(verificationData.faceMatchPassed),
-            extractedIdNumber: sanitize(verificationData.idNumber),
-            extractedFullName: sanitize(verificationData.fullName),
-            extractedAddress: sanitize(verificationData.extractedAddress),
-            idCardImageUrl: sanitize(verificationData.idCardImageUrl),
-            selfieImageUrl: sanitize(verificationData.selfieImageUrl),
-            verifiedAt: serverTimestamp(),
-            verifiedBy: 'face++_cloudVision',
-          },
-          createdAt: serverTimestamp(),
-        });
-        console.log('Farmers document created');
-      } catch (farmerError: any) {
-        console.error('Failed to create farmers doc:', farmerError);
-        throw new Error(`Failed to create farmer profile: ${farmerError.message}`);
-      }
-
-      // Clean up pending data
       await deleteDoc(doc(db, 'pendingFarmers', tempId));
       sessionStorage.removeItem(`farmerSignup_${tempId}`);
       sessionStorage.removeItem('farmerSignupTempId');
 
-      // Set local state
       setUserProfile({
         ...userProfileData,
         firstName: data.firstName,
@@ -612,13 +526,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         farmType: data.farmType,
         verificationStatus: 'verified',
       });
-
     } catch (error: any) {
-      console.error('=== Complete farmer signup error ===', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
-
-      // Don't delete auth user here - let the user retry or contact support
+      console.error('Complete farmer signup error:', error);
       throw error;
     }
   };
@@ -627,7 +536,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await signOut(auth);
       setUserProfile(null);
-      recaptchaVerifierRef.current = null;
+      if (recaptchaVerifierRef.current) {
+        try {
+          (recaptchaVerifierRef.current as any).clear();
+        } catch (e) {
+          // ignore
+        }
+        recaptchaVerifierRef.current = null;
+      }
     } catch (error) {
       console.error('Logout error:', error);
       throw new Error('Failed to sign out. Please try again.');
@@ -657,7 +573,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         <SuspensionNoticeModal
           type={suspensionInfo.type}
           suspendedUntil={suspensionInfo.suspendedUntil}
-          onClose={() => setSuspensionInfo(null)}
+          onClose={async () => {
+            if (suspensionInfo.type === 'warning' && user) {
+              try {
+                await updateDoc(doc(db, 'users', user.uid), {
+                  warningAcknowledged: true
+                });
+              } catch (e) {
+                console.error('Failed to acknowledge warning', e);
+              }
+            }
+            setSuspensionInfo(null);
+          }}
         />
       )}
     </AuthContext.Provider>

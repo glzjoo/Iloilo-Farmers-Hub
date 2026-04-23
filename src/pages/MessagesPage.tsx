@@ -119,11 +119,11 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="flex flex-1 h-full min-h-0 bg-white overflow-hidden">
+    <div className="flex w-full bg-white overflow-hidden overscroll-none h-[100dvh] md:h-[calc(100dvh-80px)]">
       {/* Sidebar */}
       <div className={`
         ${isMobileSidebarVisible ? 'flex' : 'hidden'} 
-        md:flex flex-col w-full md:w-80 h-full border-r border-gray-200 flex-shrink-0
+        md:flex flex-col w-full md:w-80 h-dvh border-r border-gray-200 flex-shrink-0
       `}>
         <MessageColumn
           selectedConversationId={selectedConversationId}
@@ -135,7 +135,7 @@ export default function MessagesPage() {
       {/* Chat Area */}
       <div className={`
         ${!isMobileSidebarVisible ? 'flex' : 'hidden'} 
-        md:flex flex-1 h-full min-h-0 flex-col
+        md:flex flex-1 h-full min-h-0 flex-col relative
       `}>
         <MessagesLayout
           conversationId={selectedConversationId}
