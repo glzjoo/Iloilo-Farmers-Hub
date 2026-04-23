@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import AddProductImage from "./AddProductImage";
+import AddProductImage from "./addproductimage";
 import type { Product } from "../../types";
 import addtocart from '../../assets/icons/add-to-cart.svg';
 import minus from '../../assets/icons/minus.svg';

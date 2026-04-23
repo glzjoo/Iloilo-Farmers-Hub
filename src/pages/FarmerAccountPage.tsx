@@ -95,60 +95,65 @@ export default function FarmerAccountPage() {
 
             {/* Profile Card */}
             <div className="border border-gray-200 rounded-xl p-4 sm:p-6 mb-6">
-                <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-                    <div className="w-20 h-20 rounded-xl bg-gray-200 overflow-hidden flex items-center justify-center shrink-0">
-                        {profile?.profileImage ? (
-                            <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
-                        ) : (
-                            <svg className="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-                            </svg>
-                        )}
-                    </div>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
 
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-0.5">
-                            <h2 className="text-lg font-bold font-primary">{displayName}</h2>
+                    {/* 1. Avatar & Info */}
+                    <div className="flex items-center gap-4 w-full sm:w-auto sm:flex-1">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gray-200 overflow-hidden flex items-center justify-center shrink-0">
+                            {profile?.profileImage ? (
+                                <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                                </svg>
+                            )}
                         </div>
-                        {/* Location */}
-                        <p className="text-sm text-gray-500">{profile?.farmAddress}</p>
-                    </div>
 
-                    {/* Reviews */}
-                    <div className="text-center px-4 sm:px-6 border-l border-gray-200">
-                        <p className="text-base sm:text-lg font-bold font-primary">N/A</p>
-                        <p className="text-xs text-gray-500">No review yet</p>
-                    </div>
+                        <div className="flex-1 min-w-0">
+                            <h2 className="text-lg font-bold font-primary truncate">{displayName}</h2>
+                            <p className="text-sm text-gray-500 truncate">{profile?.farmAddress}</p>
+                        </div>
 
-                    {/* Join Date */}
-                    <div className="text-center px-4 sm:px-6 border-l border-gray-200">
-                        <p className="text-base sm:text-lg font-bold font-primary">{getJoinDate()}</p>
-                        <p className="text-xs text-gray-500">Joined</p>
-                    </div>
-
-                    {/* Edit Profile Button */}
-                    <Link to="/farmer-account-setting">
-                        <button
-                            className="px-6 py-2 rounded-full bg-primary text-white text-sm font-semibold cursor-pointer hover:bg-green-700 transition-colors"
-                        >
-                            Edit Profile
+                        {/* Mobile Share Button */}
+                        <button className="sm:hidden w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors shrink-0">
+                            <img src={shareIcon} alt="Share" className="w-4 h-4" />
                         </button>
-                    </Link>
+                    </div>
 
-                    {/* Share Icon */}
-                    <button className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors shrink-0">
-                        <img src={shareIcon} alt="Share" className="w-5 h-5" />
-                    </button>
+                    {/* Stats Row */}
+                    <div className="flex items-center justify-center sm:justify-start w-full sm:w-auto border-y sm:border-y-0 sm:border-l border-gray-200 py-3 sm:py-0 sm:pl-6">
+                        <div className="flex-1 sm:flex-none text-center sm:text-left border-r sm:border-r-0 border-gray-200 pr-4 sm:pr-6 sm:border-r">
+                            <p className="text-base sm:text-lg font-bold font-primary">N/A</p>
+                            <p className="text-xs text-gray-500">No review yet</p>
+                        </div>
+                        <div className="flex-1 sm:flex-none text-center sm:text-left pl-4 sm:pl-6">
+                            <p className="text-base sm:text-lg font-bold font-primary">{getJoinDate()}</p>
+                            <p className="text-xs text-gray-500">Joined</p>
+                        </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <Link to="/farmer-account-setting" className="w-full sm:w-auto">
+                            <button className="w-full sm:w-auto px-6 py-2.5 sm:py-2 rounded-full bg-primary text-white text-sm font-semibold cursor-pointer hover:bg-green-700 transition-colors">
+                                Edit Profile
+                            </button>
+                        </Link>
+                        {/* Desktop Share Button */}
+                        <button className="hidden sm:flex w-10 h-10 rounded-full border border-gray-300 items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors shrink-0">
+                            <img src={shareIcon} alt="Share" className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Farm Description */}
-                <div className="mt-4 pr-4">
+                <div className="mt-4 sm:mt-6 pt-4 border-t border-gray-100">
                     <p className="text-sm text-gray-500 leading-relaxed">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
                 </div>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-gray-200 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 <button
                     onClick={() => setActiveTab('listings')}
                     className={`px-6 py-3 text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'listings'
