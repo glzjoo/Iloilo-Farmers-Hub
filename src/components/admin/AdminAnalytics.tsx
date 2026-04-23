@@ -62,12 +62,13 @@ export default function AdminAnalytics() {
         const currentYear = new Date().getFullYear();
         const monthly = new Array(12).fill(0);
         reports.forEach((r) => {
+          if (!r.date) return; // Skip reports without valid dates
           const date = new Date(r.date);
+          if (isNaN(date.getTime())) return; // Skip invalid dates
           if (date.getFullYear() === currentYear) {
             monthly[date.getMonth()]++;
           }
-        });
-        const monthlyReports = monthly.map((count, idx) => ({
+        });        const monthlyReports = monthly.map((count, idx) => ({
           month: MONTHS[idx],
           count,
         }));
@@ -84,6 +85,7 @@ export default function AdminAnalytics() {
         // 3. Top Reported Users
         const userCounts: Record<string, { name: string; count: number }> = {};
         reports.forEach((r) => {
+          if (!r.reportedUserId) return; // Skip reports without valid user IDs
           if (!userCounts[r.reportedUserId]) {
             userCounts[r.reportedUserId] = { name: r.reportedUser, count: 0 };
           }
@@ -92,7 +94,6 @@ export default function AdminAnalytics() {
         const topReported = Object.values(userCounts)
           .sort((a, b) => b.count - a.count)
           .slice(0, 5);
-
         // 4. Resolution Time (mock ranges since we don't track resolution timestamp yet)
         const resolved = reports.filter((r) => r.status === 'Resolved');
         const resolutionTimes = [
