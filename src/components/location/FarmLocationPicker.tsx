@@ -42,6 +42,7 @@ export interface FarmLocation {
 }
 
 interface FarmLocationPickerProps {
+  value?: FarmLocation | null;
   onChange: (location: FarmLocation) => void;
   error?: string;
 }
