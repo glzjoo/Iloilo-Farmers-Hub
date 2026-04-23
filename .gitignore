@@ -31,9 +31,11 @@ dist-ssr
 .env.production
 .env.test
 .env.*.local
+vision-key.json
+*.key.json
 
 # server keys
 server/vision-key.json
 server/firebase-service-account.json
 
-
+.firebase/

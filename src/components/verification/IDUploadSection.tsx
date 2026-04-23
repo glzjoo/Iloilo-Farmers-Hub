@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-
+//IDUploadSectiom.tsx
 interface IDUploadSectionProps {
   idPreview: string | null;
   onImageSelect: (file: File) => void;

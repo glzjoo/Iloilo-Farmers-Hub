@@ -10,7 +10,7 @@ import ErrorModal from '../common/ErrorModal';
 import type { Product } from '../../types';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { collection, query, where, onSnapshot, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
 export default function ListingProducts() {
@@ -86,25 +86,6 @@ export default function ListingProducts() {
 
     const cancelDelete = () => {
         setProductToDelete(null);
-    };
-
-    const handleSaveEdit = async (updatedProduct: Product) => {
-        try {
-            const productRef = doc(db, 'products', updatedProduct.id);
-            await updateDoc(productRef, {
-                name: updatedProduct.name,
-                price: updatedProduct.price,
-                stock: updatedProduct.stock,
-                unit: updatedProduct.unit,
-                description: updatedProduct.description,
-                category: updatedProduct.category,
-                status: updatedProduct.status,
-                updatedAt: new Date()
-            });
-            setEditingProduct(null);
-        } catch (err: any) {
-            setActionError('Failed to update product: ' + err.message);
-        }
     };
 
     const filteredProducts = products.filter(product => 
