@@ -25,7 +25,7 @@ const idVerificationSchema = z.object({
 
 type IDVerificationFormData = z.infer<typeof idVerificationSchema>;
 
-const API_URL = import.meta.env.VITE_VERIFICATION_API_URL || 'http://localhost:3001';
+const API_URL = 'https://us-central1-iloilo-farmers-hub.cloudfunctions.net/verifyFarmerId';
 
 export default function IDVerification() {
   const navigate = useNavigate();
@@ -198,16 +198,16 @@ export default function IDVerification() {
   const handleContinueToOTP = async () => {
     try {
       await storeVerificationData(tempId, {
-        idType: verificationResult?.verification?.idData?.idType || 'national_id',
+        idType: verificationResult?.verification?.IdData?.idType || 'national_id',
         faceMatchScore: verificationResult?.verification?.faceMatch?.score ?? null,
         faceMatchPassed: verificationResult?.verification?.faceMatch?.passed ?? null,
-        idNumber: verificationResult?.verification?.idData?.idNumber ?? null,
-        fullName: verificationResult?.verification?.idData?.fullName ?? null,
-        extractedAddress: verificationResult?.verification?.idData?.address ?? null,
+        idNumber: verificationResult?.verification?.IdData?.idNumber ?? null,
+        fullName: verificationResult?.verification?.IdData?.fullName ?? null,
+        extractedAddress: verificationResult?.verification?.IdData?.address ?? null,
         idCardImageUrl: verificationResult?.idCardUrl ?? null,
         selfieImageUrl: verificationResult?.selfieUrl ?? null,
-        mobileWalletNo: verificationResult?.verification?.idData?.mobileWalletNo ?? null,
-        issuingAgency: verificationResult?.verification?.idData?.issuingAgency ?? null,
+        mobileWalletNo: verificationResult?.verification?.IdData?.mobileWalletNo ?? null,
+        issuingAgency: verificationResult?.verification?.IdData?.issuingAgency ?? null,
       });
 
       navigate('/otp-verification', {
@@ -258,7 +258,7 @@ export default function IDVerification() {
       formData.append('idType', data.idType);
       formData.append('idNumber', data.idNumber);
 
-      const response = await fetch(`${API_URL}/api/verify-farmer-id`, {
+      const response = await fetch(`${API_URL}`, {
         method: 'POST',
         body: formData,
       });
@@ -281,7 +281,7 @@ export default function IDVerification() {
         setShowSuccessModal(true);
 
       } else if (result.verified && !nameMatches) {
-        const extracted = result.verification?.idData?.fullName || 'Unknown';
+        const extracted = result.verification?.IdData?.fullName || 'Unknown';
         const registered = `${farmerData.firstName} ${farmerData.lastName}`;
 
         setError(

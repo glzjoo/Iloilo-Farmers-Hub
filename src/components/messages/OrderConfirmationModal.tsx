@@ -25,10 +25,10 @@ export default function OrderConfirmationModal({
   onConfirm,
   product,
   consumerId,
-  conversationId,
+  conversationId: _conversationId,
   lastAcceptedOfferPrice,
 }: OrderConfirmationModalProps) {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [consumerName, setConsumerName] = useState('');

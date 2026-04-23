@@ -150,7 +150,7 @@ interface MakeOfferModalProps {
   remainingOffers?: number;
 }
 
-function MakeOfferModal({ isOpen, onClose, product, farmerName, onSubmitOffer, disabled, remainingOffers }: MakeOfferModalProps) {
+function MakeOfferModal({ isOpen, onClose, product, farmerName, onSubmitOffer, disabled: _disabled, remainingOffers }: MakeOfferModalProps) {
   const [offerPrice, setOfferPrice] = useState('');
 
   if (!isOpen) return null;
