@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  
+
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [showUserDetail, setShowUserDetail] = useState(false);
   const [showConversation, setShowConversation] = useState(false);
@@ -33,13 +33,13 @@ export default function AdminDashboard() {
     report: Report;
     type: 'warning' | '1 week suspension' | '30 days suspension' | 'permanent';
   } | null>(null);
-  
+
   const [successModal, setSuccessModal] = useState<{
     isOpen: boolean;
     title: string;
     message: string;
   }>({ isOpen: false, title: '', message: '' });
-  
+
   const [latestLog, setLatestLog] = useState<AdminAction | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -53,10 +53,10 @@ export default function AdminDashboard() {
   // Real-time Firestore subscription
   useEffect(() => {
     const reportsQuery = query(
-      collection(db, 'reports_users'), 
+      collection(db, 'reports_users'),
       orderBy('createdAt', 'desc')
     );
-    
+
     const unsubscribe = onSnapshot(
       reportsQuery,
       (snapshot) => {
@@ -141,9 +141,9 @@ export default function AdminDashboard() {
         suspendModal.type === 'warning' ? undefined : suspendModal.type
       );
 
-      const actionLabel = suspendModal.type === 'warning' ? 'warned' : 
+      const actionLabel = suspendModal.type === 'warning' ? 'warned' :
         suspendModal.type === 'permanent' ? 'banned' : `suspended (${suspendModal.type})`;
-      
+
       showSuccess(
         'Action Completed',
         `${suspendModal.report.reportedUser} has been ${actionLabel} successfully.`
@@ -198,11 +198,6 @@ export default function AdminDashboard() {
     navigate('/admin/login');
   };
 
-  const handleOverviewViewReport = (report: Report) => {
-    setSelectedReport(report);
-    setActiveTab('reports');
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -216,14 +211,14 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminSidebar 
-        activeTab={activeTab} 
-        onTabChange={(tab) => setActiveTab(tab as TabId)} 
+      <AdminSidebar
+        activeTab={activeTab}
+        onTabChange={(tab) => setActiveTab(tab as TabId)}
         onLogout={handleLogout}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
-      
+
       <main className={`flex-1 overflow-y-auto min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
         <div className="lg:hidden bg-primary px-4 py-3 flex items-center justify-between">
           <h1 className="text-white font-bold text-sm">Admin Dashboard</h1>
@@ -231,10 +226,8 @@ export default function AdminDashboard() {
         </div>
 
         <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px]">
-          {activeTab === 'overview' && (
-            <AdminOverview reports={reports} onViewReport={handleOverviewViewReport} />
-          )}
-          
+          {activeTab === 'overview' && <AdminOverview />}
+
           {activeTab === 'reports' && (
             <AdminReports
               reports={reports}
@@ -246,7 +239,7 @@ export default function AdminDashboard() {
               getStatusBadge={getStatusBadge}
             />
           )}
-          
+
           {activeTab === 'appeals' && <AdminAppeals />}
           {activeTab === 'logs' && <AdminLogs newAction={latestLog} />}
           {activeTab === 'analytics' && <AdminAnalytics />}
@@ -262,7 +255,7 @@ export default function AdminDashboard() {
           }}
         />
       )}
-      
+
       {showConversation && selectedReport && (
         <ConversationModal
           report={selectedReport}
@@ -272,7 +265,7 @@ export default function AdminDashboard() {
           }}
         />
       )}
-      
+
       {suspendModal && (
         <SuspendModal
           report={suspendModal.report}

@@ -42,7 +42,6 @@ export default function AdminOverview() {
   });
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
 
-  // Fetch analytics data on mount
   useEffect(() => {
     const fetchAnalytics = async () => {
       setLoadingAnalytics(true);
@@ -73,9 +72,8 @@ export default function AdminOverview() {
     {
       title: 'Total Farmer Revenue',
       subtitle: '(Last 30 Days)',
-      value: stats.revenue > 0 ? `$${stats.revenue.toLocaleString()}` : '$0.00',
-      change: `${stats.revenueChangePercent >= 0 ? '↑' : '↓'} Revenue ${stats.revenueChangePercent >= 0 ? 'up' : 'down'} (previous 30 days)`,
-      changeType: stats.revenueChangePercent >= 0 ? ('up' as const) : ('down' as const),
+      value: `₱${stats.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      change: `${stats.revenueChangePercent >= 0 ? '↑' : '↓'} ${Math.abs(stats.revenueChangePercent).toFixed(1)}% vs last month`,      changeType: stats.revenueChangePercent >= 0 ? ('up' as const) : ('down' as const),
       icon: (
         <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -86,7 +84,7 @@ export default function AdminOverview() {
       title: 'Total Orders',
       subtitle: '(Last 30 Days)',
       value: stats.ordersCount.toLocaleString(),
-      change: `${stats.ordersChangePercent >= 0 ? '↑' : '↓'} Order ${stats.ordersChangePercent >= 0 ? 'up' : 'down'} (previous 30 days)`,
+      change: `${stats.ordersChangePercent >= 0 ? '↑' : '↓'} ${Math.abs(stats.ordersChangePercent)}% vs last month`,
       changeType: stats.ordersChangePercent >= 0 ? ('up' as const) : ('down' as const),
       icon: (
         <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,7 +96,7 @@ export default function AdminOverview() {
       title: 'New Customers',
       subtitle: '(Last 30 Days)',
       value: stats.newCustomersThisMonth.toLocaleString(),
-      change: `${stats.newCustomersChangePercent >= 0 ? '↑' : '↓'} Customer ${stats.newCustomersChangePercent >= 0 ? 'up' : 'down'} (previous 30 days)`,
+      change: `${stats.newCustomersChangePercent >= 0 ? '↑' : '↓'} ${Math.abs(stats.newCustomersChangePercent)}% vs last month`,
       changeType: stats.newCustomersChangePercent >= 0 ? ('up' as const) : ('down' as const),
       icon: (
         <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,10 +105,10 @@ export default function AdminOverview() {
       ),
     },
     {
-      title: 'Total Active Products',
+      title: 'Active Products',
       subtitle: '(Last 30 Days)',
       value: stats.activeProducts.toLocaleString(),
-      change: `${stats.productsChangePercent >= 0 ? '↑' : '↓'} Delivery ${stats.productsChangePercent >= 0 ? 'up' : 'down'} (previous 30 days)`,
+      change: `${stats.productsChangePercent >= 0 ? '↑' : '↓'} ${Math.abs(stats.productsChangePercent)}% vs last month`,
       changeType: stats.productsChangePercent >= 0 ? ('up' as const) : ('down' as const),
       icon: (
         <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -174,7 +172,7 @@ export default function AdminOverview() {
 
         {/* Line Chart - User Registration Per Month */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm lg:col-span-2">
-          <h3 className="text-sm font-medium text-gray-900 mb-6">User Registration</h3>
+          <h3 className="text-sm font-medium text-gray-900 mb-6">User Registration Per Month</h3>
           <div className="h-64">
             {loadingAnalytics ? (
               <div className="h-full flex items-center justify-center text-gray-400 text-sm">Loading...</div>
@@ -247,9 +245,6 @@ export default function AdminOverview() {
             >
               {card.change}
             </p>
-            <button className="mt-4 text-xs text-indigo-600 font-medium hover:text-indigo-700 transition-colors border-none bg-transparent cursor-pointer">
-              Full Details
-            </button>
           </div>
         ))}
       </div>
