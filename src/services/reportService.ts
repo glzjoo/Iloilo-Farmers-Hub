@@ -119,6 +119,7 @@ export const suspendUser = async (
         suspensionType: type,
         suspendedAt: serverTimestamp(),
         suspendedUntil: getSuspendedUntil(),
+        warningAcknowledged: type === 'warning' ? false : null,
     };
 
     const collections = ['users', 'farmers', 'consumers'];

@@ -130,8 +130,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userData = userDoc.data();
             const suspensionType = userData.suspensionType;
 
-            if (suspensionType === 'warning' && !userData.suspended) {
-              setSuspensionInfo({ type: 'warning', suspendedUntil: null });
+            // Handle warning — show notice but allow login
+            if (suspensionType === 'warning' && !userData.suspended && !userData.warningAcknowledged) {
+              setSuspensionInfo({
+                type: 'warning',
+                suspendedUntil: null,
+              });
+              // Don't return — allow login to proceed
             }
 
             if (userData.suspended) {
@@ -201,13 +206,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       normalizedPhone = '+' + normalizedPhone;
     }
 
-    // FIX 1: Properly clear existing reCAPTCHA
-    if (recaptchaVerifierRef.current) {
-      try {
-        (recaptchaVerifierRef.current as any).clear();
-      } catch (e) {
-        console.log('No previous reCAPTCHA to clear');
+      console.log('=== SEND OTP DEBUG ===');
+      console.log('1. Phone normalized:', normalizedPhone);
+      console.log('2. Auth exists:', !!auth);
+
+      // Always remove old container and create a fresh one
+      const oldContainer = document.getElementById('recaptcha-container');
+      if (oldContainer) {
+        oldContainer.remove();
+        console.log('3. Removed old reCAPTCHA container');
       }
+
+      const container = document.createElement('div');
+      container.id = 'recaptcha-container';
+      document.body.appendChild(container);
+      console.log('3. Created fresh reCAPTCHA container');
+
+      // Reset the ref
       recaptchaVerifierRef.current = null;
     }
 
@@ -558,7 +573,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         <SuspensionNoticeModal
           type={suspensionInfo.type}
           suspendedUntil={suspensionInfo.suspendedUntil}
-          onClose={() => setSuspensionInfo(null)}
+          onClose={async () => {
+            if (suspensionInfo.type === 'warning' && user) {
+              try {
+                await updateDoc(doc(db, 'users', user.uid), {
+                  warningAcknowledged: true
+                });
+              } catch (e) {
+                console.error('Failed to acknowledge warning', e);
+              }
+            }
+            setSuspensionInfo(null);
+          }}
         />
       )}
     </AuthContext.Provider>
