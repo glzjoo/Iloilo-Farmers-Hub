@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userData = userDoc.data();
             const suspensionType = userData.suspensionType;
 
-            // Handle warning — show notice but allow login
+            // Handle warning — show notice but allow login (only if not already acknowledged)
             if (suspensionType === 'warning' && !userData.suspended && !userData.warningAcknowledged) {
               setSuspensionInfo({
                 type: 'warning',
@@ -143,7 +143,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const suspendedUntil = userData.suspendedUntil?.toDate?.();
 
               if ((suspensionType === '1 week suspension' || suspensionType === '30 days suspension') && suspendedUntil && new Date() > suspendedUntil) {
-                // Suspension expired — allow login
+                // Suspension expired — auto-clear and allow login
+                await updateDoc(doc(db, 'users', firebaseUser.uid), {
+                  suspended: false,
+                  suspensionType: null,
+                  suspendedUntil: null,
+                });
               } else {
                 await signOut(auth);
                 setUser(null);
@@ -206,23 +211,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       normalizedPhone = '+' + normalizedPhone;
     }
 
-      console.log('=== SEND OTP DEBUG ===');
-      console.log('1. Phone normalized:', normalizedPhone);
-      console.log('2. Auth exists:', !!auth);
-
-      // Always remove old container and create a fresh one
-      const oldContainer = document.getElementById('recaptcha-container');
-      if (oldContainer) {
-        oldContainer.remove();
-        console.log('3. Removed old reCAPTCHA container');
+    // FIX 1: Properly clear existing reCAPTCHA
+    if (recaptchaVerifierRef.current) {
+      try {
+        (recaptchaVerifierRef.current as any).clear();
+      } catch (e) {
+        console.log('No previous reCAPTCHA to clear');
       }
-
-      const container = document.createElement('div');
-      container.id = 'recaptcha-container';
-      document.body.appendChild(container);
-      console.log('3. Created fresh reCAPTCHA container');
-
-      // Reset the ref
       recaptchaVerifierRef.current = null;
     }
 

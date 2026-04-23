@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'; // Added useRef
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ConfirmationResult } from 'firebase/auth'; // Added type
