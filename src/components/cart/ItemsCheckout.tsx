@@ -1,6 +1,3 @@
-// ============================================
-// FILE: src/components/cart/ItemsCheckout.tsx (FIXED)
-// ============================================
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -118,7 +115,7 @@ export default function ItemsCheckout() {
     if (!user) {
         return (
             <section className="w-full py-12">
-            <div className="max-w-5xl mx-auto px-4 sm:px-10 text-center">
+                <div className="max-w-5xl mx-auto px-4 sm:px-10 text-center">
                     <h2 className="text-2xl sm:text-3xl font-primary font-semibold text-primary mb-8">Your Favorites</h2>
                     <p className="text-gray-500 mb-4">Please login to view your list</p>
                     <button
@@ -135,7 +132,7 @@ export default function ItemsCheckout() {
     if (loading) {
         return (
             <section className="w-full py-12">
-            <div className="max-w-5xl mx-auto px-4 sm:px-10">
+                <div className="max-w-5xl mx-auto px-4 sm:px-10">
                     <div className="flex justify-center items-center h-64">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                     </div>

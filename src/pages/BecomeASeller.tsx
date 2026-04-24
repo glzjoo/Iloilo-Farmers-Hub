@@ -1,11 +1,11 @@
-import HeroSectionAboutUs from '../components/about/HeroSectionAboutUs';
-import BecomeAsellerSection from '../components/about/BecomeAsellerSection';
+import HeroSectionBecomeSeller from '../components/becomeSeller/HeroSectionBecomeSeller';
+import BecomeAsellerSection from '../components/becomeSeller/BecomeAsellerSection';
 
 
 export default function BecomeASeller() {
     return (
         <main className="w-full scroll-smooth">
-            <HeroSectionAboutUs />
+            <HeroSectionBecomeSeller />
             <BecomeAsellerSection />
         </main>
     );
