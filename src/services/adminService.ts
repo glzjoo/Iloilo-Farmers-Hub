@@ -17,14 +17,21 @@ export const verifyAdminLogin = async (
         const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
+            console.log('No admin found with username:', username);
             return false;
         }
 
-        // Check password match on the client side
         const adminDoc = snapshot.docs[0].data();
-        return adminDoc.password === password;
-    } catch (error) {
-        console.error('Admin login error:', error);
-        throw new Error('Failed to verify admin credentials.');
+        const isMatch = adminDoc.password === password;
+        
+        if (!isMatch) {
+            console.log('Password mismatch for admin:', username);
+        }
+        
+        return isMatch;
+    } catch (error: any) {
+        console.error('Admin login error:', error.code || 'NO_CODE', error.message || error);
+        // Re-throw with more detail for the UI
+        throw new Error(error.message || 'Failed to verify admin credentials.');
     }
 };
