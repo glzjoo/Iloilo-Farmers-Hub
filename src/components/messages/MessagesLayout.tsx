@@ -606,7 +606,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
   };
 
   return (
-    <div className="flex flex-col w-full h-[100dvh] fixed inset-0 z-50 md:relative md:inset-auto md:h-full bg-white overflow-hidden overscroll-none">
+    <div className="flex flex-col w-full h-[100dvh] fixed inset-0 z-50 md:z-0 md:relative md:inset-auto md:h-full bg-white overflow-hidden overscroll-none">
 
       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-gray-50 flex-shrink-0 z-20">
         {onBack && (
@@ -663,7 +663,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
                     ))}
                   </div>
                 ) : (
-                  // Step 2: Add details + media
+                  // Add details + media
                   <div className="p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">{reportType}</span>
