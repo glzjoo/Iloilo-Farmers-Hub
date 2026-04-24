@@ -15,7 +15,7 @@ import UserDetailModal from '../../components/admin/userDetailModal';
 import EvidenceModal from '../../components/admin/EvidenceModal';
 import SuspendModal from '../../components/admin/SuspendModal';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
-import { updateReportStatus, suspendUser, unsuspendUser } from '../../services/reportService';
+import { updateReportStatus, unsuspendUser } from '../../services/reportService';
 
 type TabId = 'overview' | 'reports' | 'appeals' | 'logs' | 'analytics';
 
@@ -132,9 +132,6 @@ export default function AdminDashboard() {
       if (suspendModal.report.firestoreId) {
         await updateReportStatus(suspendModal.report.firestoreId, newStatus);
       }
-      if (suspendModal.report.reportedUserId) {
-        await suspendUser(suspendModal.report.reportedUserId, suspendModal.type);
-      }
 
       addLog(
         suspendModal.type === 'warning' ? 'warned' : 'suspended',
@@ -176,6 +173,25 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Failed to reactivate user:', error);
       showSuccess('Action Failed', 'Failed to reactivate user. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDismiss = async (report: Report) => {
+    if (actionLoading) return;
+    setActionLoading(true);
+
+    try {
+      if (report.firestoreId) {
+        await updateReportStatus(report.firestoreId, 'Dismissed');
+      }
+
+      addLog('dismissed', report.reportedUser, 'report marked as false/not relevant');
+      showSuccess('Report Dismissed', `Report ${report.id} has been dismissed. No action was taken against ${report.reportedUser}.`);
+    } catch (error) {
+      console.error('Failed to dismiss report:', error);
+      showSuccess('Action Failed', 'Failed to dismiss report. Please try again.');
     } finally {
       setActionLoading(false);
     }
@@ -235,6 +251,7 @@ export default function AdminDashboard() {
               onSuspend={handleSuspend}
               onWarning={handleWarning}
               onReactivate={handleReactivate}
+              onDismiss={handleDismiss}
               onViewUser={handleViewUser}
               onViewEvidence={handleViewEvidence}
               getStatusBadge={getStatusBadge}

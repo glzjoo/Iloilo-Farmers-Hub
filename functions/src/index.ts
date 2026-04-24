@@ -149,6 +149,7 @@ export const verifyFarmerId = functions
         const isVerified = faceResult.faceMatch.passed && hasIdData;
 
         await db.collection('pendingFarmers').doc(tempId).update({
+          idVerified: isVerified,  // <-- ADD THIS LINE
           verificationResults: {
             faceMatch: faceResult.faceMatch,
             extractedData: extractedData,

@@ -7,6 +7,7 @@ interface AdminReportsProps {
     onSuspend: (report: Report, type: '1 week suspension' | '30 days suspension' | 'permanent') => void;
     onWarning: (report: Report) => void;
     onReactivate: (reportId: string) => void;
+    onDismiss: (report: Report) => void;
     onViewUser: (report: Report) => void;
     onViewEvidence: (report: Report) => void;
     getStatusBadge: (status: Report['status']) => JSX.Element | undefined;
@@ -23,7 +24,7 @@ function getNextSuspensionAction(status: Report['status']): {
         case '1st Warning':
             return {
                 type: '1 week suspension',
-                label: '1 Week Suspend',
+                label: 'Suspend',
                 color: 'bg-orange-500',
                 hoverColor: 'hover:bg-orange-600',
             };
@@ -51,6 +52,7 @@ export default function AdminReports({
     onSuspend,
     onWarning,
     onReactivate,
+    onDismiss,
     onViewUser,
     onViewEvidence,
     getStatusBadge,
@@ -75,6 +77,7 @@ export default function AdminReports({
         '30 days suspension': reports.filter(r => r.status === '30 days suspension').length,
         'Permanently Banned': reports.filter(r => r.status === 'Permanently Banned').length,
         Resolved: reports.filter(r => r.status === 'Resolved').length,
+        Dismissed: reports.filter(r => r.status === 'Dismissed').length,
     };
 
     return (
@@ -91,7 +94,7 @@ export default function AdminReports({
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-3 mb-4 sm:mb-6">
                 {Object.entries(statusCounts).map(([status, count]) => (
                     <button
                         key={status}
@@ -200,56 +203,74 @@ export default function AdminReports({
                                         </td>
                                         <td className="px-4 py-3">{getStatusBadge(report.status)}</td>
                                         <td className="px-4 py-3">
-                                            <div className="flex items-center gap-1.5 flex-wrap">
-                                                {report.status === 'Pending' && (
-                                                    <button
-                                                        onClick={() => onWarning(report)}
-                                                        className="px-2.5 py-1 bg-yellow-500 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-yellow-600 transition-colors"
-                                                    >
-                                                        Warning
-                                                    </button>
-                                                )}
-
-                                                {(() => {
-                                                    const action = getNextSuspensionAction(report.status);
-                                                    if (!action) return null;
-                                                    return (
+                                            <div className="flex flex-col gap-1.5">
+                                                {/* Row 1: Warning + Suspend */}
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    {report.status === 'Pending' && (
                                                         <button
-                                                            onClick={() => onSuspend(report, action.type)}
-                                                            className={`px-2.5 py-1 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer transition-colors ${action.color} ${action.hoverColor}`}
+                                                            onClick={() => onWarning(report)}
+                                                            className="px-2.5 py-1 bg-yellow-500 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-yellow-600 transition-colors"
                                                         >
-                                                            {action.label}
+                                                            Warning
                                                         </button>
-                                                    );
-                                                })()}
+                                                    )}
 
-                                                {(report.status === '1 week suspension' || report.status === '30 days suspension' || report.status === 'Permanently Banned') && (
+                                                    {(() => {
+                                                        const action = getNextSuspensionAction(report.status);
+                                                        if (!action) return null;
+                                                        return (
+                                                            <button
+                                                                onClick={() => onSuspend(report, action.type)}
+                                                                className={`px-2.5 py-1 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer transition-colors ${action.color} ${action.hoverColor}`}
+                                                            >
+                                                                {action.label}
+                                                            </button>
+                                                        );
+                                                    })()}
+
+                                                    {(report.status === '1 week suspension' || report.status === '30 days suspension' || report.status === 'Permanently Banned') && (
+                                                        <button
+                                                            onClick={() => onReactivate(report.id)}
+                                                            className="px-2.5 py-1 bg-green-600 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-green-700 transition-colors"
+                                                        >
+                                                            Reactivate
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                {/* Row 2: View User + View Evidence */}
+                                                <div className="flex items-center gap-1.5">
                                                     <button
-                                                        onClick={() => onReactivate(report.id)}
-                                                        className="px-2.5 py-1 bg-green-600 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-green-700 transition-colors"
+                                                        onClick={() => onViewUser(report)}
+                                                        className="px-1.5 py-1 bg-transparent text-gray-500 border-none cursor-pointer hover:text-primary transition-colors"
+                                                        title="View User Details"
                                                     >
-                                                        Reactivate
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                        </svg>
                                                     </button>
-                                                )}
+                                                    <button
+                                                        onClick={() => onViewEvidence(report)}
+                                                        className="px-1.5 py-1 bg-transparent text-gray-500 border-none cursor-pointer hover:text-primary transition-colors"
+                                                        title="View Evidence"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
 
-                                                <button
-                                                    onClick={() => onViewUser(report)}
-                                                    className="px-1.5 py-1 bg-transparent text-gray-500 border-none cursor-pointer hover:text-primary transition-colors"
-                                                    title="View User Details"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                    </svg>
-                                                </button>
-                                                <button
-                                                    onClick={() => onViewEvidence(report)}
-                                                    className="px-1.5 py-1 bg-transparent text-gray-500 border-none cursor-pointer hover:text-primary transition-colors"
-                                                    title="View Evidence"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                </button>
+                                                {/* Row 3: Dismiss */}
+                                                {report.status === 'Pending' && (
+                                                    <div className="flex items-center">
+                                                        <button
+                                                            onClick={() => onDismiss(report)}
+                                                            className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[11px] font-semibold rounded-md border border-gray-300 cursor-pointer hover:bg-gray-200 transition-colors"
+                                                        >
+                                                            Dismiss
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -339,57 +360,75 @@ export default function AdminReports({
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
-                                        {report.status === 'Pending' && (
-                                            <button
-                                                onClick={() => onWarning(report)}
-                                                className="px-3 py-1.5 bg-yellow-500 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-yellow-600 transition-colors"
-                                            >
-                                                Warning
-                                            </button>
-                                        )}
-
-                                        {(() => {
-                                            const action = getNextSuspensionAction(report.status);
-                                            if (!action) return null;
-                                            return (
+                                    {/* Mobile Actions - same 3-row layout */}
+                                    <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
+                                        {/* Row 1: Warning + Suspend/Reactivate */}
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            {report.status === 'Pending' && (
                                                 <button
-                                                    onClick={() => onSuspend(report, action.type)}
-                                                    className={`px-3 py-1.5 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer transition-colors ${action.color} ${action.hoverColor}`}
+                                                    onClick={() => onWarning(report)}
+                                                    className="px-3 py-1.5 bg-yellow-500 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-yellow-600 transition-colors"
                                                 >
-                                                    {action.label}
+                                                    Warning
                                                 </button>
-                                            );
-                                        })()}
+                                            )}
 
-                                        {(report.status === '1 week suspension' || report.status === '30 days suspension' || report.status === 'Permanently Banned') && (
+                                            {(() => {
+                                                const action = getNextSuspensionAction(report.status);
+                                                if (!action) return null;
+                                                return (
+                                                    <button
+                                                        onClick={() => onSuspend(report, action.type)}
+                                                        className={`px-3 py-1.5 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer transition-colors ${action.color} ${action.hoverColor}`}
+                                                    >
+                                                        {action.label}
+                                                    </button>
+                                                );
+                                            })()}
+
+                                            {(report.status === '1 week suspension' || report.status === '30 days suspension' || report.status === 'Permanently Banned') && (
+                                                <button
+                                                    onClick={() => onReactivate(report.id)}
+                                                    className="px-3 py-1.5 bg-green-600 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-green-700 transition-colors"
+                                                >
+                                                    Reactivate
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {/* Row 2: View User + View Evidence */}
+                                        <div className="flex items-center gap-2">
                                             <button
-                                                onClick={() => onReactivate(report.id)}
-                                                className="px-3 py-1.5 bg-green-600 text-white text-[11px] font-semibold rounded-md border-none cursor-pointer hover:bg-green-700 transition-colors"
+                                                onClick={() => onViewUser(report)}
+                                                className="w-8 h-8 flex items-center justify-center bg-gray-100 text-gray-500 rounded-lg border-none cursor-pointer hover:text-primary hover:bg-green-50 transition-colors"
+                                                title="View User Details"
                                             >
-                                                Reactivate
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                </svg>
                                             </button>
-                                        )}
+                                            <button
+                                                onClick={() => onViewEvidence(report)}
+                                                className="w-8 h-8 flex items-center justify-center bg-gray-100 text-gray-500 rounded-lg border-none cursor-pointer hover:text-primary hover:bg-green-50 transition-colors"
+                                                title="View Evidence"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </button>
+                                        </div>
 
-                                        <div className="flex-1" />
-                                        <button
-                                            onClick={() => onViewUser(report)}
-                                            className="w-8 h-8 flex items-center justify-center bg-gray-100 text-gray-500 rounded-lg border-none cursor-pointer hover:text-primary hover:bg-green-50 transition-colors"
-                                            title="View User Details"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                            </svg>
-                                        </button>
-                                        <button
-                                            onClick={() => onViewEvidence(report)}
-                                            className="w-8 h-8 flex items-center justify-center bg-gray-100 text-gray-500 rounded-lg border-none cursor-pointer hover:text-primary hover:bg-green-50 transition-colors"
-                                            title="View Evidence"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                        </button>
+                                        {/* Row 3: Dismiss */}
+                                        {report.status === 'Pending' && (
+                                            <div className="flex items-center">
+                                                <button
+                                                    onClick={() => onDismiss(report)}
+                                                    className="px-3 py-1.5 bg-gray-100 text-gray-600 text-[11px] font-semibold rounded-md border border-gray-300 cursor-pointer hover:bg-gray-200 transition-colors"
+                                                >
+                                                    Dismiss
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
