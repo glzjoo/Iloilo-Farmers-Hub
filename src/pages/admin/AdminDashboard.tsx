@@ -12,10 +12,10 @@ import AdminLogs, { type AdminAction } from '../../components/admin/AdminLogs';
 import AdminAppeals from '../../components/admin/AdminAppeals';
 import AdminAnalytics from '../../components/admin/AdminAnalytics';
 import UserDetailModal from '../../components/admin/userDetailModal';
-import ConversationModal from '../../components/admin/ConversationModal';
+import EvidenceModal from '../../components/admin/EvidenceModal';
 import SuspendModal from '../../components/admin/SuspendModal';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
-import { updateReportStatus, suspendUser, unsuspendUser } from '../../services/reportService';
+import { updateReportStatus, unsuspendUser } from '../../services/reportService';
 
 type TabId = 'overview' | 'reports' | 'appeals' | 'logs' | 'analytics';
 
@@ -28,7 +28,7 @@ export default function AdminDashboard() {
 
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [showUserDetail, setShowUserDetail] = useState(false);
-  const [showConversation, setShowConversation] = useState(false);
+  const [showEvidence, setShowEvidence] = useState(false);
   const [suspendModal, setSuspendModal] = useState<{
     report: Report;
     type: 'warning' | '1 week suspension' | '30 days suspension' | 'permanent';
@@ -73,6 +73,7 @@ export default function AdminDashboard() {
             status: d.status || 'Pending',
             date: createdAt ? createdAt.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             conversationId: d.conversationId || '',
+            mediaUrls: d.mediaUrls || [],
           } as Report;
         });
         setReports(data);
@@ -127,9 +128,6 @@ export default function AdminDashboard() {
       if (suspendModal.report.firestoreId) {
         await updateReportStatus(suspendModal.report.firestoreId, newStatus);
       }
-      if (suspendModal.report.reportedUserId) {
-        await suspendUser(suspendModal.report.reportedUserId, suspendModal.type);
-      }
 
       addLog(
         suspendModal.type === 'warning' ? 'warned' : 'suspended',
@@ -176,16 +174,35 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDismiss = async (report: Report) => {
+    if (actionLoading) return;
+    setActionLoading(true);
+
+    try {
+      if (report.firestoreId) {
+        await updateReportStatus(report.firestoreId, 'Dismissed');
+      }
+
+      addLog('dismissed', report.reportedUser, 'report marked as false/not relevant');
+      showSuccess('Report Dismissed', `Report ${report.id} has been dismissed. No action was taken against ${report.reportedUser}.`);
+    } catch (error) {
+      console.error('Failed to dismiss report:', error);
+      showSuccess('Action Failed', 'Failed to dismiss report. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleViewUser = (report: Report) => {
     setSelectedReport(report);
     setShowUserDetail(true);
     addLog('viewed', report.reportedUser, 'user details');
   };
 
-  const handleViewConversation = (report: Report) => {
+  const handleViewEvidence = (report: Report) => {
     setSelectedReport(report);
-    setShowConversation(true);
-    addLog('viewed', report.reportedUser, 'conversation');
+    setShowEvidence(true);
+    addLog('viewed', report.reportedUser, 'evidence');
   };
 
   const handleLogout = () => {
@@ -230,8 +247,9 @@ export default function AdminDashboard() {
               onSuspend={handleSuspend}
               onWarning={handleWarning}
               onReactivate={handleReactivate}
+              onDismiss={handleDismiss}
               onViewUser={handleViewUser}
-              onViewConversation={handleViewConversation}
+              onViewEvidence={handleViewEvidence}
               getStatusBadge={getStatusBadge}
             />
           )}
@@ -252,11 +270,11 @@ export default function AdminDashboard() {
         />
       )}
 
-      {showConversation && selectedReport && (
-        <ConversationModal
+      {showEvidence && selectedReport && (
+        <EvidenceModal
           report={selectedReport}
           onClose={() => {
-            setShowConversation(false);
+            setShowEvidence(false);
             setSelectedReport(null);
           }}
         />

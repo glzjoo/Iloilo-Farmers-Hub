@@ -16,7 +16,7 @@ import { getProductById } from '../../services/productService';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import MakeOfferButton from './MakeOfferButton';
-import { submitReport } from '../../services/reportService';
+import { submitReport, uploadReportMedia } from '../../services/reportService';
 
 interface MessagesLayoutProps {
   conversationId: string | null;
@@ -73,6 +73,9 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
   const [showReportMenu, setShowReportMenu] = useState(false);
   const [reportType, setReportType] = useState<string | null>(null);
   const [reportDetails, setReportDetails] = useState('');
+  const [reportFiles, setReportFiles] = useState<File[]>([]);
+  const [reportUploading, setReportUploading] = useState(false);
+  const reportFileInputRef = useRef<HTMLInputElement>(null);
 
   // Debug: Log messages when they change
   useEffect(() => {
@@ -536,6 +539,72 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
 
   const currentProductContext = productContext || fetchedProductContext;
 
+  // Report handlers
+  const handleReportFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter(f => {
+      const isImage = f.type.startsWith('image/');
+      const isVideo = f.type.startsWith('video/');
+      return isImage || isVideo;
+    });
+    if (validFiles.length !== files.length) {
+      alert('Only image and video files are allowed.');
+    }
+    const oversized = validFiles.filter(f => f.size > 50 * 1024 * 1024);
+    if (oversized.length > 0) {
+      alert('Some files exceed the 50MB limit and were skipped.');
+    }
+    const finalFiles = validFiles.filter(f => f.size <= 50 * 1024 * 1024).slice(0, 5);
+    setReportFiles(prev => [...prev, ...finalFiles].slice(0, 5));
+    if (reportFileInputRef.current) reportFileInputRef.current.value = '';
+  };
+
+  const removeReportFile = (index: number) => {
+    setReportFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmitReport = async () => {
+    if (!user || !userProfile || !participantData || !reportType) return;
+
+    try {
+      setReportUploading(true);
+      const mediaUrls: { url: string; type: 'image' | 'video' }[] = [];
+
+      if (reportFiles.length > 0) {
+        for (const file of reportFiles) {
+          const { url, type } = await uploadReportMedia(file, user.uid);
+          mediaUrls.push({ url, type });
+        }
+      }
+
+      const reporterName = userProfile.farmName || `${userProfile.firstName} ${userProfile.lastName}`;
+      const reportedName = participantData.farmName || `${participantData.firstName} ${participantData.lastName}`;
+
+      await submitReport({
+        type: reportType as any,
+        reportedUser: reportedName,
+        reportedUserId: otherParticipantId || '',
+        role: participantData.role === 'farmer' ? 'Seller' : 'Consumer',
+        reportedBy: reporterName,
+        reportedById: user.uid,
+        reason: reportDetails || reportType || '',
+        conversationId: conversationId || '',
+        mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
+      });
+
+      alert('Report submitted successfully! The admin will review it.');
+    } catch (error) {
+      console.error('Failed to submit report:', error);
+      alert('Failed to submit report. Please try again.');
+    } finally {
+      setReportUploading(false);
+      setShowReportMenu(false);
+      setReportType(null);
+      setReportDetails('');
+      setReportFiles([]);
+    }
+  };
+
   return (
     <div className="flex flex-col w-full h-[100dvh] fixed inset-0 z-50 md:relative md:inset-auto md:h-full bg-white overflow-hidden overscroll-none">
 
@@ -567,7 +636,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
           </button>
           {showReportMenu && (
             <>
-              <div className="fixed inset-0 z-30" onClick={() => { setShowReportMenu(false); setReportType(null); setReportDetails(''); }} />
+              <div className="fixed inset-0 z-30" onClick={() => { setShowReportMenu(false); setReportType(null); setReportDetails(''); setReportFiles([]); }} />
               <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-40 overflow-hidden">
                 <div className="px-4 py-2.5 bg-red-500 flex items-center justify-between">
                   <div>
@@ -575,7 +644,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
                     <p className="text-[10px] text-red-100">{reportType ? 'Provide details' : 'Select a reason'}</p>
                   </div>
                   <button
-                    onClick={() => { setShowReportMenu(false); setReportType(null); setReportDetails(''); }}
+                    onClick={() => { setShowReportMenu(false); setReportType(null); setReportDetails(''); setReportFiles([]); }}
                     className="text-white/80 hover:text-white bg-transparent border-none cursor-pointer text-lg leading-none"
                   >✕</button>
                 </div>
@@ -594,7 +663,7 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
                     ))}
                   </div>
                 ) : (
-                  // Step 2: Add details
+                  // Step 2: Add details + media
                   <div className="p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">{reportType}</span>
@@ -603,41 +672,77 @@ export default function MessagesLayout({ conversationId, onBack, productContext,
                         className="text-xs text-gray-400 hover:text-gray-600 bg-transparent border-none cursor-pointer underline"
                       >Change</button>
                     </div>
+
                     <textarea
                       value={reportDetails}
                       onChange={(e) => setReportDetails(e.target.value)}
                       placeholder="Describe what happened (optional)..."
                       rows={3}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400 placeholder:text-gray-400"
+                      disabled={reportUploading}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400 placeholder:text-gray-400 disabled:bg-gray-50"
                     />
+
+                    {/* Media Upload */}
+                    <input
+                      type="file"
+                      ref={reportFileInputRef}
+                      onChange={handleReportFileSelect}
+                      accept="image/*,video/*"
+                      multiple
+                      className="hidden"
+                    />
+
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        onClick={() => reportFileInputRef.current?.click()}
+                        disabled={reportUploading || reportFiles.length >= 5}
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                        Attach Photo/Video {reportFiles.length > 0 && `(${reportFiles.length}/5)`}
+                      </button>
+
+                      {reportFiles.length > 0 && (
+                        <div className="flex gap-2 mt-2 flex-wrap">
+                          {reportFiles.map((file, idx) => (
+                            <div key={idx} className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                              {file.type.startsWith('image/') ? (
+                                <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-gray-500">
+                                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  <span className="text-[9px] mt-0.5">Video</span>
+                                </div>
+                              )}
+                              <button
+                                onClick={() => removeReportFile(idx)}
+                                className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 text-white rounded-full text-[10px] flex items-center justify-center cursor-pointer border-none hover:bg-black/80"
+                              >✕</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     <button
-                      onClick={async () => {
-                        if (!user || !userProfile || !participantData) return;
-                        try {
-                          const reporterName = userProfile.farmName || `${userProfile.firstName} ${userProfile.lastName}`;
-                          const reportedName = participantData.farmName || `${participantData.firstName} ${participantData.lastName}`;
-                          await submitReport({
-                            type: reportType as any,
-                            reportedUser: reportedName,
-                            reportedUserId: otherParticipantId || '',
-                            role: participantData.role === 'farmer' ? 'Seller' : 'Consumer',
-                            reportedBy: reporterName,
-                            reportedById: user.uid,
-                            reason: reportDetails || reportType || '',
-                            conversationId: conversationId || '',
-                          });
-                          alert('Report submitted successfully! The admin will review it.');
-                        } catch (error) {
-                          console.error('Failed to submit report:', error);
-                          alert('Failed to submit report. Please try again.');
-                        }
-                        setShowReportMenu(false);
-                        setReportType(null);
-                        setReportDetails('');
-                      }}
-                      className="w-full mt-3 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg border-none cursor-pointer hover:bg-red-600 transition-colors"
+                      onClick={handleSubmitReport}
+                      disabled={reportUploading}
+                      className="w-full mt-3 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg border-none cursor-pointer hover:bg-red-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                      Submit Report
+                      {reportUploading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        'Submit Report'
+                      )}
                     </button>
                   </div>
                 )}
