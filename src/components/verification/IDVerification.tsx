@@ -273,7 +273,7 @@ export default function IDVerification() {
       setAttemptsLeft(prev => prev - 1);
 
       const nameMatches = checkNameMatch(
-        result.verification?.idData?.fullName,
+        result.verification?.IdData?.fullName,
         farmerData
       );
 
