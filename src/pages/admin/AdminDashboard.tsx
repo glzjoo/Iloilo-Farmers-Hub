@@ -40,15 +40,11 @@ export default function AdminDashboard() {
     message: string;
   }>({ isOpen: false, title: '', message: '' });
 
+
   const [latestLog, setLatestLog] = useState<AdminAction | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Auth guard
-  useEffect(() => {
-    if (!sessionStorage.getItem('isAdmin')) {
-      navigate('/admin/login');
-    }
-  }, [navigate]);
+
 
   // Real-time Firestore subscription
   useEffect(() => {
