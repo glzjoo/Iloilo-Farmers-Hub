@@ -1,6 +1,3 @@
-// ============================================
-// FILE: src/components/selling/ListedProductCard.tsx 
-// ============================================
 import type { Product } from '../../types';
 import edit from '../../assets/images/Edit.svg';
 import deleteIcon from '../../assets/images/delete.svg';
@@ -18,8 +15,8 @@ function StarDisplay({ rating }: { rating: number }) {
     return (
         <div className="flex items-center gap-0.5">
             {[1, 2, 3, 4, 5].map((star) => (
-                <span 
-                    key={star} 
+                <span
+                    key={star}
                     className={`text-xs ${star <= roundedRating ? 'text-yellow-500' : 'text-gray-300'}`}
                 >
                     ★
