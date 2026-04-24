@@ -8,11 +8,13 @@ import SignupToggle from './SignupToggle';
 import { consumerSignupSchema, type ConsumerSignupData } from '../../lib/validations';
 import { useAuth } from '../../context/AuthContext';
 import { useSanitizedInput } from '../../hooks/useSanitizedInput';
+import { useTranslation } from 'react-i18next';
 
 export default function ConsumerSignup() {
   const navigate = useNavigate();
   const { sendOTP } = useAuth();
   const { sanitizeName, sanitizeEmail, sanitizePhone } = useSanitizedInput();
+  const { t } = useTranslation();
 
   // Store confirmation result in ref (not state) to persist across renders
   const confirmationRef = useRef<ConfirmationResult | null>(null);
@@ -91,7 +93,7 @@ export default function ConsumerSignup() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
           <div className="flex items-center gap-3">
             <img src={logo} className="w-9 h-9 sm:w-11 sm:h-11 object-contain" alt="Logo" />
-            <span className="font-primary text-primary font-bold text-xl sm:text-2xl">Consumer's Information</span>
+            <span className="font-primary text-primary font-bold text-xl sm:text-2xl">{t('consumer_info')}</span>
           </div>
           <SignupToggle />
         </div>
@@ -99,7 +101,7 @@ export default function ConsumerSignup() {
         {/* Info Banner */}
         <div className="mb-5 sm:mb-6 p-3 sm:p-4 bg-primary/10 border border-primary/40 rounded-lg">
           <p className="text-primary text-sm font-primary leading-relaxed">
-            📱 We'll send a 6-digit OTP to verify your phone number
+            📱 {t('consumer.we_will_send_otp')} {t('consumer.to_verify_your_phone_number')}
           </p>
         </div>
 
@@ -115,7 +117,7 @@ export default function ConsumerSignup() {
           {/* First Name */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1.5">
-              First name <span className="text-red-500">*</span>
+              {t('consumer.first_name')} <span className="text-red-500">*</span>
             </label>
             <Controller
               name="firstName"
@@ -145,7 +147,7 @@ export default function ConsumerSignup() {
           {/* Last Name */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Last name <span className="text-red-500">*</span>
+              {t('consumer.last_name')} <span className="text-red-500">*</span>
             </label>
             <Controller
               name="lastName"
@@ -175,7 +177,7 @@ export default function ConsumerSignup() {
           {/* Email */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Email <span className="text-gray-400 text-xs italic">(Optional)</span>
+              {t('consumer.email')} <span className="text-gray-400 text-xs italic">(Optional)</span>
             </label>
             <Controller
               name="email"
@@ -207,7 +209,7 @@ export default function ConsumerSignup() {
           {/* Home Address */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Home Address <span className="text-red-500">*</span>
+              {t('consumer.home_address')} <span className="text-red-500">*</span>
             </label>
             <input
               {...register('address')}
@@ -223,7 +225,7 @@ export default function ConsumerSignup() {
           {/* Contact Number */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Contact Number <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(for OTP verification)</span>
+              {t('contact_number')} <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(for OTP verification)</span>
             </label>
             <Controller
               name="phoneNo"
@@ -251,7 +253,7 @@ export default function ConsumerSignup() {
           {/* Interest */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              What do you want to buy? <span className="text-red-500">*</span>
+              {t('consumer.interest')} <span className="text-red-500">*</span>
             </label>
             <select
               {...register('interest')}
@@ -298,7 +300,7 @@ export default function ConsumerSignup() {
               disabled={isLoading}
               className="py-3 sm:py-2.5 px-8 sm:px-12 rounded-full border-2 border-gray-300 text-gray-600 font-primary font-semibold bg-white cursor-pointer hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base transition-colors"
             >
-              Clear All
+              {t('clear_all')}
             </button>
 
             <button
@@ -312,10 +314,10 @@ export default function ConsumerSignup() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Sending OTP...
+                  {t('sending_otp')}
                 </>
               ) : (
-                'Continue to OTP'
+                t('continue_to_otp')
               )}
             </button>
           </div>

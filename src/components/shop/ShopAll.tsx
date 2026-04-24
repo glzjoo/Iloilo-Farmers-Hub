@@ -14,6 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import ActionGuardModal from '../common/ActionGuardModal';
 import ErrorModal from '../common/ErrorModal';
 import FarmerCard from './FarmerCard';
+import { useTranslation } from 'react-i18next';
 
 type NearbyMode = 'selection' | 'choosing' | 'gps' | 'manual';
 
@@ -93,6 +94,7 @@ export default function ShopAll({
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [addingToCart, setAddingToCart] = useState<string | null>(null);
     const [showGuardModal, setShowGuardModal] = useState(false);
+    const { t } = useTranslation();
 
     const queryOptionsKey = useMemo(() => {
         return JSON.stringify({
@@ -555,10 +557,10 @@ export default function ShopAll({
                                 disabled={isOutOfStock(product.stock) || addingToCart === product.id}
                             >
                                 {addingToCart === product.id
-                                    ? 'Adding...'
+                                    ? t('adding_to_cart')
                                     : isOutOfStock(product.stock)
-                                        ? 'Out of Stock'
-                                        : 'Add to Cart'
+                                        ? t('out_of_stock')
+                                        : t('add_to_favorites')
                                 }
                             </button>
                         </div>
