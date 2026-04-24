@@ -21,8 +21,8 @@ function StarDisplay({ rating, size = 'text-lg' }: { rating: number; size?: stri
     return (
         <div className="flex items-center gap-0.5">
             {[1, 2, 3, 4, 5].map((star) => (
-                <span 
-                    key={star} 
+                <span
+                    key={star}
                     className={`${size} ${star <= roundedRating ? 'text-yellow-500' : 'text-gray-300'}`}
                 >
                     ★
@@ -37,7 +37,7 @@ export default function ItemSection({ productId: propProductId, product: propPro
     const navigate = useNavigate();
     const { user, userProfile } = useAuth();
     const urlProductId = searchParams.get('id');
-    
+
     const productId = propProductId || urlProductId;
 
     const [product, setProduct] = useState<Product | null>(propProduct || null);
@@ -89,14 +89,14 @@ export default function ItemSection({ productId: propProductId, product: propPro
 
     const handleMessageSeller = () => {
         const role = checkUserRole();
-        
+
         if (role !== 'consumer') {
             setShowMessageModal(true);
             return;
         }
 
         if (!product) return;
-        
+
         navigate('/messages', {
             state: {
                 farmerId: product.farmerId,
@@ -107,7 +107,7 @@ export default function ItemSection({ productId: propProductId, product: propPro
                     price: product.price,
                     image: product.image,
                     unit: product.unit,
-                    quantity: quantity 
+                    quantity: quantity
                 }
             }
         });
@@ -116,18 +116,18 @@ export default function ItemSection({ productId: propProductId, product: propPro
     // FIXED: Actually calls addToCart service
     const handleAddToCart = async () => {
         const role = checkUserRole();
-        
+
         if (role !== 'consumer') {
             setShowCartModal(true);
             return;
         }
 
         if (!product || !user) return;
-        
+
         setAddingToCart(true);
         try {
             const stockValue = parseInt(product.stock.match(/^(\d+)/)?.[1] || '0');
-            
+
             await addToCart(user.uid, {
                 id: product.id,
                 name: product.name,
@@ -197,7 +197,7 @@ export default function ItemSection({ productId: propProductId, product: propPro
                         <h1 className="text-2xl sm:text-3xl font-primary font-bold text-black">{product.name}</h1>
                         <span className="text-lg sm:text-2xl font-primary text-gray-600">(₱{product.price} per {product.unit})</span>
                     </div>
-                    
+
                     {/* Updated Rating Display */}
                     <div className="flex items-center gap-2 mb-3">
                         {product.rating > 0 ? (
@@ -261,7 +261,7 @@ export default function ItemSection({ productId: propProductId, product: propPro
                             disabled={isOutOfStock || addingToCart}
                             className="px-8 py-2.5 border-2 border-primary text-primary font-primary font-semibold rounded-full cursor-pointer bg-white hover:bg-green-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300 disabled:cursor-not-allowed"
                         >
-                            {addingToCart ? 'Adding...' : isOutOfStock ? 'Out of Stock' : 'Add to cart'}
+                            {addingToCart ? 'Adding...' : isOutOfStock ? 'Out of Stock' : 'Add to Favorites'}
                         </button>
                         <button
                             onClick={handleMessageSeller}

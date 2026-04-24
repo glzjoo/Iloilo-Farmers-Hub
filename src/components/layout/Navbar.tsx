@@ -36,63 +36,98 @@ export default function Navbar() {
         }`;
 
     return (
-        <header className="w-full sticky top-0 z-50">
-            <nav className="bg-primary w-full">
-                <div className="max-w-7xl mx-auto flex justify-end px-4 sm:px-6 pt-2">
-                    <LanguageSwitcher />
-                </div>
-                <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 pb-3 sm:pb-4 pt-1 gap-2 sm:gap-3">
-                    <Link to="/" className="flex items-center gap-2 text-white no-underline shrink-0">
-                        <img src={logoOnly} className="h-8 w-auto md:hidden" alt="Iloilo Farmers Hub" />
-                        <img src={logo} className="h-8 w-auto hidden md:block" alt="Iloilo Farmers Hub" />
-                    </Link>
+        <>
+            <header className="w-full sticky top-0 z-50">
+                <nav className="bg-primary w-full">
+                    <div className="max-w-7xl mx-auto flex justify-end px-4 sm:px-6 pt-2">
+                        <LanguageSwitcher />
+                    </div>
+                    <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 pb-3 sm:pb-4 pt-1 gap-2 sm:gap-3">
 
-                    <SearchBar />
+                        {/*Mobile Left */}
+                        <div className="flex md:hidden items-center shrink-0">
+                            {location.pathname === '/shop' ? (
+                                <button onClick={() => window.history.back()} className="bg-transparent border-none cursor-pointer p-1 -ml-2 text-white hover:bg-white/10 rounded-full transition">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                </button>
+                            ) : (
+                                <Link to="/" className="flex items-center gap-2 text-white no-underline">
+                                    <img src={logoOnly} className="h-8 w-auto" alt="Iloilo Farmers Hub" />
+                                </Link>
+                            )}
+                        </div>
 
-                    {/* Desktop actions */}
-                    <div className="hidden md:flex items-center gap-2 shrink-0">
-                        <button className="bg-transparent border-none cursor-pointer p-1">
-                            <Link to="/cart" className="flex items-center gap-2 p-1 no-underline">
-                                <img src={savedItemsIcon} className="w-6 h-6 brightness-0 invert" />
+                        {/* Logo */}
+                        <Link to="/" className="hidden md:flex items-center gap-2 text-white no-underline shrink-0">
+                            <img src={logo} className="h-8 w-auto" alt="Iloilo Farmers Hub" />
+                        </Link>
+
+                        {/* Center: Search Bar */}
+
+                        <SearchBar />
+
+
+                        {/* 4. Desktop actions */}
+                        <div className="hidden md:flex items-center gap-2 shrink-0">
+                            <button className="bg-transparent border-none cursor-pointer p-1">
+                                <Link to="/cart" className="flex items-center gap-2 p-1 no-underline hover:bg-white/10 rounded-full transition">
+                                    <img src={savedItemsIcon} className="w-6 h-6 brightness-0 invert" />
+                                </Link>
+                            </button>
+                            <Link to="/consumer-signup" className="no-underline ml-1">
+                                <span className="text-white text-base font-medium">Sign Up</span>
                             </Link>
-                        </button>
-                        <Link to="/consumer-signup" className="no-underline">
-                            <span className="text-white text-base font-medium ml-1">Sign Up</span>
-                        </Link>
-                        <span className="text-white text-base font-medium">|</span>
-                        <Link to="/login" className="no-underline">
-                            <span className="text-white text-base font-medium">{t('login')}</span>
-                        </Link>
-                    </div>
+                            <span className="text-white text-base font-medium mx-1">|</span>
+                            <Link to="/login" className="no-underline">
+                                <span className="text-white text-base font-medium">{t('login')}</span>
+                            </Link>
+                        </div>
 
-                    {/* Mobile: cart + hamburger */}
-                    <div className="flex md:hidden items-center gap-2 shrink-0">
-                        <Link to="/cart" className="flex items-center p-1 no-underline">
-                            <img src={savedItemsIcon} className="w-6 h-6 brightness-0 invert" />
-                        </Link>
-                        <button
-                            onClick={() => setDrawerOpen(true)}
-                            className="bg-transparent border-none cursor-pointer p-1 text-white"
-                            aria-label="Open menu"
-                        >
-                            <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                            </svg>
-                        </button>
+                        {/* Mobile Filter */}
+                        <div className="flex md:hidden items-center gap-2 shrink-0">
+                            {location.pathname === '/shop' ? (
+                                <button
+                                    onClick={() => window.dispatchEvent(new Event('openMobileFilter'))}
+                                    className="flex items-center justify-center bg-transparent border-none cursor-pointer p-1 text-white hover:bg-white/10 rounded-full transition"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                    </svg>
+                                </button>
+                            ) : (
+                                // Standard Navigation
+                                <>
+                                    <Link to="/cart" className="flex items-center p-1 no-underline hover:bg-white/10 rounded-full transition">
+                                        <img src={savedItemsIcon} className="w-6 h-6 brightness-0 invert" />
+                                    </Link>
+                                    <button
+                                        onClick={() => setDrawerOpen(true)}
+                                        className="bg-transparent border-none cursor-pointer p-1 text-white hover:bg-white/10 rounded-full transition"
+                                        aria-label="Open menu"
+                                    >
+                                        <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                                        </svg>
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </nav>
+
+                {/* Desktop nav links */}
+                <div className="hidden md:block bg-white border-b border-gray-200 shadow-sm">
+                    <div className="max-w-7xl mx-auto relative flex items-center justify-center gap-10 px-6 py-3">
+                        <Link to="/" className={linkClass('/')}>{t('nav_home')}</Link>
+                        <Link to="/shop" className={linkClass('/shop')}>{t('nav_shop')}</Link>
+                        <Link to="/subscriptions" className={linkClass('/subscriptions')}>{t('nav_subscriptions')}</Link>
+                        <Link to="/become-a-seller" className={linkClass('/become-a-seller')}>{t('nav_become_seller')}</Link>
+                        <Link to="/about" className={linkClass('/about')}>{t('nav_about')}</Link>
                     </div>
                 </div>
-            </nav>
-
-            {/* Desktop nav links */}
-            <div className="hidden md:block bg-white border-b border-gray-200 shadow-sm">
-                <div className="max-w-7xl mx-auto relative flex items-center justify-center gap-10 px-6 py-3">
-                    <Link to="/" className={linkClass('/')}>{t('nav_home')}</Link>
-                    <Link to="/shop" className={linkClass('/shop')}>{t('nav_shop')}</Link>
-                    <Link to="/subscriptions" className={linkClass('/subscriptions')}>{t('nav_subscriptions')}</Link>
-                    <Link to="/become-a-seller" className={linkClass('/become-a-seller')}>{t('nav_become_seller')}</Link>
-                    <Link to="/about" className={linkClass('/about')}>{t('nav_about')}</Link>
-                </div>
-            </div>
+            </header>
 
             {/* Mobile slide-out drawer */}
             {drawerOpen && (
@@ -131,14 +166,9 @@ export default function Navbar() {
                             <Link to="/consumer-signup" className={drawerLinkClass('/consumer-signup')}>Sign Up</Link>
                             <Link to="/login" className={drawerLinkClass('/login')}>{t('login')}</Link>
                         </div>
-
-                        {/* Language switcher at bottom */}
-                        <div className="border-t border-gray-100 px-5 py-4">
-                            <LanguageSwitcher />
-                        </div>
                     </div>
                 </div>
             )}
-        </header>
+        </>
     );
 }

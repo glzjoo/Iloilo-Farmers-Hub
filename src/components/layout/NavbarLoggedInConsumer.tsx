@@ -19,7 +19,7 @@ export default function NavbarLoggedInConsumer() {
     const navigate = useNavigate();
     const { user, userProfile, logout, loading } = useAuth();
     const { t } = useTranslation();
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(false)
 
 
     // Close drawer on route change
