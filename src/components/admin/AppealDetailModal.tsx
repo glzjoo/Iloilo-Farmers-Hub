@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Appeal } from './adminTypes';
 import { updateAppealStatus } from '../../services/appealService';
+import ErrorModal from '../common/ErrorModal';
 
 interface AppealDetailModalProps {
   appeal: Appeal;
@@ -11,6 +12,11 @@ interface AppealDetailModalProps {
 export default function AppealDetailModal({ appeal, onClose, onAction }: AppealDetailModalProps) {
   const [adminNotes, setAdminNotes] = useState(appeal.adminNotes || '');
   const [loading, setLoading] = useState(false);
+  const [errorModal, setErrorModal] = useState({
+    isOpen: false,
+    title: 'Error',
+    message: '',
+  });
 
   const handleAction = async (status: 'Approved' | 'Rejected') => {
     if (loading) return;
@@ -21,7 +27,11 @@ export default function AppealDetailModal({ appeal, onClose, onAction }: AppealD
       onClose();
     } catch (error) {
       console.error('Failed to update appeal:', error);
-      alert('Failed to process appeal. Please try again.');
+      setErrorModal({
+        isOpen: true,
+        title: 'Action Failed',
+        message: 'Failed to process appeal. Please try again.',
+      });
     } finally {
       setLoading(false);
     }
@@ -144,6 +154,14 @@ export default function AppealDetailModal({ appeal, onClose, onAction }: AppealD
             </div>
           )}
         </div>
+
+        {/* Error Modal */}
+        <ErrorModal
+          isOpen={errorModal.isOpen}
+          title={errorModal.title}
+          message={errorModal.message}
+          onClose={() => setErrorModal(prev => ({ ...prev, isOpen: false }))}
+        />
       </div>
     </div>
   );

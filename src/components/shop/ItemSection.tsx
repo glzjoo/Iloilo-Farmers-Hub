@@ -1,21 +1,21 @@
 // ============================================
-// FILE: src/components/shop/ItemSection.tsx (FIXED - ADD TO CART ACTUALLY WORKS)
+// FILE: src/components/shop/ItemSection.tsx (FIXED - ADD TO CART WITH MODALS)
 // ============================================
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import type { Product } from '../../types';
 import { getProductById } from '../../services/shopService';
-import { addToCart } from '../../services/cartService'; // ADD THIS IMPORT
+import { addToCart } from '../../services/cartService';
 import { useAuth } from '../../context/AuthContext';
 import ActionGuardModal from '../common/ActionGuardModal';
 import ErrorModal from '../common/ErrorModal';
+import ConfirmationModal from '../common/ConfirmationModal'; // ← ADDED
 
 interface ItemSectionProps {
     productId?: string | null;
     product?: Product | null;
 }
 
-// Star display - whole stars only
 function StarDisplay({ rating, size = 'text-lg' }: { rating: number; size?: string }) {
     const roundedRating = Math.round(rating);
     return (
@@ -37,7 +37,6 @@ export default function ItemSection({ productId: propProductId, product: propPro
     const navigate = useNavigate();
     const { user, userProfile } = useAuth();
     const urlProductId = searchParams.get('id');
-
     const productId = propProductId || urlProductId;
 
     const [product, setProduct] = useState<Product | null>(propProduct || null);
@@ -45,10 +44,10 @@ export default function ItemSection({ productId: propProductId, product: propPro
     const [error, setError] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [quantity, setQuantity] = useState(1);
-    const [addingToCart, setAddingToCart] = useState(false); // ADD loading state
-
+    const [addingToCart, setAddingToCart] = useState(false);
     const [showCartModal, setShowCartModal] = useState(false);
     const [showMessageModal, setShowMessageModal] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false); // ← ADDED
 
     useEffect(() => {
         if (propProduct) {
@@ -56,14 +55,12 @@ export default function ItemSection({ productId: propProductId, product: propPro
             setLoading(false);
             return;
         }
-
         const fetchProduct = async () => {
             if (!productId) {
                 setError('No product selected');
                 setLoading(false);
                 return;
             }
-
             try {
                 setLoading(true);
                 const fetchedProduct = await getProductById(productId);
@@ -78,7 +75,6 @@ export default function ItemSection({ productId: propProductId, product: propPro
                 setLoading(false);
             }
         };
-
         fetchProduct();
     }, [productId, propProduct]);
 
@@ -89,14 +85,11 @@ export default function ItemSection({ productId: propProductId, product: propPro
 
     const handleMessageSeller = () => {
         const role = checkUserRole();
-
         if (role !== 'consumer') {
             setShowMessageModal(true);
             return;
         }
-
         if (!product) return;
-
         navigate('/messages', {
             state: {
                 farmerId: product.farmerId,
@@ -113,21 +106,17 @@ export default function ItemSection({ productId: propProductId, product: propPro
         });
     };
 
-    // FIXED: Actually calls addToCart service
     const handleAddToCart = async () => {
         const role = checkUserRole();
-
         if (role !== 'consumer') {
             setShowCartModal(true);
             return;
         }
-
         if (!product || !user) return;
 
         setAddingToCart(true);
         try {
             const stockValue = parseInt(product.stock.match(/^(\d+)/)?.[1] || '0');
-
             await addToCart(user.uid, {
                 id: product.id,
                 name: product.name,
@@ -139,7 +128,8 @@ export default function ItemSection({ productId: propProductId, product: propPro
                 stock: stockValue,
             }, quantity);
 
-            alert(`Added ${quantity} ${product.unit} of ${product.name} to cart!`);
+            setShowSuccessModal(true); // ← CHANGED: replaced alert() with modal
+
         } catch (err: any) {
             console.error('Add to cart error:', err);
             setErrorMessage(err.message || 'Failed to add to cart');
@@ -181,7 +171,6 @@ export default function ItemSection({ productId: propProductId, product: propPro
     return (
         <section className="w-full py-12">
             <div className="max-w-4xl mx-auto px-4 sm:px-10 flex flex-col md:flex-row gap-6 md:gap-10">
-
                 <div className="flex flex-col items-center w-full md:w-[320px] flex-shrink-0">
                     <div className="w-full h-[260px] rounded-xl overflow-hidden mb-3 bg-gray-100">
                         <img
@@ -198,7 +187,6 @@ export default function ItemSection({ productId: propProductId, product: propPro
                         <span className="text-lg sm:text-2xl font-primary text-gray-600">(₱{product.price} per {product.unit})</span>
                     </div>
 
-                    {/* Updated Rating Display */}
                     <div className="flex items-center gap-2 mb-3">
                         {product.rating > 0 ? (
                             <>
@@ -289,9 +277,29 @@ export default function ItemSection({ productId: propProductId, product: propPro
 
             <ErrorModal
                 isOpen={Boolean(errorMessage)}
-                title="Cart error"
+                title="Cart Error"
                 message={errorMessage}
                 onClose={() => setErrorMessage('')}
+            />
+
+            {/* ← ADDED: Success modal replaces alert() */}
+            <ConfirmationModal
+                isOpen={showSuccessModal}
+                title="Added to Favorites"
+                message={
+                    <span>
+                        <span className="font-semibold text-gray-800">{quantity} {product.unit}</span> of{' '}
+                        <span className="font-semibold text-gray-800">{product.name}</span> has been added to your favorites.
+                    </span>
+                }
+                variant="success"
+                confirmLabel="Continue Shopping"
+                cancelLabel="Go to Cart"
+                onConfirm={() => setShowSuccessModal(false)}
+                onCancel={() => {
+                    setShowSuccessModal(false);
+                    navigate('/cart');
+                }}
             />
         </section>
     );

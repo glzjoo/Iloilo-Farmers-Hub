@@ -17,7 +17,6 @@ import SuspendModal from '../../components/admin/SuspendModal';
 import AppealDetailModal from '../../components/admin/AppealDetailModal';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
 import { updateReportStatus, unsuspendUser } from '../../services/reportService';
-import { updateAppealStatus } from '../../services/appealService';
 
 type TabId = 'overview' | 'reports' | 'appeals' | 'logs' | 'analytics';
 
