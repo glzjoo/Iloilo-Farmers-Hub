@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import logo from '../../assets/icons/logo.png';
 import { verifyAdminLogin } from '../../services/adminService';
+import { db } from '../../lib/firebase';
 
 export default function AdminLogin() {
     const navigate = useNavigate();
@@ -25,6 +27,15 @@ export default function AdminLogin() {
         try {
             const isValid = await verifyAdminLogin(username.trim(), password);
             if (isValid) {
+                // Log admin login to Firestore
+                await addDoc(collection(db, 'admin_logs'), {
+                    action: 'logged_in',
+                    targetUser: 'System',
+                    adminName: 'Admin',
+                    details: 'Admin authenticated via login page',
+                    timestamp: serverTimestamp(),
+                });
+
                 sessionStorage.setItem('isAdmin', 'true');
                 navigate('/admin/dashboard');
             } else {

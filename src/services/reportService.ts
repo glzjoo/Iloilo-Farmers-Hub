@@ -52,9 +52,9 @@ export const uploadReportMedia = async (
 ): Promise<{ url: string; type: 'image' | 'video' }> => {
     const storage = getStorage();
     const isVideo = file.type.startsWith('video/');
-    const ext = file.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg');
-    const path = `reports_media/${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    const storageRef = ref(storage, path);
+    const parts = file.name.split('.');
+    const ext = parts.length > 1 ? parts.pop() : (isVideo ? 'mp4' : 'jpg');
+    const path = `reports_media/${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;    const storageRef = ref(storage, path);
     const uploadTask = uploadBytesResumable(storageRef, file);
 
     return new Promise((resolve, reject) => {

@@ -1,19 +1,20 @@
 // src/pages/admin/AdminDashboard.tsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import type { Report } from '../../components/admin/adminTypes';
-import { getStatusBadge } from '../../components/admin/adminTypes';
+import type { Report, Appeal, AdminAction } from '../../components/admin/adminTypes';
+import { getStatusBadge, getAppealStatusBadge } from '../../components/admin/adminTypes';
 import AdminSidebar from '../../components/admin/AdminSidebar';
 import AdminOverview from '../../components/admin/AdminOverview';
 import AdminReports from '../../components/admin/reports';
-import AdminLogs, { type AdminAction } from '../../components/admin/AdminLogs';
+import AdminLogs from '../../components/admin/AdminLogs';
 import AdminAppeals from '../../components/admin/AdminAppeals';
 import AdminAnalytics from '../../components/admin/AdminAnalytics';
 import UserDetailModal from '../../components/admin/userDetailModal';
 import EvidenceModal from '../../components/admin/EvidenceModal';
 import SuspendModal from '../../components/admin/SuspendModal';
+import AppealDetailModal from '../../components/admin/AppealDetailModal';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
 import { updateReportStatus, unsuspendUser } from '../../services/reportService';
 
@@ -21,8 +22,14 @@ type TabId = 'overview' | 'reports' | 'appeals' | 'logs' | 'analytics';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const loginLoggedRef = useRef(false);
+
   const [reports, setReports] = useState<Report[]>([]);
+  const [appeals, setAppeals] = useState<Appeal[]>([]);
+  const [logs, setLogs] = useState<AdminAction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [appealsLoading, setAppealsLoading] = useState(true);
+  const [logsLoading, setLogsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -34,19 +41,30 @@ export default function AdminDashboard() {
     type: 'warning' | '1 week suspension' | '30 days suspension' | 'permanent';
   } | null>(null);
 
+  const [selectedAppeal, setSelectedAppeal] = useState<Appeal | null>(null);
+  const [showAppealDetail, setShowAppealDetail] = useState(false);
+
   const [successModal, setSuccessModal] = useState<{
     isOpen: boolean;
     title: string;
     message: string;
   }>({ isOpen: false, title: '', message: '' });
 
-
-  const [latestLog, setLatestLog] = useState<AdminAction | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Auth guard + log admin login once per session
+  useEffect(() => {
+    if (!sessionStorage.getItem('isAdmin')) {
+      navigate('/admin/login');
+      return;
+    }
+    if (!loginLoggedRef.current) {
+      loginLoggedRef.current = true;
+      addLog('logged_in', 'System', 'Admin accessed dashboard');
+    }
+  }, [navigate]);
 
-
-  // Real-time Firestore subscription
+  // ─── Real-time Reports ───
   useEffect(() => {
     const reportsQuery = query(
       collection(db, 'reports_users'),
@@ -88,22 +106,100 @@ export default function AdminDashboard() {
     return () => unsubscribe();
   }, []);
 
-  const addLog = useCallback((action: AdminAction['action'], targetUser: string, details?: string) => {
-    const newLog: AdminAction = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date().toISOString(),
-      action,
-      targetUser,
-      details,
-      adminName: 'Admin',
-    };
-    setLatestLog(newLog);
+  // ─── Real-time Appeals ───
+  useEffect(() => {
+    const appealsQuery = query(
+      collection(db, 'appeals'),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(
+      appealsQuery,
+      (snapshot) => {
+        const data = snapshot.docs.map((doc, idx) => {
+          const d = doc.data();
+          const createdAt = d.createdAt?.toDate?.();
+          return {
+            id: `#${String(idx + 1).padStart(3, '0')}`,
+            firestoreId: doc.id,
+            userId: d.userId || '',
+            userName: d.userName || 'Unknown',
+            userEmail: d.userEmail || '',
+            suspensionType: d.suspensionType || 'permanent',
+            reason: d.reason || '',
+            mediaUrls: d.mediaUrls || [],
+            status: d.status || 'Pending',
+            adminNotes: d.adminNotes || '',
+            createdAt: createdAt ? createdAt.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            updatedAt: d.updatedAt?.toDate?.()?.toISOString() || '',
+          } as Appeal;
+        });
+        setAppeals(data);
+        setAppealsLoading(false);
+      },
+      (error) => {
+        console.error('Firestore appeals subscription error:', error);
+        setAppealsLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  // ─── Real-time Admin Logs ───
+  useEffect(() => {
+    const logsQuery = query(
+      collection(db, 'admin_logs'),
+      orderBy('timestamp', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(
+      logsQuery,
+      (snapshot) => {
+        const data = snapshot.docs.map((doc) => {
+          const d = doc.data();
+          const ts = d.timestamp?.toDate?.();
+          return {
+            id: doc.id,
+            timestamp: ts ? ts.toISOString() : new Date().toISOString(),
+            action: d.action || 'unknown',
+            targetUser: d.targetUser || 'Unknown',
+            details: d.details || '',
+            adminName: d.adminName || 'Admin',
+          } as AdminAction;
+        });
+        setLogs(data);
+        setLogsLoading(false);
+      },
+      (error) => {
+        console.error('Firestore logs subscription error:', error);
+        setLogsLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  // ─── Persist log to Firestore ───
+  const addLog = useCallback(async (action: AdminAction['action'], targetUser: string, details?: string) => {
+    try {
+      await addDoc(collection(db, 'admin_logs'), {
+        action,
+        targetUser,
+        details: details || '',
+        adminName: 'Admin',
+        timestamp: serverTimestamp(),
+      });
+    } catch (err) {
+      console.error('Failed to write admin log:', err);
+    }
   }, []);
 
   const showSuccess = useCallback((title: string, message: string) => {
     setSuccessModal({ isOpen: true, title, message });
   }, []);
 
+  // ─── Report Handlers ───
   const handleSuspend = (report: Report, type: '1 week suspension' | '30 days suspension' | 'permanent') => {
     setSuspendModal({ report, type });
   };
@@ -129,14 +225,15 @@ export default function AdminDashboard() {
         await updateReportStatus(suspendModal.report.firestoreId, newStatus);
       }
 
-      addLog(
+      const actionLabel =
+        suspendModal.type === 'warning' ? 'warned' :
+        suspendModal.type === 'permanent' ? 'banned' : `suspended (${suspendModal.type})`;
+
+      await addLog(
         suspendModal.type === 'warning' ? 'warned' : 'suspended',
         suspendModal.report.reportedUser,
         suspendModal.type === 'warning' ? undefined : suspendModal.type
       );
-
-      const actionLabel = suspendModal.type === 'warning' ? 'warned' :
-        suspendModal.type === 'permanent' ? 'banned' : `suspended (${suspendModal.type})`;
 
       showSuccess(
         'Action Completed',
@@ -164,7 +261,7 @@ export default function AdminDashboard() {
         await unsuspendUser(report.reportedUserId);
       }
 
-      addLog('reactivated', report?.reportedUser || 'Unknown');
+      await addLog('reactivated', report?.reportedUser || 'Unknown');
       showSuccess('User Reactivated', `${report?.reportedUser || 'User'} has been reactivated.`);
     } catch (error) {
       console.error('Failed to reactivate user:', error);
@@ -183,7 +280,7 @@ export default function AdminDashboard() {
         await updateReportStatus(report.firestoreId, 'Dismissed');
       }
 
-      addLog('dismissed', report.reportedUser, 'report marked as false/not relevant');
+      await addLog('dismissed', report.reportedUser, 'report marked as false/not relevant');
       showSuccess('Report Dismissed', `Report ${report.id} has been dismissed. No action was taken against ${report.reportedUser}.`);
     } catch (error) {
       console.error('Failed to dismiss report:', error);
@@ -205,9 +302,38 @@ export default function AdminDashboard() {
     addLog('viewed', report.reportedUser, 'evidence');
   };
 
+  // ─── Appeal Handlers ───
+  const handleViewAppeal = (appeal: Appeal) => {
+    setSelectedAppeal(appeal);
+    setShowAppealDetail(true);
+    addLog('viewed', appeal.userName, 'appeal details');
+  };
+
+  const handleAppealAction = async (appeal: Appeal, status: 'Approved' | 'Rejected') => {
+    try {
+      if (status === 'Approved' && appeal.userId) {
+        await unsuspendUser(appeal.userId);
+      }
+      await addLog(
+        status === 'Approved' ? 'appeal_approved' : 'appeal_rejected',
+        appeal.userName,
+        status === 'Approved' ? 'appeal approved — user reinstated' : 'appeal rejected'
+      );
+      showSuccess(
+        status === 'Approved' ? 'Appeal Approved' : 'Appeal Rejected',
+        status === 'Approved'
+          ? `${appeal.userName} has been reinstated.`
+          : `The appeal from ${appeal.userName} has been rejected.`
+      );
+    } catch (error) {
+      console.error('Failed to process appeal:', error);
+      showSuccess('Action Failed', 'Failed to process appeal. Please try again.');
+    }
+  };
+
   const handleLogout = () => {
+    addLog('logged_out', 'System', 'Admin logged out');
     sessionStorage.removeItem('isAdmin');
-    sessionStorage.removeItem('adminActivityLogs');
     navigate('/admin/login');
   };
 
@@ -254,8 +380,17 @@ export default function AdminDashboard() {
             />
           )}
 
-          {activeTab === 'appeals' && <AdminAppeals />}
-          {activeTab === 'logs' && <AdminLogs newAction={latestLog} />}
+          {activeTab === 'appeals' && (
+            <AdminAppeals
+              appeals={appeals}
+              loading={appealsLoading}
+              onViewAppeal={handleViewAppeal}
+              getStatusBadge={getAppealStatusBadge}
+            />
+          )}
+
+          {activeTab === 'logs' && <AdminLogs logs={logs} loading={logsLoading} />}
+
           {activeTab === 'analytics' && <AdminAnalytics />}
         </div>
       </main>
@@ -286,6 +421,17 @@ export default function AdminDashboard() {
           type={suspendModal.type}
           onClose={() => setSuspendModal(null)}
           onConfirm={confirmSuspend}
+        />
+      )}
+
+      {showAppealDetail && selectedAppeal && (
+        <AppealDetailModal
+          appeal={selectedAppeal}
+          onClose={() => {
+            setShowAppealDetail(false);
+            setSelectedAppeal(null);
+          }}
+          onAction={(status) => handleAppealAction(selectedAppeal, status)}
         />
       )}
 
