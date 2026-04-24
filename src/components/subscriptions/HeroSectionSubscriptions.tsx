@@ -1,10 +1,10 @@
-import subscriptionsHero from '../../assets/images/subscription-hero.png';
+import HeroImg from '../../assets/images/subscription-hero.png';
 import arrowRightCircle from '../../assets/icons/Arrow-right-circle.svg';
 
 export default function HeroSectionSubscriptions() {
     return (
-        <section className="w-full h-[400px] sm:h-[600px] md:h-[900px] relative pb-10 sm:pb-20">
-            <img src={subscriptionsHero} className="w-full h-full object-cover" />
+        <section className="w-full h-[300px] sm:h-[400px] md:h-[600px] relative">
+            <img src={HeroImg} className="w-full h-full object-cover" />
             <div className="flex flex-col justify-center items-center absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full px-4 sm:px-8">
                 <h1 className="text-2xl sm:text-3xl md:text-5xl text-center font-primary font-semibold text-white">Sell Your Fresh Goods
                     Online. Reach Thousands
@@ -16,6 +16,6 @@ export default function HeroSectionSubscriptions() {
                     <img src={arrowRightCircle} alt="arrow" className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
             </div>
-        </section >
+        </section>
     );
 }

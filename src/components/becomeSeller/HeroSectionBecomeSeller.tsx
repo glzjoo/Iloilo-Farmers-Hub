@@ -1,6 +1,5 @@
-import HeroImg from '../../assets/images/about-us.jpg';
-
-export default function HeroSectionAboutUs() {
+import HeroImg from '../../assets/images/farmingselling.jpg';
+export default function HeroSectionBecomeSeller() {
     return (
         <section className="w-full h-[300px] sm:h-[400px] md:h-[600px] relative">
             <img src={HeroImg} className="w-full h-full object-cover" />

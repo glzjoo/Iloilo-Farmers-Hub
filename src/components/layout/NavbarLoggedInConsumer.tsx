@@ -19,7 +19,7 @@ export default function NavbarLoggedInConsumer() {
     const navigate = useNavigate();
     const { user, userProfile, logout, loading } = useAuth();
     const { t } = useTranslation();
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(false)
 
 
     // Close drawer on route change
@@ -180,17 +180,29 @@ export default function NavbarLoggedInConsumer() {
                         </div>
 
                         {/*Filter (on Shop) */}
-                        <div className="flex md:hidden items-center gap-2 shrink-0">
+                        <div className="flex md:hidden items-center gap-1 sm:gap-2 shrink-0">
                             {location.pathname === '/shop' ? (
-
-                                <button
-                                    onClick={() => window.dispatchEvent(new Event('openMobileFilter'))}
-                                    className="flex items-center justify-center bg-transparent border-none cursor-pointer p-1 text-white hover:bg-white/10 rounded-full transition"
-                                >
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                                    </svg>
-                                </button>
+                                <>
+                                    {/* Shopee-style Filter Button */}
+                                    <button
+                                        onClick={() => window.dispatchEvent(new Event('openMobileFilter'))}
+                                        className="flex items-center justify-center bg-transparent border-none cursor-pointer p-1 text-white hover:bg-white/10 rounded-full transition"
+                                    >
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                        </svg>
+                                    </button>
+                                    {/* Hamburger Menu (Restored for Shop) */}
+                                    <button
+                                        onClick={() => setDrawerOpen(true)}
+                                        className="bg-transparent border-none cursor-pointer p-1 text-white hover:bg-white/10 rounded-full transition"
+                                        aria-label="Open menu"
+                                    >
+                                        <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                                        </svg>
+                                    </button>
+                                </>
                             ) : (
                                 // Standard Navigation
                                 <>
