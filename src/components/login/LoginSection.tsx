@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from '../../context/AuthContext';
-import logo from '../../assets/icons/logo.png';
+import logo from '../../assets/icons/logo-Green.svg';
 
 export default function LoginSection() {
     const navigate = useNavigate();
@@ -53,12 +53,12 @@ export default function LoginSection() {
         <section className="flex items-center justify-center py-16 px-4">
             <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
                 <div className="flex items-center justify-center gap-2 mb-4">
-                    <img src={logo} className="w-11 h-11 rounded-full object-cover" alt="Logo" />
-                    <span className="font-primary font-bold text-lg tracking-wide whitespace-nowrap">ILOILO FARMERS HUB</span>
+                    <img src={logo} className="w-80 h-25" alt="Logo" />
+
                 </div>
 
-                <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-blue-700 text-xs font-primary text-center">
+                <div className="mb-6 p-3 bg-primary/10 border border-primary rounded-lg">
+                    <p className="text-primary text-xs font-primary text-center">
                         📱 Enter your phone number. We'll send a 6-digit OTP to verify your identity.
                     </p>
                 </div>
@@ -75,6 +75,14 @@ export default function LoginSection() {
                                 const digitsOnly = e.target.value.replace(/\D/g, '');
                                 setPhone(digitsOnly);
                             }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    if (!loading && phone.replace(/\D/g, '').length >= 10) {
+                                        handleLogin();
+                                    }
+                                }
+                            }}
                             inputMode="numeric"
                             pattern="[0-9]*"
                             maxLength={12}
@@ -90,6 +98,7 @@ export default function LoginSection() {
                     )}
 
                     <button
+                        type="button"
                         onClick={handleLogin}
                         disabled={loading || phone.replace(/\D/g, '').length < 10}
                         className="w-full bg-primary text-white font-primary font-semibold py-3 rounded-full border-none cursor-pointer hover:bg-green-700 mt-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

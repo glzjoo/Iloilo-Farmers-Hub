@@ -1,16 +1,13 @@
-// ============================================
-// FILE: src/components/shop/ShopAll.tsx (FIXED - HIDE DISTANCE IN MANUAL MODE)
-// ============================================
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Fuse from 'fuse.js';
 import minus from '../../assets/icons/minus.svg';
-import add from '../../assets/icons/add.svg';
+import add from '../../assets/icons/add.svg';;
 import type { Product } from '../../types';
 import type { FarmerWithLocation } from '../../types';
-import { 
+import {
     getProducts,
-    type ProductQueryOptions 
+    type ProductQueryOptions
 } from '../../services/shopService';
 import { addToCart } from '../../services/cartService';
 import { useAuth } from '../../context/AuthContext';
@@ -66,8 +63,8 @@ function StarDisplay({ rating }: { rating: number }) {
     return (
         <div className="flex gap-0.5">
             {[1, 2, 3, 4, 5].map((star) => (
-                <span 
-                    key={star} 
+                <span
+                    key={star}
                     className={`text-xs ${star <= roundedRating ? 'text-yellow-500' : 'text-gray-300'}`}
                 >
                     ★
@@ -77,15 +74,15 @@ function StarDisplay({ rating }: { rating: number }) {
     );
 }
 
-export default function ShopAll({ 
-    searchQuery = '', 
+export default function ShopAll({
+    searchQuery = '',
     queryOptions = { sortBy: 'trending', limit: 100 },
     nearbyFarmers = [],
     nearbyMode,
     nearbyLoading = false,
     nearbyError = null,
     isUsingManualLocation = false,
-    hasSearched,
+    hasSearched: _hasSearched,
 }: ShopAllProps) {
     const navigate = useNavigate();
     const { user, userProfile } = useAuth();
@@ -118,7 +115,7 @@ export default function ShopAll({
                 setLoading(true);
                 setError('');
                 const fetchedProducts = await getProducts(queryOptions);
-                
+
                 let filtered = fetchedProducts;
                 if (queryOptions.minPrice !== undefined || queryOptions.maxPrice !== undefined) {
                     filtered = filtered.filter(p => {
@@ -127,7 +124,7 @@ export default function ShopAll({
                         return true;
                     });
                 }
-                
+
                 setProducts(filtered);
 
                 const initialQuantities: Record<string, number> = {};
@@ -192,7 +189,7 @@ export default function ShopAll({
                 const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
                 return timeB - timeA;
             });
-            
+
             const sortedOutOfStock = [...outOfStock].sort((a, b) => {
                 const dateA = a.createdAt?.toDate?.() || new Date(0);
                 const dateB = b.createdAt?.toDate?.() || new Date(0);
@@ -200,9 +197,9 @@ export default function ShopAll({
                 const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
                 return timeB - timeA;
             });
-            
+
             return [...sortedInStock, ...sortedOutOfStock];
-        } 
+        }
         else if (queryOptions.sortBy === 'trending' || !queryOptions.sortBy) {
             const withBaseScores = inStock.map(product => ({
                 product,
@@ -296,7 +293,7 @@ export default function ShopAll({
     // ==========================================
     // NEARBY FARMERS DISPLAY SECTION
     // ==========================================
-    
+
     // Show nearby farmers when in GPS or Manual mode
     if (nearbyMode === 'gps' || nearbyMode === 'manual') {
         // Loading state
@@ -348,7 +345,7 @@ export default function ShopAll({
                             </div>
                             <p className="text-lg text-gray-900 font-medium mb-2">No farmers found</p>
                             <p className="text-sm text-gray-500 mb-4">
-                                {isUsingManualLocation 
+                                {isUsingManualLocation
                                     ? "No verified farmers with active products in this area."
                                     : "No farmers found within 5km of your location."}
                             </p>
@@ -376,7 +373,7 @@ export default function ShopAll({
                             Farmers Near You
                         </h2>
                         <p className="text-sm text-gray-500 mt-1">
-                            {isUsingManualLocation 
+                            {isUsingManualLocation
                                 ? `Showing farmers in selected area (${nearbyFarmers.length} found)`
                                 : `Showing farmers within 5km of your location (${nearbyFarmers.length} found)`}
                         </p>
@@ -385,9 +382,9 @@ export default function ShopAll({
                     {/* Farmers Grid - hide distance badge in manual mode */}
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                         {nearbyFarmers.map((farmer) => (
-                            <FarmerCard 
-                                key={farmer.uid} 
-                                farmer={farmer} 
+                            <FarmerCard
+                                key={farmer.uid}
+                                farmer={farmer}
                                 hideDistance={isUsingManualLocation}  // KEY FIX: Hide distance in manual mode
                             />
                         ))}
@@ -422,7 +419,7 @@ export default function ShopAll({
     // ==========================================
     // SELECTION MODE: REGULAR PRODUCTS RENDER
     // ==========================================
-    
+
     if (loading) {
         return (
             <section className="w-full py-8">
@@ -517,7 +514,7 @@ export default function ShopAll({
                                 <p className="text-xs text-gray-500 truncate flex-1 mr-2">
                                     {product.farmerName}
                                 </p>
-                                
+
                                 {/* Quantity buttons inline */}
                                 <div className="flex items-center gap-1 flex-shrink-0">
                                     <button

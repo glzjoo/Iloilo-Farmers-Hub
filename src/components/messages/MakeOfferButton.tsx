@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import ReviewPromptModal from './ReviewPromptModal';
 
 interface MakeOfferButtonProps {
@@ -28,12 +27,10 @@ export default function MakeOfferButton({
   remainingOffers,
   orderStatus,
   onConfirmReceived,
-  conversationId,
   productId,
   farmerId,
 }: MakeOfferButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showReviewModal, setShowReviewModal] = useState(false);
   const [hasConfirmedReceived, setHasConfirmedReceived] = useState(false);
   const [showReviewPrompt, setShowReviewPrompt] = useState(true); // Track if user clicked
 
@@ -153,7 +150,7 @@ interface MakeOfferModalProps {
   remainingOffers?: number;
 }
 
-function MakeOfferModal({ isOpen, onClose, product, farmerName, onSubmitOffer, disabled, remainingOffers }: MakeOfferModalProps) {
+function MakeOfferModal({ isOpen, onClose, product, farmerName, onSubmitOffer, disabled: _disabled, remainingOffers }: MakeOfferModalProps) {
   const [offerPrice, setOfferPrice] = useState('');
 
   if (!isOpen) return null;

@@ -29,6 +29,9 @@ import ReviewFarmer from './pages/ReviewFarmer';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import FarmerShopPage from './pages/FarmerShopPage';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import GuestRoute from './components/auth/GuestRoute';
+import AdminRoute from './components/auth/AdminRoute';
 //app.tsx
 // Pages that should not have footer and should be full viewport height
 const FULL_HEIGHT_PAGES = ['/messages'];
@@ -61,35 +64,44 @@ function AppLayout() {
             {/* Main content area */}
             <div className={`flex-1 flex flex-col ${isFullHeightPage ? 'min-h-0 overflow-hidden' : ''}`}>
                 <Routes>
+                    {/* ── Public Routes ── */}
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/shop" element={<Shop />} />
                     <Route path="/about" element={<AboutUs />} />
                     <Route path="/subscriptions" element={<Subscriptions />} />
                     <Route path="/become-a-seller" element={<BecomeASeller />} />
-                    {/* CHANGED: Added productId parameter */}
                     <Route path="/item/:productId" element={<ItemsDetailsPage />} />
-                    {/* Keep old route for backward compatibility, redirect to new format */}
                     <Route path="/item-details" element={<ItemsDetailsPage />} />
-                    <Route path="/cart" element={<CartPage />} />
-                    <Route path="/messages" element={<MessagesPage />} />
-                    <Route path="/farmer-signup" element={<FarmerSignupPage />} />
-                    <Route path="/id-verification" element={<IDVerificationPage />} />
-                    <Route path="/otp-verification" element={<FarmerOtpPage />} />
-                    <Route path="/consumer-signup" element={<ConsumerSignupPage />} />
-                    <Route path="/consumer/otp-verification" element={<ConsumerOtpPage />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/login/otp-verification" element={<LoginOtpPage />} />
-                    <Route path="/sell" element={<SellModalPage />} />
-                    <Route path="/AddProduct" element={<SellModalPage />} />
-                    <Route path="/my-listings" element={<MyListingPage />} />
-                    <Route path="/farmer-account" element={<FarmerAccountPage />} />
                     <Route path="/farmer/:farmerId" element={<FarmerShopPage />} />
-                    <Route path="/consumer-account" element={<ConsumerAccountPage />} />
-                    <Route path="/farmer-account-setting" element={<FarmerAccountSettingPage />} />
-                    <Route path="/consumer-account-setting" element={<ConsumerAccountSettingPage />} />
-                    <Route path="/review-farmer" element={<ReviewFarmer />} />
+
+                    {/* ── Guest-Only Routes (redirect if already logged in) ── */}
+                    <Route path="/farmer-signup" element={<GuestRoute><FarmerSignupPage /></GuestRoute>} />
+                    <Route path="/id-verification" element={<GuestRoute><IDVerificationPage /></GuestRoute>} />
+                    <Route path="/otp-verification" element={<GuestRoute><FarmerOtpPage /></GuestRoute>} />
+                    <Route path="/consumer-signup" element={<GuestRoute><ConsumerSignupPage /></GuestRoute>} />
+                    <Route path="/consumer/otp-verification" element={<GuestRoute><ConsumerOtpPage /></GuestRoute>} />
+                    <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+                    <Route path="/login/otp-verification" element={<GuestRoute><LoginOtpPage /></GuestRoute>} />
+
+                    {/* ── Authenticated Routes (any logged-in user) ── */}
+                    <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+                    <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+                    <Route path="/review-farmer" element={<ProtectedRoute><ReviewFarmer /></ProtectedRoute>} />
+
+                    {/* ── Farmer-Only Routes ── */}
+                    <Route path="/sell" element={<ProtectedRoute allowedRoles={['farmer']}><SellModalPage /></ProtectedRoute>} />
+                    <Route path="/AddProduct" element={<ProtectedRoute allowedRoles={['farmer']}><SellModalPage /></ProtectedRoute>} />
+                    <Route path="/my-listings" element={<ProtectedRoute allowedRoles={['farmer']}><MyListingPage /></ProtectedRoute>} />
+                    <Route path="/farmer-account" element={<ProtectedRoute allowedRoles={['farmer']}><FarmerAccountPage /></ProtectedRoute>} />
+                    <Route path="/farmer-account-setting" element={<ProtectedRoute allowedRoles={['farmer']}><FarmerAccountSettingPage /></ProtectedRoute>} />
+
+                    {/* ── Consumer-Only Routes ── */}
+                    <Route path="/consumer-account" element={<ProtectedRoute allowedRoles={['consumer']}><ConsumerAccountPage /></ProtectedRoute>} />
+                    <Route path="/consumer-account-setting" element={<ProtectedRoute allowedRoles={['consumer']}><ConsumerAccountSettingPage /></ProtectedRoute>} />
+
+                    {/* ── Admin Routes ── */}
                     <Route path="/admin/login" element={<AdminLogin />} />
-                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                    <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                 </Routes>
             </div>
 

@@ -1,6 +1,3 @@
-// ============================================
-// FILE: src/components/selling/ListingProducts.tsx (DYNAMIC)
-// ============================================
 import mylisting from '../../assets/icons/mylisting.svg';
 import searchIcon from '../../assets/icons/search.svg';
 import ListedProductCard from './ListedProductCard';
@@ -10,7 +7,7 @@ import ErrorModal from '../common/ErrorModal';
 import type { Product } from '../../types';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { collection, query, where, onSnapshot, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
 export default function ListingProducts() {
@@ -42,14 +39,14 @@ export default function ListingProducts() {
                     id: doc.id,
                     ...doc.data()
                 } as Product));
-                
+
                 // Sort by created date (newest first)
                 productsList.sort((a, b) => {
                     const dateA = a.createdAt?.toDate?.() || new Date(0);
                     const dateB = b.createdAt?.toDate?.() || new Date(0);
                     return dateB.getTime() - dateA.getTime();
                 });
-                
+
                 setProducts(productsList);
                 setLoading(false);
             },
@@ -88,26 +85,7 @@ export default function ListingProducts() {
         setProductToDelete(null);
     };
 
-    const handleSaveEdit = async (updatedProduct: Product) => {
-        try {
-            const productRef = doc(db, 'products', updatedProduct.id);
-            await updateDoc(productRef, {
-                name: updatedProduct.name,
-                price: updatedProduct.price,
-                stock: updatedProduct.stock,
-                unit: updatedProduct.unit,
-                description: updatedProduct.description,
-                category: updatedProduct.category,
-                status: updatedProduct.status,
-                updatedAt: new Date()
-            });
-            setEditingProduct(null);
-        } catch (err: any) {
-            setActionError('Failed to update product: ' + err.message);
-        }
-    };
-
-    const filteredProducts = products.filter(product => 
+    const filteredProducts = products.filter(product =>
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.category.toLowerCase().includes(searchQuery.toLowerCase())
     );

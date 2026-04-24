@@ -7,7 +7,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../../context/AuthContext';
-import logo from '../../assets/icons/logo.png';
 import type { FarmerSignupData } from '../../lib/validations';
 import CameraCapture from './CameraCapture';
 import IDVerificationSuccessModal from './IDVerificationSuccessModal';
@@ -26,15 +25,15 @@ const idVerificationSchema = z.object({
 
 type IDVerificationFormData = z.infer<typeof idVerificationSchema>;
 
-const API_URL = import.meta.env.VITE_VERIFICATION_API_URL || 'http://localhost:3001';
+const API_URL = 'https://us-central1-iloilo-farmers-hub.cloudfunctions.net/verifyFarmerId';
 
 export default function IDVerification() {
   const navigate = useNavigate();
   const location = useLocation();
   const { storeVerificationData } = useAuth();
-  
-  const { tempId, farmerData } = location.state as { 
-    tempId: string; 
+
+  const { tempId, farmerData } = location.state as {
+    tempId: string;
     farmerData: FarmerSignupData;
   } || {};
 
@@ -66,7 +65,7 @@ export default function IDVerification() {
 
   useEffect(() => {
     if (!tempId) {
-      navigate('/farmer-signup', { 
+      navigate('/farmer-signup', {
         replace: true,
         state: { error: 'Please complete the signup form first' }
       });
@@ -106,20 +105,20 @@ export default function IDVerification() {
   // Enhanced name matching for both ID types
   const checkNameMatch = (extractedName: string, formData: FarmerSignupData): boolean => {
     if (!extractedName) return false;
-    
-    const normalize = (str: string) => 
+
+    const normalize = (str: string) =>
       str.toLowerCase()
-         .replace(/[^a-z\s]/g, ' ')
-         .replace(/\s+/g, ' ')
-         .trim();
-    
+        .replace(/[^a-z\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
     const extracted = normalize(extractedName);
     const firstName = normalize(formData.firstName);
     const lastName = normalize(formData.lastName);
-    
+
     // Filter out common OCR garbage/template text
     const garbageWords = [
-      'statistic', 'authority', 'philippine', 'repub', 'publik', 
+      'statistic', 'authority', 'philippine', 'repub', 'publik',
       'nasrep', 'kad', 'tisticsal', 'pilipinas', 'filipinas',
       'pambansa', 'pagkakakilanlan', 'philippines', 'republic',
       'apelyido', 'pangalan', 'given', 'names', 'last', 'name',
@@ -128,25 +127,25 @@ export default function IDVerification() {
       'registry', 'system', 'basic', 'sectors', 'farmers', 'fishers',
       'rsbsa', 'reference', 'mobile', 'wallet'
     ];
-    
-    const extractedWords = extracted.split(' ').filter(word => 
+
+    const extractedWords = extracted.split(' ').filter(word =>
       word.length > 2 && !garbageWords.some(g => word.includes(g))
     );
-    
+
     // Check if first name appears
-    const firstNameMatch = extractedWords.some(word => 
-      word.includes(firstName) || 
+    const firstNameMatch = extractedWords.some(word =>
+      word.includes(firstName) ||
       firstName.includes(word) ||
       calculateSimilarity(word, firstName) > 0.7
     );
-    
+
     // Check last name
-    const lastNameMatch = extractedWords.some(word => 
-      word.includes(lastName) || 
+    const lastNameMatch = extractedWords.some(word =>
+      word.includes(lastName) ||
       lastName.includes(word) ||
       calculateSimilarity(word, lastName) > 0.7
     );
-    
+
     console.log('Name matching debug:', {
       extractedRaw: extractedName,
       extractedFiltered: extractedWords,
@@ -154,31 +153,31 @@ export default function IDVerification() {
       matches: { firstNameMatch, lastNameMatch },
       finalResult: firstNameMatch && lastNameMatch
     });
-    
+
     return firstNameMatch && lastNameMatch;
   };
 
   const calculateSimilarity = (str1: string, str2: string): number => {
     const len1 = str1.length;
     const len2 = str2.length;
-    
+
     if (len1 === 0 || len2 === 0) return 0;
-    
+
     if (str1.includes(str2) || str2.includes(str1)) {
       const longer = Math.max(len1, len2);
       const shorter = Math.min(len1, len2);
       return shorter / longer;
     }
-    
+
     const matrix: number[][] = [];
-    
+
     for (let i = 0; i <= len1; i++) {
       matrix[i] = [i];
     }
     for (let j = 0; j <= len2; j++) {
       matrix[0][j] = j;
     }
-    
+
     for (let i = 1; i <= len1; i++) {
       for (let j = 1; j <= len2; j++) {
         const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
@@ -189,26 +188,26 @@ export default function IDVerification() {
         );
       }
     }
-    
+
     const distance = matrix[len1][len2];
     const maxLen = Math.max(len1, len2);
-    
+
     return 1 - distance / maxLen;
   };
 
   const handleContinueToOTP = async () => {
     try {
       await storeVerificationData(tempId, {
-        idType: verificationResult?.verification?.idData?.idType || 'national_id',
+        idType: verificationResult?.verification?.IdData?.idType || 'national_id',
         faceMatchScore: verificationResult?.verification?.faceMatch?.score ?? null,
         faceMatchPassed: verificationResult?.verification?.faceMatch?.passed ?? null,
-        idNumber: verificationResult?.verification?.idData?.idNumber ?? null,
-        fullName: verificationResult?.verification?.idData?.fullName ?? null,
-        extractedAddress: verificationResult?.verification?.idData?.address ?? null,
+        idNumber: verificationResult?.verification?.IdData?.idNumber ?? null,
+        fullName: verificationResult?.verification?.IdData?.fullName ?? null,
+        extractedAddress: verificationResult?.verification?.IdData?.address ?? null,
         idCardImageUrl: verificationResult?.idCardUrl ?? null,
         selfieImageUrl: verificationResult?.selfieUrl ?? null,
-        mobileWalletNo: verificationResult?.verification?.idData?.mobileWalletNo ?? null,
-        issuingAgency: verificationResult?.verification?.idData?.issuingAgency ?? null,
+        mobileWalletNo: verificationResult?.verification?.IdData?.mobileWalletNo ?? null,
+        issuingAgency: verificationResult?.verification?.IdData?.issuingAgency ?? null,
       });
 
       navigate('/otp-verification', {
@@ -259,7 +258,7 @@ export default function IDVerification() {
       formData.append('idType', data.idType);
       formData.append('idNumber', data.idNumber);
 
-      const response = await fetch(`${API_URL}/api/verify-farmer-id`, {
+      const response = await fetch(`${API_URL}`, {
         method: 'POST',
         body: formData,
       });
@@ -274,17 +273,17 @@ export default function IDVerification() {
       setAttemptsLeft(prev => prev - 1);
 
       const nameMatches = checkNameMatch(
-        result.verification?.idData?.fullName, 
+        result.verification?.idData?.fullName,
         farmerData
       );
 
       if (result.verified && nameMatches) {
         setShowSuccessModal(true);
-        
+
       } else if (result.verified && !nameMatches) {
-        const extracted = result.verification?.idData?.fullName || 'Unknown';
+        const extracted = result.verification?.IdData?.fullName || 'Unknown';
         const registered = `${farmerData.firstName} ${farmerData.lastName}`;
-        
+
         setError(
           `Name mismatch detected.\n\n` +
           `ID shows: "${extracted}"\n` +
@@ -326,7 +325,7 @@ export default function IDVerification() {
   };
 
   const handleGoBack = () => {
-    navigate('/farmer-signup', { 
+    navigate('/farmer-signup', {
       replace: true,
       state: { farmerData }
     });
@@ -334,8 +333,8 @@ export default function IDVerification() {
 
   const getInputClass = (fieldName: keyof IDVerificationFormData) => {
     const baseClass = "w-full border rounded-lg px-4 py-2.5 text-sm font-primary outline-none transition-colors";
-    return errors[fieldName] 
-      ? `${baseClass} border-red-500 focus:border-red-500 bg-red-50` 
+    return errors[fieldName]
+      ? `${baseClass} border-red-500 focus:border-red-500 bg-red-50`
       : `${baseClass} border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary`;
   };
 
@@ -366,7 +365,7 @@ export default function IDVerification() {
   return (
     <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-10">
       {showCamera && (
-        <CameraCapture 
+        <CameraCapture
           onCapture={handleCapture}
           onCancel={handleCancelCamera}
         />
@@ -390,12 +389,11 @@ export default function IDVerification() {
       />
 
       <div className="text-center mb-8">
-        <img src={logo} className="w-16 h-16 rounded-full object-cover mx-auto mb-4" alt="Logo" />
         <h1 className="font-primary font-bold text-2xl text-gray-800">Farmer ID Verification</h1>
         <p className="text-gray-600 mt-2">
           Please verify your identity to continue registration
         </p>
-        <p className="text-sm text-blue-600 mt-2 font-medium">
+        <p className="text-sm text-primary mt-2 font-medium mt-4">
           Step 2 of 3: ID Verification → OTP Verification
         </p>
       </div>
@@ -431,19 +429,19 @@ export default function IDVerification() {
           <label className="block text-sm font-primary font-semibold text-gray-800 mb-2">
             ID Number <span className="text-red-500">*</span>
           </label>
-          <input 
-            {...register('idNumber')} 
-            type="text" 
-            placeholder="Enter ID number" 
-            className={getInputClass('idNumber')} 
+          <input
+            {...register('idNumber')}
+            type="text"
+            placeholder="Enter ID number"
+            className={getInputClass('idNumber')}
           />
           {errors.idNumber && <p className="mt-1 text-xs text-red-500 font-primary">{errors.idNumber.message}</p>}
-          
+
           {/* Updated help text */}
           <p className="text-xs text-gray-500 mt-1">
             {watch('idType') === 'farmers_fisheries_id' ? (
               <>
-                RSBSA Reference No. (e.g., 063034025000033 or 06-30-34-025-000033). 
+                RSBSA Reference No. (e.g., 063034025000033 or 06-30-34-025-000033).
                 <span className="text-primary font-medium"> Dashes are optional.</span>
               </>
             ) : watch('idType') === 'national_id' ? (
@@ -454,12 +452,12 @@ export default function IDVerification() {
           </p>
         </div>
 
-        <IDUploadSection 
+        <IDUploadSection
           idPreview={idPreview}
           onImageSelect={handleImageSelect}
         />
 
-        <SelfieCaptureSection 
+        <SelfieCaptureSection
           selfiePreview={selfiePreview}
           onOpenCamera={() => setShowCamera(true)}
           onRetake={handleRetake}
@@ -468,8 +466,8 @@ export default function IDVerification() {
         <div className="flex items-start gap-3">
           <input {...register('agreeToVerification')} type="checkbox" className="w-4 h-4 mt-1 accent-primary cursor-pointer" />
           <label className="text-sm font-primary text-gray-600">
-            I consent to the ID verification process. I confirm that the information provided is accurate 
-            and I am the person in the ID and selfie. I understand that false information will result in 
+            I consent to the ID verification process. I confirm that the information provided is accurate
+            and I am the person in the ID and selfie. I understand that false information will result in
             account suspension and legal action.
           </label>
         </div>

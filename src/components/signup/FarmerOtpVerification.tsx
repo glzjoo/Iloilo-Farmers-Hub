@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import logo from '../../assets/icons/logo.png';
+import logo from '../../assets/icons/logo-green.svg';
 import { useAuth } from '../../context/AuthContext';
 import SuccessModal from '../verification/SuccessModal'; // Your original modal for final success
 //famrerOTPverification
@@ -14,10 +14,10 @@ interface LocationState {
 export default function FarmerOtpVerification() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { sendOTP, verifyOTP, completeFarmerSignup } = useAuth();
-  
+  const { sendOTP, completeFarmerSignup } = useAuth();
+
   const { tempId, phoneNumber } = (location.state as LocationState) || {};
-  
+
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
@@ -26,12 +26,11 @@ export default function FarmerOtpVerification() {
   const [countdown, setCountdown] = useState(60);
   const [confirmationResult, setConfirmationResult] = useState<any>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [verificationResult, setVerificationResult] = useState<any>(null);
 
   // Send OTP on mount
   useEffect(() => {
     if (!tempId || !phoneNumber) {
-      navigate('/farmer-signup', { 
+      navigate('/farmer-signup', {
         replace: true,
         state: { error: 'Please complete registration first' }
       });
@@ -90,6 +89,12 @@ export default function FarmerOtpVerification() {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!loading && !sending && !otp.some(d => !d)) {
+        handleVerify();
+      }
+    }
   };
 
   const handleVerify = async (code: string = otp.join('')) => {
@@ -112,15 +117,12 @@ export default function FarmerOtpVerification() {
       setLoading(true);
       setError('');
 
-      // Step 1: Verify OTP
-      const firebaseUser = await verifyOTP(confirmationResult, code);
-      
-      // Step 2: Complete farmer signup
+      // completeFarmerSignup already verifies the OTP and creates the account
       await completeFarmerSignup(tempId, confirmationResult, code);
-      
+
       // Show success modal
       setShowSuccessModal(true);
-      
+
     } catch (err: any) {
       setError(err.message || 'Invalid code. Please try again.');
       // Reset OTP inputs
@@ -133,7 +135,7 @@ export default function FarmerOtpVerification() {
 
   const handleGoToLogin = () => {
     setShowSuccessModal(false);
-    navigate('/login', { 
+    navigate('/login', {
       replace: true,
       state: { message: 'Account created successfully! Please log in.' }
     });
@@ -145,7 +147,7 @@ export default function FarmerOtpVerification() {
   };
 
   const handleGoBack = () => {
-    navigate('/id-verification', { 
+    navigate('/id-verification', {
       replace: true,
       state: { tempId, farmerData: { phoneNo: phoneNumber } }
     });
@@ -175,7 +177,7 @@ export default function FarmerOtpVerification() {
       {/* Success Modal - Account Created */}
       {showSuccessModal && (
         <SuccessModal
-          farmerData={{ 
+          farmerData={{
             firstName: '', // Will be populated from context after signup
             lastName: '',
             phoneNo: phoneNumber,
@@ -186,9 +188,8 @@ export default function FarmerOtpVerification() {
       )}
 
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <img src={logo} className="w-11 h-11 rounded-full object-cover" alt="Logo" />
-          <span className="font-primary font-bold text-lg tracking-wide whitespace-nowrap">ILOILO FARMERS HUB</span>
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <img src={logo} className="w-22 h-22 object-contain" alt="Logo" />
         </div>
 
         <div className="text-center mb-6">

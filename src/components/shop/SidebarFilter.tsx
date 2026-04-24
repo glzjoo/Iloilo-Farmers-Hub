@@ -6,6 +6,7 @@ import type { Coordinates } from '../../hooks/useNearbyFarmers';
 type NearbyMode = 'selection' | 'choosing' | 'gps' | 'manual';
 
 interface SidebarFilterProps {
+    idPrefix?: string;
     categories: string[];
     onCategoryChange: (categories: string[]) => void;
     sortBy: string;
@@ -45,6 +46,7 @@ const sortOptions = [
 ] as const;
 
 export default function SidebarFilter({
+    idPrefix = 'desktop',
     categories,
     onCategoryChange,
     sortBy,
@@ -87,6 +89,7 @@ export default function SidebarFilter({
 
     const showRegularFilters = nearbyMode === 'selection';
 
+
     return (
         <aside className="w-full h-full bg-white border-r border-gray-100 pr-4">
             <div className="flex items-center justify-between mb-6">
@@ -95,7 +98,7 @@ export default function SidebarFilter({
                     Filters
                 </h2>
                 {hasFilters && showRegularFilters && (
-                    <button 
+                    <button
                         onClick={onClear}
                         className="text-xs text-red-600 hover:text-red-800 underline"
                     >
@@ -130,8 +133,8 @@ export default function SidebarFilter({
                                         className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors text-left group"
                                     >
                                         {item.image ? (
-                                            <img 
-                                                src={item.image} 
+                                            <img
+                                                src={item.image}
                                                 alt={item.name}
                                                 className="w-10 h-10 rounded object-cover"
                                             />
@@ -157,18 +160,17 @@ export default function SidebarFilter({
                         <div className="flex flex-col gap-2">
                             {sortOptions.map(option => (
                                 <label key={option.value} className="flex items-center gap-3 cursor-pointer group">
-                                    <input 
-                                        type="radio" 
-                                        name="sort" 
+                                    <input
+                                        type="radio"
+                                        name={`sort-${idPrefix}`}
                                         checked={sortBy === option.value}
                                         onChange={() => onSortChange(option.value)}
-                                        className="w-4 h-4 text-primary focus:ring-primary cursor-pointer" 
+                                        className="w-4 h-4 text-primary border-gray-300 focus:ring-primary cursor-pointer"
                                     />
-                                    <span className={`text-sm transition-colors ${
-                                        sortBy === option.value 
-                                            ? 'text-primary font-semibold' 
-                                            : 'text-gray-700 group-hover:text-primary'
-                                    }`}>
+                                    <span className={`text-sm transition-colors ${sortBy === option.value
+                                        ? 'text-primary font-semibold'
+                                        : 'text-gray-700 group-hover:text-primary'
+                                        }`}>
                                         {option.label}
                                     </span>
                                 </label>
@@ -183,17 +185,16 @@ export default function SidebarFilter({
                         <div className="flex flex-col gap-2">
                             {categoryOptions.map(option => (
                                 <label key={option.value} className="flex items-center gap-3 cursor-pointer group">
-                                    <input 
-                                        type="checkbox" 
+                                    <input
+                                        type="checkbox"
                                         checked={categories.includes(option.value)}
                                         onChange={() => handleCategoryToggle(option.value)}
-                                        className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer" 
+                                        className="w-4 h-4 rounded text-primary border-gray-300 focus:ring-primary cursor-pointer"
                                     />
-                                    <span className={`text-sm transition-colors ${
-                                        categories.includes(option.value)
-                                            ? 'text-primary font-semibold' 
-                                            : 'text-gray-700 group-hover:text-primary'
-                                    }`}>
+                                    <span className={`text-sm transition-colors ${categories.includes(option.value)
+                                        ? 'text-primary font-semibold'
+                                        : 'text-gray-700 group-hover:text-primary'
+                                        }`}>
                                         {option.label}
                                     </span>
                                 </label>

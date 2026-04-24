@@ -1,6 +1,3 @@
-// ============================================
-// FILE: src/components/cart/ItemsCheckout.tsx (FIXED)
-// ============================================
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -31,7 +28,7 @@ export default function ItemsCheckout() {
 
         console.log('Setting up cart listener for user:', user.uid);
         const cartRef = doc(db, 'carts', user.uid);
-        
+
         const unsubscribe = onSnapshot(
             cartRef,
             (docSnapshot) => {
@@ -118,8 +115,8 @@ export default function ItemsCheckout() {
     if (!user) {
         return (
             <section className="w-full py-12">
-                <div className="max-w-5xl mx-auto px-10 text-center">
-                    <h2 className="text-3xl font-primary font-semibold text-primary mb-8">Your Favorites</h2>
+                <div className="max-w-5xl mx-auto px-4 sm:px-10 text-center">
+                    <h2 className="text-2xl sm:text-3xl font-primary font-semibold text-primary mb-8">Your Favorites</h2>
                     <p className="text-gray-500 mb-4">Please login to view your list</p>
                     <button
                         onClick={() => navigate('/login')}
@@ -135,7 +132,7 @@ export default function ItemsCheckout() {
     if (loading) {
         return (
             <section className="w-full py-12">
-                <div className="max-w-5xl mx-auto px-10">
+                <div className="max-w-5xl mx-auto px-4 sm:px-10">
                     <div className="flex justify-center items-center h-64">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                     </div>
@@ -145,9 +142,9 @@ export default function ItemsCheckout() {
     }
 
     return (
-        <section className="w-full py-12">
-            <div className="max-w-5xl mx-auto px-10">
-                <h2 className="text-3xl font-primary font-semibold text-primary mb-8">
+        <section className="w-full py-8 sm:py-12">
+            <div className="max-w-5xl mx-auto px-4 sm:px-10">
+                <h2 className="text-2xl sm:text-3xl font-primary font-semibold text-primary mb-6 sm:mb-8">
                     Your Favorites ({cartItems.length} items)
                 </h2>
 
@@ -187,10 +184,10 @@ export default function ItemsCheckout() {
                             />
                         ))}
 
-                        <div className="mt-8 pt-6 border-t border-gray-200">
+                        <div className="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-gray-200">
                             <div className="flex justify-between items-center mb-6">
-                                <span className="text-xl font-primary font-semibold">Total:</span>
-                                <span className="text-3xl font-primary font-bold text-primary">
+                                <span className="text-lg sm:text-xl font-primary font-semibold">Total:</span>
+                                <span className="text-2xl sm:text-3xl font-primary font-bold text-primary">
                                     ₱{calculateTotal().toFixed(2)}
                                 </span>
                             </div>
@@ -198,7 +195,7 @@ export default function ItemsCheckout() {
                             <div className="flex justify-center gap-4">
                                 <button
                                     onClick={() => navigate('/shop')}
-                                    className="px-10 py-3 bg-gray-200 text-gray-700 font-primary font-semibold rounded-full cursor-pointer hover:bg-gray-300"
+                                    className="w-full sm:w-auto px-10 py-3 bg-gray-200 text-gray-700 font-primary font-semibold rounded-full cursor-pointer hover:bg-gray-300 transition-colors"
                                 >
                                     Continue Shopping
                                 </button>

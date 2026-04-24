@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from '../../context/AuthContext';
-import logo from '../../assets/icons/logo.png';
+import logo from '../../assets/icons/logo-Green.svg'
 
 interface LocationState {
   phoneNo: string;  // Changed from phoneNumber
@@ -12,9 +12,9 @@ export default function LoginOtpVerification() {
   const navigate = useNavigate();
   const location = useLocation();
   const { sendOTP, verifyOTP } = useAuth();
-  
+
   const { phoneNo } = (location.state as LocationState) || {};  // Changed from phoneNumber
-  
+
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
@@ -22,9 +22,12 @@ export default function LoginOtpVerification() {
   const [sending, setSending] = useState(false);
   const [countdown, setCountdown] = useState(60);
 
+
+
+
   useEffect(() => {
     if (!phoneNo) {  // Changed from phoneNumber
-      navigate('/login', { 
+      navigate('/login', {
         replace: true,
         state: { error: 'Please enter your phone number first' }
       });
@@ -97,7 +100,7 @@ export default function LoginOtpVerification() {
 
       const confirmation = await sendOTP(phoneNo);  // Changed from phoneNumber
       const user = await verifyOTP(confirmation, code);
-      
+
       if (!user) {
         throw new Error('Login failed. Please try again.');
       }
@@ -106,7 +109,7 @@ export default function LoginOtpVerification() {
       sessionStorage.removeItem('loginPhone');
 
       navigate('/', { replace: true });
-      
+
     } catch (err: any) {
       setError(err.message || 'Invalid code. Please try again.');
       setOtp(['', '', '', '', '', '']);
@@ -141,13 +144,13 @@ export default function LoginOtpVerification() {
   return (
     <section className="flex items-center justify-center py-16 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <img src={logo} className="w-11 h-11 rounded-full object-cover" alt="Logo" />
-          <span className="font-primary font-bold text-lg tracking-wide whitespace-nowrap">ILOILO FARMERS HUB</span>
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <img src={logo} className="w-22 h-22 object-contain" alt="Logo" />
+
         </div>
 
         <div className="text-center mb-6">
-          <h2 className="text-xl font-primary font-bold text-gray-800 mb-1">Verify Your Phone</h2>
+          <h2 className="text-lg font-primary font-bold text-gray-800 mb-1">Verify Your Phone</h2>
           <p className="text-sm font-primary text-gray-500">
             Enter the 6-digit code sent to<br />
             <span className="font-semibold text-gray-700">{formatPhone(phoneNo)}</span>  {/* Changed from phoneNumber */}
