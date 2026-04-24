@@ -15,6 +15,60 @@ export interface Report {
     mediaUrls?: { url: string; type: 'image' | 'video' }[];
 }
 
+// ─── AdminAction ───
+export type AdminActionType =
+  | 'logged_in'
+  | 'logged_out'
+  | 'warned'
+  | 'suspended'
+  | 'reactivated'
+  | 'dismissed'
+  | 'viewed'
+  | 'appeal_approved'
+  | 'appeal_rejected';
+
+export interface AdminAction {
+  id: string;
+  timestamp: string;
+  action: AdminActionType;
+  targetUser: string;
+  details?: string;
+  adminName: string;
+}
+
+// ─── Appeal ───
+export type AppealStatus = 'Pending' | 'Under Review' | 'Approved' | 'Rejected';
+
+export interface Appeal {
+  id: string;
+  firestoreId: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  suspensionType: '1 week suspension' | '30 days suspension' | 'permanent';
+  reason: string;
+  mediaUrls: { url: string; type: 'image' | 'video' }[];
+  status: AppealStatus;
+  adminNotes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const getAppealStatusBadge = (status: AppealStatus) => {
+  const config: Record<AppealStatus, { bg: string; text: string }> = {
+    Pending: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
+    'Under Review': { bg: 'bg-blue-100', text: 'text-blue-700' },
+    Approved: { bg: 'bg-green-100', text: 'text-green-700' },
+    Rejected: { bg: 'bg-red-100', text: 'text-red-700' },
+  };
+  const { bg, text } = config[status];
+  return (
+    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${bg} ${text}`}>
+      {status}
+    </span>
+  );
+};
+
 export function getStatusBadge(status: Report['status']) {
     switch (status) {
         case 'Pending':

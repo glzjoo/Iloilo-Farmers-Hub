@@ -2,9 +2,9 @@ import { useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from '../../context/AuthContext';
 import logo from '../../assets/icons/logo-Green.svg'
-
+//login OTP ver
 interface LocationState {
-  phoneNo: string;  // Changed from phoneNumber
+  phoneNo: string;
   flow: 'login';
 }
 
@@ -13,7 +13,7 @@ export default function LoginOtpVerification() {
   const location = useLocation();
   const { sendOTP, verifyOTP } = useAuth();
 
-  const { phoneNo } = (location.state as LocationState) || {};  // Changed from phoneNumber
+  const { phoneNo } = (location.state as LocationState) || {};
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -21,12 +21,10 @@ export default function LoginOtpVerification() {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [countdown, setCountdown] = useState(60);
-
-
-
+  const [confirmationResult, setConfirmationResult] = useState<any>(null); // ← CHANGED: added state
 
   useEffect(() => {
-    if (!phoneNo) {  // Changed from phoneNumber
+    if (!phoneNo) {
       navigate('/login', {
         replace: true,
         state: { error: 'Please enter your phone number first' }
@@ -51,7 +49,8 @@ export default function LoginOtpVerification() {
     try {
       setSending(true);
       setError('');
-      await sendOTP(phoneNo);  // Changed from phoneNumber
+      const confirmation = await sendOTP(phoneNo); // ← CHANGED: capture result
+      setConfirmationResult(confirmation);          // ← CHANGED: store it
       sessionStorage.setItem('loginConfirmation', 'true');
     } catch (err: any) {
       setError(err.message || 'Failed to send OTP. Please try again.');
@@ -94,12 +93,16 @@ export default function LoginOtpVerification() {
       return;
     }
 
+    if (!confirmationResult) { // ← CHANGED: check stored result
+      setError('Session expired. Please request a new code.');
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');
 
-      const confirmation = await sendOTP(phoneNo);  // Changed from phoneNumber
-      const user = await verifyOTP(confirmation, code);
+      const user = await verifyOTP(confirmationResult, code); // ← CHANGED: use stored result
 
       if (!user) {
         throw new Error('Login failed. Please try again.');
@@ -131,7 +134,7 @@ export default function LoginOtpVerification() {
     return phone;
   };
 
-  if (!phoneNo) {  // Changed from phoneNumber
+  if (!phoneNo) {
     return (
       <section className="flex items-center justify-center py-16">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 text-center">
@@ -146,14 +149,13 @@ export default function LoginOtpVerification() {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
         <div className="flex items-center justify-center gap-2 mb-6">
           <img src={logo} className="w-22 h-22 object-contain" alt="Logo" />
-
         </div>
 
         <div className="text-center mb-6">
           <h2 className="text-lg font-primary font-bold text-gray-800 mb-1">Verify Your Phone</h2>
           <p className="text-sm font-primary text-gray-500">
             Enter the 6-digit code sent to<br />
-            <span className="font-semibold text-gray-700">{formatPhone(phoneNo)}</span>  {/* Changed from phoneNumber */}
+            <span className="font-semibold text-gray-700">{formatPhone(phoneNo)}</span>
           </p>
         </div>
 
