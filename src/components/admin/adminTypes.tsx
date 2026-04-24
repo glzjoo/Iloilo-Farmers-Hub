@@ -12,6 +12,7 @@ export interface Report {
     status: 'Pending' | '1st Warning' | '1 week suspension' | '30 days suspension' | 'Permanently Banned' | 'Resolved';
     date: string;
     conversationId?: string;
+    mediaUrls?: { url: string; type: 'image' | 'video' }[];
 }
 
 export function getStatusBadge(status: Report['status']) {

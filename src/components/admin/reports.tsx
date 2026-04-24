@@ -134,6 +134,7 @@ export default function AdminReports({
                                 <th className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wider">Reports</th>
                                 <th className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wider">Reported By</th>
                                 <th className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wider">Reason</th>
+                                <th className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wider">Media</th>
                                 <th className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wider">Status</th>
                                 <th className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wider">Actions</th>
                             </tr>
@@ -141,7 +142,7 @@ export default function AdminReports({
                         <tbody>
                             {filteredReports.length === 0 ? (
                                 <tr>
-                                    <td colSpan={9} className="px-4 py-12 text-center text-gray-400">
+                                    <td colSpan={10} className="px-4 py-12 text-center text-gray-400">
                                         No reports found.
                                     </td>
                                 </tr>
@@ -169,6 +170,33 @@ export default function AdminReports({
                                         <td className="px-4 py-3 text-gray-600">{report.reportedBy}</td>
                                         <td className="px-4 py-3 text-gray-600 max-w-[200px] truncate" title={report.reason}>
                                             {report.reason}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {report.mediaUrls && report.mediaUrls.length > 0 ? (
+                                                <div className="flex items-center gap-1.5">
+                                                    {report.mediaUrls.map((media, i) => (
+                                                        <a
+                                                            key={i}
+                                                            href={media.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="w-10 h-10 rounded-lg overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center hover:opacity-80 transition-opacity flex-shrink-0"
+                                                            title={media.type === 'video' ? 'View video' : 'View image'}
+                                                        >
+                                                            {media.type === 'video' ? (
+                                                                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                            ) : (
+                                                                <img src={media.url} alt="" className="w-full h-full object-cover" />
+                                                            )}
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400 text-xs">—</span>
+                                            )}
                                         </td>
                                         <td className="px-4 py-3">{getStatusBadge(report.status)}</td>
                                         <td className="px-4 py-3">
@@ -280,6 +308,34 @@ export default function AdminReports({
                                         <div className="col-span-2">
                                             <span className="text-gray-400">Reason</span>
                                             <p className="text-gray-600 mt-0.5 line-clamp-2">{report.reason}</p>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <span className="text-gray-400">Media</span>
+                                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                {report.mediaUrls && report.mediaUrls.length > 0 ? (
+                                                    report.mediaUrls.map((media, i) => (
+                                                        <a
+                                                            key={i}
+                                                            href={media.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity"
+                                                            title={media.type === 'video' ? 'View video' : 'View image'}
+                                                        >
+                                                            {media.type === 'video' ? (
+                                                                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                            ) : (
+                                                                <img src={media.url} alt="" className="w-full h-full object-cover" />
+                                                            )}
+                                                        </a>
+                                                    ))
+                                                ) : (
+                                                    <span className="text-gray-400 text-xs">—</span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 
