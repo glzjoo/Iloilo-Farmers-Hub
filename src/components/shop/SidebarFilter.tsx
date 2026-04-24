@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import filter from '../../assets/icons/filter.svg';
 import NearbyFarmerToggle from './NearbyFarmerToggle';
 import type { Coordinates } from '../../hooks/useNearbyFarmers';
+import { useTranslation } from 'react-i18next';
 
 type NearbyMode = 'selection' | 'choosing' | 'gps' | 'manual';
 
@@ -66,6 +67,7 @@ export default function SidebarFilter({
     nearbyLocationError,
     nearbyLoading,
 }: SidebarFilterProps) {
+    const { t } = useTranslation();
     const [localPriceMin, setLocalPriceMin] = useState(priceRange?.min?.toString() || '');
     const [localPriceMax, setLocalPriceMax] = useState(priceRange?.max?.toString() || '');
 
@@ -95,14 +97,14 @@ export default function SidebarFilter({
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
                     <img src={filter} className="w-5 h-5" alt="Filter" />
-                    Filters
+                    {t('filter_title')}
                 </h2>
                 {hasFilters && showRegularFilters && (
                     <button
                         onClick={onClear}
                         className="text-xs text-red-600 hover:text-red-800 underline"
                     >
-                        Clear
+                        {t('filter_clear')}
                     </button>
                 )}
             </div>
@@ -123,7 +125,7 @@ export default function SidebarFilter({
                     {trendingItems.length > 0 && (
                         <div className="border-b border-gray-200 pb-5 mb-5">
                             <h3 className="text-[13px] font-semibold text-gray-800 mb-4 uppercase tracking-wider flex items-center gap-2">
-                                <span className="text-red-500">🔥</span> Trending Now
+                                <span className="text-red-500">🔥</span> {t('filter_trending')}
                             </h3>
                             <div className="flex flex-col gap-2">
                                 {trendingItems.map((item) => (
@@ -155,7 +157,7 @@ export default function SidebarFilter({
 
                     <div className="border-b border-gray-200 pb-5 mb-5">
                         <h3 className="text-[13px] font-semibold text-gray-800 mb-4 uppercase tracking-wider">
-                            Sort By
+                            {t('filter_sort')}
                         </h3>
                         <div className="flex flex-col gap-2">
                             {sortOptions.map(option => (
@@ -171,7 +173,7 @@ export default function SidebarFilter({
                                         ? 'text-primary font-semibold'
                                         : 'text-gray-700 group-hover:text-primary'
                                         }`}>
-                                        {option.label}
+                                        {t(option.label)}
                                     </span>
                                 </label>
                             ))}
@@ -180,7 +182,7 @@ export default function SidebarFilter({
 
                     <div className="border-b border-gray-200 pb-5 mb-5">
                         <h3 className="text-[13px] font-semibold text-gray-800 mb-4 uppercase tracking-wider">
-                            Categories
+                            {t('filter_categories')}
                         </h3>
                         <div className="flex flex-col gap-2">
                             {categoryOptions.map(option => (
@@ -195,7 +197,7 @@ export default function SidebarFilter({
                                         ? 'text-primary font-semibold'
                                         : 'text-gray-700 group-hover:text-primary'
                                         }`}>
-                                        {option.label}
+                                        {t(option.label)}
                                     </span>
                                 </label>
                             ))}
@@ -209,7 +211,7 @@ export default function SidebarFilter({
                         <div className="flex gap-2 mb-3">
                             <input
                                 type="number"
-                                placeholder="Min"
+                                placeholder={t('filter_min')}
                                 value={localPriceMin}
                                 onChange={(e) => setLocalPriceMin(e.target.value)}
                                 className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-primary focus:border-primary"
@@ -217,7 +219,7 @@ export default function SidebarFilter({
                             <span className="text-gray-400 self-center">-</span>
                             <input
                                 type="number"
-                                placeholder="Max"
+                                placeholder={t('filter_max')}
                                 value={localPriceMax}
                                 onChange={(e) => setLocalPriceMax(e.target.value)}
                                 className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-primary focus:border-primary"
@@ -227,7 +229,7 @@ export default function SidebarFilter({
                             onClick={applyPriceFilter}
                             className="w-full py-1.5 bg-primary text-white text-xs font-semibold rounded hover:bg-green-700 transition-colors"
                         >
-                            Apply Price
+                            {t('filter_apply_price')}
                         </button>
                     </div>
                 </>

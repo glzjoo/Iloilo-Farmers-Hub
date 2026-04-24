@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   CITY_COORDINATES,
   BARANGAY_COORDINATES,
@@ -31,6 +32,7 @@ export default function NearbyFarmerToggle({
   locationError,
   isLoading,
 }: NearbyFarmerToggleProps) {
+  const { t } = useTranslation();
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedBarangay, setSelectedBarangay] = useState('');
 
@@ -45,13 +47,13 @@ export default function NearbyFarmerToggle({
 
   const handleApplyManual = () => {
     let coords: Coordinates | null = null;
-    
+
     if (selectedCity && BARANGAY_COORDINATES[selectedCity]?.[selectedBarangay]) {
       coords = BARANGAY_COORDINATES[selectedCity][selectedBarangay];
     } else if (selectedCity && CITY_COORDINATES[selectedCity]) {
       coords = CITY_COORDINATES[selectedCity];
     }
-    
+
     // Pass city and barangay along with coordinates
     onLocationSelect(coords, selectedCity, selectedBarangay || undefined);
   };
@@ -75,7 +77,7 @@ export default function NearbyFarmerToggle({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          Find farmers near you
+          {t('nearby_farmers')}
         </button>
       </div>
     );
@@ -87,12 +89,12 @@ export default function NearbyFarmerToggle({
       <div className="border-b border-gray-200 pb-5 mb-5">
 
         <h3 className="text-[13px] font-semibold text-gray-800 mb-3 uppercase tracking-wider flex items-center gap-2">
-          <span className="text-primary">📍</span> Nearby Farmers
+          <span className="text-primary">📍</span> {t('nearby_farmers')}
         </h3>
 
         <div className="space-y-3">
           <p className="text-xs text-gray-600 bg-blue-50 p-3 rounded-lg">
-            Choose between GPS or manual to find farmers near you
+            {t('select_location_to_continue')}
           </p>
 
           <div className="grid grid-cols-2 gap-2">
@@ -106,7 +108,7 @@ export default function NearbyFarmerToggle({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <span className="text-xs font-semibold text-primary text-center">Use GPS</span>
+              <span className="text-xs font-semibold text-primary text-center">{t('use_current_location')}</span>
             </button>
 
             <button
@@ -118,7 +120,7 @@ export default function NearbyFarmerToggle({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <span className="text-xs font-semibold text-gray-700 text-center">Manual</span>
+              <span className="text-xs font-semibold text-gray-700 text-center">{t('manual')}</span>
             </button>
           </div>
         </div>
@@ -137,29 +139,29 @@ export default function NearbyFarmerToggle({
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Browse All Products
+          {t('browse_all_products')}
         </button>
 
         <h3 className="text-[13px] font-semibold text-gray-800 mb-3 uppercase tracking-wider flex items-center gap-2">
-          <span className="text-primary">📍</span> Nearby Farmers
+          <span className="text-primary">📍</span> {t('nearby_farmers')}
         </h3>
 
         {isLoading ? (
           <div className="flex flex-col items-center gap-3 p-4 bg-green-50 rounded-lg">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-            <span className="text-sm text-gray-600">Finding your location...</span>
+            <span className="text-sm text-gray-600">{t('loading')}</span>
           </div>
         ) : locationError ? (
           <div className="p-3 bg-red-50 rounded-lg">
             <p className="text-xs text-red-600">{locationError}</p>
-            <p className="text-xs text-gray-500 mt-1">Switching to manual mode...</p>
+            <p className="text-xs text-gray-500 mt-1">{t('location_error')}</p>
           </div>
         ) : (
           <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg text-green-700">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>
-            <span className="text-sm font-medium">Using GPS Location</span>
+            <span className="text-sm font-medium">{t('using_gps_location')}</span>
           </div>
         )}
       </div>
@@ -177,25 +179,25 @@ export default function NearbyFarmerToggle({
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Browse All Products
+          {t('browse_all_products')}
         </button>
 
         <h3 className="text-[13px] font-semibold text-gray-800 mb-3 uppercase tracking-wider flex items-center gap-2">
-          <span className="text-primary">📍</span> Nearby Farmers
+          <span className="text-primary">📍</span> {t('nearby_farmers')}
         </h3>
 
         <div className="space-y-3">
           {locationError && (
             <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
-              GPS unavailable. Please select location manually.
+              {t('location_error')}
             </p>
           )}
 
           <div className="p-3 bg-gray-50 rounded-lg space-y-3">
             <p className="text-xs font-semibold text-gray-700">
-              {locationError ? 'Select location to continue:' : 'Select your location:'}
+              {locationError ? t('select_location_to_continue') : t('select_your_location')}
             </p>
-            
+
             <div>
               <label className="text-xs text-gray-500 mb-1 block">City/Municipality *</label>
               <select
@@ -203,7 +205,7 @@ export default function NearbyFarmerToggle({
                 onChange={(e) => handleCityChange(e.target.value)}
                 className="w-full px-2 py-2 text-sm border rounded focus:ring-1 focus:ring-primary focus:border-primary bg-white"
               >
-                <option value="">Select city...</option>
+                <option value="">{t('select_city')}</option>
                 {cities.map((city) => (
                   <option key={city} value={city}>
                     {city}
@@ -220,7 +222,7 @@ export default function NearbyFarmerToggle({
                   onChange={(e) => handleBarangayChange(e.target.value)}
                   className="w-full px-2 py-2 text-sm border rounded focus:ring-1 focus:ring-primary focus:border-primary bg-white"
                 >
-                  <option value="">All barangays</option>
+                  <option value="">{t('all_barangays')}</option>
                   {getBarangaysForCity(selectedCity).map((barangay) => (
                     <option key={barangay} value={barangay}>
                       {barangay}
@@ -233,16 +235,15 @@ export default function NearbyFarmerToggle({
             <button
               onClick={handleApplyManual}
               disabled={!canApplyManual || isLoading}
-              className={`w-full py-2 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
-                canApplyManual && !isLoading
-                  ? 'bg-primary text-white hover:bg-green-700'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              className={`w-full py-2 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${canApplyManual && !isLoading
+                ? 'bg-primary text-white hover:bg-green-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
             >
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Searching...
+                  {t('loading')}
                 </>
               ) : (
                 'Apply Location'

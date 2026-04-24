@@ -8,6 +8,7 @@ import FarmLocationPicker from '../location/FarmLocationPicker';
 import { farmerSignupSchema, type FarmerSignupData } from '../../lib/validations';
 import { useAuth } from '../../context/AuthContext';
 import { useSanitizedInput } from '../../hooks/useSanitizedInput';
+import { useTranslation } from 'react-i18next';
 
 export default function FarmerSignup() {
   const navigate = useNavigate();
@@ -16,6 +17,9 @@ export default function FarmerSignup() {
   const [isLoading, setIsLoading] = useState(false);
   const [firebaseError, setFirebaseError] = useState<string | null>(null);
   const [customFarmType, setCustomFarmType] = useState('');
+  const { t } = useTranslation();
+
+
 
   const {
     register,
@@ -103,7 +107,7 @@ export default function FarmerSignup() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
           <div className="flex items-center gap-3">
             <img src={logo} className="w-9 h-9 sm:w-11 sm:h-11 object-contain" alt="Logo" />
-            <span className="font-primary text-primary font-bold text-xl sm:text-2xl">Farmer's Information</span>
+            <span className="font-primary text-primary font-bold text-xl sm:text-2xl">{t('farmer_information')}</span>
           </div>
           <SignupToggle />
         </div>
@@ -116,8 +120,8 @@ export default function FarmerSignup() {
 
         <div className="mb-5 sm:mb-6 p-3 sm:p-4 bg-primary/10 border border-primary/40 rounded-lg">
           <p className="text-primary text-sm font-primary leading-relaxed">
-            <span className="font-bold text-primary">Next Steps:</span> <br />
-            1) Verify your identity with ID + selfie, <br />2) We'll send a 6-digit OTP to your provided phone number to create your account.
+            <span className="font-bold text-primary">{t('next_steps')}</span> <br />
+            1) {t('verify_identity')} <br />2) {t('create_account')}
           </p>
         </div>
 
@@ -125,7 +129,7 @@ export default function FarmerSignup() {
           {/* First Name */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1.5">
-              First name <span className="text-red-500">*</span>
+              {t('first_name')} <span className="text-red-500">*</span>
             </label>
             <Controller
               name="firstName"
@@ -155,7 +159,7 @@ export default function FarmerSignup() {
           {/* Last Name */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Last name <span className="text-red-500">*</span>
+              {t('last_name')} <span className="text-red-500">*</span>
             </label>
             <Controller
               name="lastName"
@@ -185,7 +189,7 @@ export default function FarmerSignup() {
           {/* Email */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Email <span className="text-gray-400 text-xs italic">(Optional)</span>
+              {t('email')} <span className="text-gray-400 text-xs italic">(Optional)</span>
             </label>
             <Controller
               name="email"
@@ -217,7 +221,7 @@ export default function FarmerSignup() {
           {/* Farm Name */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Farm Name <span className="text-red-500">*</span>
+              {t('farm_name')} <span className="text-red-500">*</span>
             </label>
             <Controller
               name="farmName"
@@ -247,7 +251,7 @@ export default function FarmerSignup() {
           {/* Farm Location Picker */}
           <div className="sm:col-span-2">
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Farm Location <span className="text-red-500">*</span>
+              {t('farm_location')} <span className="text-red-500">*</span>
             </label>
             <Controller
               name="farmLocation"
@@ -277,7 +281,7 @@ export default function FarmerSignup() {
           {/* Additional Address Details */}
           <div className="sm:col-span-2">
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Additional Address Details <span className="text-gray-400 text-xs italic">(Optional)</span>
+              {t('additional_address_details')} <span className="text-gray-400 text-xs italic">(Optional)</span>
               <span className="text-xs text-gray-500 font-normal block">Street name, landmark, or specific directions</span>
             </label>
             <input
@@ -294,7 +298,7 @@ export default function FarmerSignup() {
           {/* Contact Number */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Contact Number <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(for OTP)</span>
+              {t('contact_number')} <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(for OTP)</span>
             </label>
             <Controller
               name="phoneNo"
@@ -322,7 +326,7 @@ export default function FarmerSignup() {
           {/* Farm Type */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Farm Type <span className="text-red-500">*</span>
+              {t('farm_type')} <span className="text-red-500">*</span>
             </label>
             <Controller
               name="farmType"
@@ -398,7 +402,7 @@ export default function FarmerSignup() {
               disabled={isLoading}
               className="py-3 sm:py-2.5 px-8 sm:px-12 rounded-full border-2 border-gray-300 text-gray-600 font-primary font-semibold bg-white cursor-pointer hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base transition-colors"
             >
-              Clear All
+              {t('clear_all')}
             </button>
 
             <button
@@ -412,10 +416,10 @@ export default function FarmerSignup() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Preparing...
+                  {t('continue_to_verification')}
                 </>
               ) : (
-                'Continue to Verification'
+                t('continue_to_verification')
               )}
             </button>
           </div>

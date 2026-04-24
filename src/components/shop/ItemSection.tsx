@@ -9,6 +9,7 @@ import { addToCart } from '../../services/cartService';
 import { useAuth } from '../../context/AuthContext';
 import ActionGuardModal from '../common/ActionGuardModal';
 import ErrorModal from '../common/ErrorModal';
+import { useTranslation } from 'react-i18next';
 import ConfirmationModal from '../common/ConfirmationModal'; // ← ADDED
 
 interface ItemSectionProps {
@@ -36,6 +37,7 @@ export default function ItemSection({ productId: propProductId, product: propPro
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const { user, userProfile } = useAuth();
+    const { t } = useTranslation();
     const urlProductId = searchParams.get('id');
     const productId = propProductId || urlProductId;
 
@@ -247,15 +249,15 @@ export default function ItemSection({ productId: propProductId, product: propPro
                         <button
                             onClick={handleAddToCart}
                             disabled={isOutOfStock || addingToCart}
-                            className="px-8 py-2.5 border-2 border-primary text-primary font-primary font-semibold rounded-full cursor-pointer bg-white hover:bg-green-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300 disabled:cursor-not-allowed"
+                            className="px-5 py-2.5 border-2 border-primary text-primary font-primary font-semibold rounded-full cursor-pointer bg-white hover:bg-green-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300 disabled:cursor-not-allowed"
                         >
-                            {addingToCart ? 'Adding...' : isOutOfStock ? 'Out of Stock' : 'Add to Favorites'}
+                            {addingToCart ? 'Adding...' : isOutOfStock ? t('out_of_stock') : t('add_to_favorites')}
                         </button>
                         <button
                             onClick={handleMessageSeller}
-                            className="px-8 py-2.5 bg-primary text-white font-primary font-semibold rounded-full cursor-pointer border-none hover:bg-green-700"
+                            className="px-5 py-2.5 bg-primary text-white font-primary font-semibold rounded-full cursor-pointer border-none hover:bg-green-700"
                         >
-                            Message Seller
+                            {t('message_seller')}
                         </button>
                     </div>
                 </div>

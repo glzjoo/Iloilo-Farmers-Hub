@@ -135,8 +135,6 @@ export default function NavbarLoggedInFarmer() {
                                                 <div>
                                                     <p className="text-base font-bold text-black">{t('my_account')}</p>
 
-                                                    {/* show email here */}
-                                                    <p className="text-xs text-gray-400">bea4@gmail.com</p>
                                                 </div>
                                             </Link>
                                             <Link to="/my-listings" className="flex items-center gap-4 w-full px-5 py-3.5 no-underline hover:bg-gray-50 text-left">
