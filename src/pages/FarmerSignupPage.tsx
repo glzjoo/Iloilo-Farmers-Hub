@@ -4,7 +4,7 @@ export default function SignupPage() {
     return (
         <section
             style={{ backgroundImage: `url(${background})` }}
-            className="flex items-center justify-center bg-cover bg-no-repeat bg-center min-h-screen"
+            className="flex items-center justify-center bg-cover bg-no-repeat bg-center bg-fixed min-h-screen"
         >
             <FarmerSignup />
         </section>

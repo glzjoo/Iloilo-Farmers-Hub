@@ -107,32 +107,35 @@ export default function MyAccountFarmerListing() {
 
     return (
         <div>
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold font-primary">Listings ({filteredProducts.length})</h2>
-                <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <h2 className="text-xl font-bold font-primary shrink-0">
+                    Listings ({filteredProducts.length})
+                </h2>
+                {/* Search and Filters container */}
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                     {/* Search */}
-                    <div className="relative">
+                    <div className="relative flex-1 sm:flex-none">
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search listings..."
-                            className="pl-4 pr-10 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary w-[250px]"
+                            placeholder="Search..."
+                            className="w-full sm:w-[250px] pl-4 pr-10 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                         />
                         <img src={searchIcon} alt="" className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50" />
                     </div>
 
                     {/* Filters Button */}
-                    <div className="relative">
+                    <div className="relative shrink-0">
                         <button
                             onClick={() => setShowFilters(!showFilters)}
                             className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium cursor-pointer transition-colors ${showFilters
-                                    ? 'border-primary bg-primary/5 text-primary'
-                                    : 'border-gray-300 hover:bg-gray-50'
+                                ? 'border-primary bg-primary/5 text-primary'
+                                : 'border-gray-300 hover:bg-gray-50'
                                 }`}
                         >
                             Filters
-                            <img src={filterIcon} alt="" className="w-4 h-4" />
+                            <img src={filterIcon} alt="" className="w-4 h-4 hidden sm:block" />
                         </button>
 
                         {/* Filter Dropdown */}
@@ -140,7 +143,10 @@ export default function MyAccountFarmerListing() {
                             <>
                                 <div className="fixed inset-0 z-40" onClick={() => setShowFilters(false)} />
                                 <MyAccountFarmerFilterDropdown
-                                    onApply={(filters) => setActiveFilters(filters)}
+                                    onApply={(filters) => {
+                                        setActiveFilters(filters);
+                                        setShowFilters(false);
+                                    }}
                                     onClose={() => setShowFilters(false)}
                                 />
                             </>
@@ -163,7 +169,7 @@ export default function MyAccountFarmerListing() {
                     <p className="text-gray-500 text-lg">No listings found</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {filteredProducts.map((product) => (
                         <ListedProductCard
                             key={product.id}
@@ -203,5 +209,6 @@ export default function MyAccountFarmerListing() {
                 />
             )}
         </div>
+
     );
 }

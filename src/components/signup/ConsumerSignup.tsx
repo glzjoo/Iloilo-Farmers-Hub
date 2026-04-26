@@ -1,22 +1,24 @@
 import { useState, useRef } from 'react'; // Added useRef
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ConfirmationResult } from 'firebase/auth'; // Added type
-import logo from '../../assets/icons/logo.png';
+import logo from '../../assets/icons/logo-only-green.svg';
 import SignupToggle from './SignupToggle';
 import { consumerSignupSchema, type ConsumerSignupData } from '../../lib/validations';
 import { useAuth } from '../../context/AuthContext';
 import { useSanitizedInput } from '../../hooks/useSanitizedInput';
+import { useTranslation } from 'react-i18next';
 
 export default function ConsumerSignup() {
   const navigate = useNavigate();
   const { sendOTP } = useAuth();
   const { sanitizeName, sanitizeEmail, sanitizePhone } = useSanitizedInput();
-  
+  const { t } = useTranslation();
+
   // Store confirmation result in ref (not state) to persist across renders
   const confirmationRef = useRef<ConfirmationResult | null>(null);
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [firebaseError, setFirebaseError] = useState<string | null>(null);
 
@@ -47,22 +49,22 @@ export default function ConsumerSignup() {
   const onSubmit = async (data: ConsumerSignupData) => {
     setIsLoading(true);
     setFirebaseError(null);
-    
+
     try {
       // Send OTP and store confirmation in ref
       const confirmation = await sendOTP(data.phoneNo);
       confirmationRef.current = confirmation;
-      
+
       // Store in sessionStorage for OTP page to access
       sessionStorage.setItem('consumerSignupData', JSON.stringify(data));
       sessionStorage.setItem('consumerConfirmation', 'true'); // Flag that confirmation exists
-      
+
       // Navigate to OTP page - don't pass confirmation in state (not serializable)
-      navigate('/consumer/otp-verification', { 
-        state: { 
+      navigate('/consumer/otp-verification', {
+        state: {
           phoneNumber: data.phoneNo,
           flow: 'signup'
-        } 
+        }
       });
     } catch (error: any) {
       console.error('OTP error:', error);
@@ -78,28 +80,28 @@ export default function ConsumerSignup() {
   };
 
   const getInputClass = (fieldName: keyof ConsumerSignupData) => {
-    const baseClass = "w-full border rounded-lg px-4 py-2.5 text-sm font-primary outline-none transition-colors";
-    return errors[fieldName] 
-      ? `${baseClass} border-red-500 focus:border-red-500 bg-red-50` 
+    const baseClass = "w-full border rounded-lg px-4 py-3 text-base font-primary outline-none transition-colors";
+    return errors[fieldName]
+      ? `${baseClass} border-red-500 focus:border-red-500 bg-red-50`
       : `${baseClass} border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary`;
   };
 
   return (
-    <section className="flex items-center justify-center py-16 px-4">
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-10">
+    <section className="flex items-center justify-center py-8 sm:py-16 px-4">
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-5 sm:p-10">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
           <div className="flex items-center gap-3">
-            <img src={logo} className="w-11 h-11 rounded-full object-cover" alt="Logo" />
-            <span className="font-primary font-bold text-2xl">Consumer's Information</span>
+            <img src={logo} className="w-9 h-9 sm:w-11 sm:h-11 object-contain" alt="Logo" />
+            <span className="font-primary text-primary font-bold text-xl sm:text-2xl">{t('consumer_info')}</span>
           </div>
           <SignupToggle />
         </div>
 
         {/* Info Banner */}
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-blue-700 text-sm font-primary">
-            📱 We'll send a 6-digit OTP to your phone number to verify your account. No password needed!
+        <div className="mb-5 sm:mb-6 p-3 sm:p-4 bg-primary/10 border border-primary/40 rounded-lg">
+          <p className="text-primary text-sm font-primary leading-relaxed">
+            📱 {t('consumer.we_will_send_otp')} {t('consumer.to_verify_your_phone_number')}
           </p>
         </div>
 
@@ -111,11 +113,11 @@ export default function ConsumerSignup() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-2 gap-x-8 gap-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 sm:gap-y-5">
           {/* First Name */}
           <div>
-            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              First name <span className="text-red-500">*</span>
+            <label className="block text-sm font-primary font-semibold text-gray-800 mb-1.5">
+              {t('consumer.first_name')} <span className="text-red-500">*</span>
             </label>
             <Controller
               name="firstName"
@@ -145,7 +147,7 @@ export default function ConsumerSignup() {
           {/* Last Name */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Last name <span className="text-red-500">*</span>
+              {t('consumer.last_name')} <span className="text-red-500">*</span>
             </label>
             <Controller
               name="lastName"
@@ -175,7 +177,7 @@ export default function ConsumerSignup() {
           {/* Email */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Email <span className="text-gray-400 text-xs italic">(Optional)</span>
+              {t('consumer.email')} <span className="text-gray-400 text-xs italic">(Optional)</span>
             </label>
             <Controller
               name="email"
@@ -207,7 +209,7 @@ export default function ConsumerSignup() {
           {/* Home Address */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Home Address <span className="text-red-500">*</span>
+              {t('consumer.home_address')} <span className="text-red-500">*</span>
             </label>
             <input
               {...register('address')}
@@ -223,7 +225,7 @@ export default function ConsumerSignup() {
           {/* Contact Number */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              Contact Number <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(for OTP verification)</span>
+              {t('contact_number')} <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(for OTP verification)</span>
             </label>
             <Controller
               name="phoneNo"
@@ -251,7 +253,7 @@ export default function ConsumerSignup() {
           {/* Interest */}
           <div>
             <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
-              What do you want to buy? <span className="text-red-500">*</span>
+              {t('consumer.interest')} <span className="text-red-500">*</span>
             </label>
             <select
               {...register('interest')}
@@ -272,38 +274,39 @@ export default function ConsumerSignup() {
           </div>
 
           {/* Terms - FIXED: Added register */}
-          <div className="col-span-2 flex items-start gap-2 mt-2 p-3 bg-gray-50 rounded-lg">
+          <div className="sm:col-span-2 flex items-start gap-3 mt-2 p-3 sm:p-4 bg-gray-50 rounded-lg">
             <input
               {...register('agreeToTerms')}
               type="checkbox"
-              className="w-4 h-4 accent-primary cursor-pointer mt-0.5"
+              id="agreeToTermsConsumer"
+              className="w-5 h-5 min-w-[20px] accent-primary cursor-pointer mt-0.5"
             />
-            <span className="text-sm font-primary text-gray-600">
+            <label htmlFor="agreeToTermsConsumer" className="text-sm font-primary text-gray-600 cursor-pointer leading-relaxed">
               By continuing, you agree to our{' '}
-              <Link to="/terms" className="text-primary underline hover:text-green-700">Terms & Conditions</Link>
+              <a href="https://drive.google.com/file/d/1Uy0uO4AbXiqpCRrLDYglutc4mPFAJhgi/view" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-green-700">Terms & Conditions</a>
               {' '}and{' '}
-              <Link to="/privacy" className="text-primary underline hover:text-green-700">Privacy Policy</Link>
-            </span>
+              <a href="https://drive.google.com/file/d/1Uy0uO4AbXiqpCRrLDYglutc4mPFAJhgi/view" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-green-700">Privacy Policy</a>
+            </label>
           </div>
           {errors.agreeToTerms && (
-            <p className="col-span-2 text-xs text-red-500 font-primary">{errors.agreeToTerms.message}</p>
+            <p className="sm:col-span-2 text-xs text-red-500 font-primary">{errors.agreeToTerms.message}</p>
           )}
 
           {/* Buttons */}
-          <div className="col-span-2 flex items-center justify-between mt-6">
+          <div className="sm:col-span-2 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-6">
             <button
               type="button"
               onClick={handleClear}
               disabled={isLoading}
-              className="px-12 py-2.5 rounded-full border-2 border-red-500 text-red-500 font-primary font-bold bg-white cursor-pointer hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed text-lg transition-colors"
+              className="py-3 sm:py-2.5 px-8 sm:px-12 rounded-full border-2 border-gray-300 text-gray-600 font-primary font-semibold bg-white cursor-pointer hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base transition-colors"
             >
-              Clear All
+              {t('clear_all')}
             </button>
-            
+
             <button
               type="submit"
               disabled={isLoading || phoneNo?.length !== 11}
-              className="px-10 py-2.5 rounded-full border-none bg-primary text-white font-primary font-bold cursor-pointer hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-lg transition-colors flex items-center gap-2"
+              className="py-3 sm:py-2.5 px-6 sm:px-10 rounded-full border-none bg-primary text-white font-primary font-bold cursor-pointer hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-base sm:text-lg transition-colors flex items-center justify-center gap-2 shadow-md"
             >
               {isLoading ? (
                 <>
@@ -311,10 +314,10 @@ export default function ConsumerSignup() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Sending OTP...
+                  {t('sending_otp')}
                 </>
               ) : (
-                'Continue to OTP'
+                t('continue_to_otp')
               )}
             </button>
           </div>

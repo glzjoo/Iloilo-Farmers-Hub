@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { ConfirmationResult } from 'firebase/auth';
-import logo from '../../assets/icons/logo.png';
+import logo from '../../assets/icons/logo-green.svg';
 import { useAuth } from '../../context/AuthContext';
 import SuccessModal from '../verification/SuccessModal';
 import type { ConsumerSignupData } from '../../lib/validations';
@@ -15,9 +15,9 @@ export default function ConsumerOtpVerification() {
   const navigate = useNavigate();
   const location = useLocation();
   const { sendOTP, signUpConsumer } = useAuth();
-  
+
   const { phoneNumber } = (location.state as LocationState) || {};
-  
+
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
@@ -37,7 +37,7 @@ export default function ConsumerOtpVerification() {
     }
 
     if (!phoneNumber) {
-      navigate('/consumer-signup', { 
+      navigate('/consumer-signup', {
         replace: true,
         state: { error: 'Please complete the signup form first' }
       });
@@ -128,14 +128,14 @@ export default function ConsumerOtpVerification() {
 
       // Verify OTP and create account
       await signUpConsumer(consumerData, confirmationResult, code);
-      
+
       // Cleanup
       sessionStorage.removeItem('consumerSignupData');
       sessionStorage.removeItem('consumerConfirmation');
-      
+
       // Show success
       setShowSuccessModal(true);
-      
+
     } catch (err: any) {
       setError(err.message || 'Invalid code. Please try again.');
       setOtp(['', '', '', '', '', '']);
@@ -177,6 +177,7 @@ export default function ConsumerOtpVerification() {
     );
   }
 
+
   return (
     <section className="flex items-center justify-center py-16 px-4">
       {/* Success Modal */}
@@ -194,9 +195,8 @@ export default function ConsumerOtpVerification() {
       )}
 
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <img src={logo} className="w-11 h-11 rounded-full object-cover" alt="Logo" />
-          <span className="font-primary font-bold text-lg tracking-wide whitespace-nowrap">ILOILO FARMERS HUB</span>
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <img src={logo} className="w-22 h-22 object-contain" alt="Logo" />
         </div>
 
         <div className="text-center mb-6">

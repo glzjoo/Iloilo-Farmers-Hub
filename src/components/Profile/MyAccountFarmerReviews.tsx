@@ -1,6 +1,4 @@
-// ============================================
-// FILE: src/components/Profile/MyAccountFarmerReviews.tsx 
-// ============================================
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getFarmerReviews } from '../../services/reviewService';
@@ -17,8 +15,8 @@ function StarDisplay({ rating, size = 'text-lg' }: { rating: number; size?: stri
     return (
         <div className="flex gap-0.5">
             {[1, 2, 3, 4, 5].map((star) => (
-                <span 
-                    key={star} 
+                <span
+                    key={star}
                     className={`${size} ${star <= roundedRating ? 'text-yellow-500' : 'text-gray-300'}`}
                 >
                     ★
@@ -66,7 +64,7 @@ export default function MyAccountFarmerReviews() {
             try {
                 setLoading(true);
                 const farmerReviews = await getFarmerReviews(user.uid, 100);
-                
+
                 // Fetch product names for each review
                 const reviewsWithProducts = await Promise.all(
                     farmerReviews.map(async (review) => {
@@ -84,7 +82,7 @@ export default function MyAccountFarmerReviews() {
                         }
                     })
                 );
-                
+
                 setReviews(reviewsWithProducts);
             } catch (err: any) {
                 console.error('Error fetching farmer reviews:', err);
@@ -101,7 +99,7 @@ export default function MyAccountFarmerReviews() {
     const sortedReviews = [...reviews].sort((a, b) => {
         const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
         const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
-        
+
         switch (sortBy) {
             case 'newest':
                 return dateB.getTime() - dateA.getTime();
@@ -181,10 +179,10 @@ export default function MyAccountFarmerReviews() {
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
                                         {review.consumerAvatar ? (
-                                            <img 
-                                                src={review.consumerAvatar} 
-                                                alt={review.consumerName} 
-                                                className="w-full h-full object-cover" 
+                                            <img
+                                                src={review.consumerAvatar}
+                                                alt={review.consumerName}
+                                                className="w-full h-full object-cover"
                                             />
                                         ) : (
                                             <span className="text-lg font-bold text-gray-600">
@@ -221,9 +219,9 @@ export default function MyAccountFarmerReviews() {
                                 {review.images && review.images.length > 0 && (
                                     <div className="flex gap-2 mb-3">
                                         {review.images.map((img: string, idx: number) => (
-                                            <img 
+                                            <img
                                                 key={idx}
-                                                src={img} 
+                                                src={img}
                                                 alt={`Review ${idx + 1}`}
                                                 className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80"
                                                 onClick={() => window.open(img, '_blank')}
@@ -231,16 +229,16 @@ export default function MyAccountFarmerReviews() {
                                         ))}
                                     </div>
                                 )}
-                                
+
                                 {/* Video */}
                                 {review.video && (
-                                    <video 
-                                        src={review.video} 
+                                    <video
+                                        src={review.video}
                                         controls
                                         className="w-full max-w-sm mb-3 rounded-lg"
                                     />
                                 )}
-                                
+
                                 {/* UPDATED: Rating Details with Stars */}
                                 <div className="bg-white/50 rounded-lg p-3 space-y-2 mb-3">
                                     <RatingRow label="Rating" rating={review.rating} />
@@ -250,7 +248,7 @@ export default function MyAccountFarmerReviews() {
                                         <RatingRow label="Farmer Service" rating={review.farmerRating} />
                                     )}
                                 </div>
-                                
+
                                 {/* Comment */}
                                 <p className="text-sm font-primary text-black">{review.comment}</p>
                             </div>

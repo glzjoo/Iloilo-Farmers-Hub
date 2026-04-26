@@ -1,6 +1,3 @@
-// ============================================
-// FILE: src/components/home/BestSellers.tsx 
-// ============================================
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import filter from '../../assets/icons/Filter.svg';

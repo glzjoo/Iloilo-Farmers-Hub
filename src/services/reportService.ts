@@ -8,6 +8,7 @@ import {
     orderBy,
     serverTimestamp,
 } from 'firebase/firestore';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db } from '../lib/firebase';
 import type { Report } from '../components/admin/adminTypes';
 
@@ -25,6 +26,7 @@ export const submitReport = async (data: {
     reportedById: string;
     reason: string;
     conversationId?: string;
+    mediaUrls?: { url: string; type: 'image' | 'video' }[];
 }): Promise<string> => {
     try {
         const docRef = await addDoc(collection(db, REPORTS_COLLECTION), {
@@ -38,6 +40,37 @@ export const submitReport = async (data: {
         console.error('Error submitting report:', error);
         throw new Error('Failed to submit report.');
     }
+};
+
+/**
+ * Upload a media file for a report to Firebase Storage.
+ */
+export const uploadReportMedia = async (
+    file: File,
+    userId: string,
+    onProgress?: (progress: number) => void
+): Promise<{ url: string; type: 'image' | 'video' }> => {
+    const storage = getStorage();
+    const isVideo = file.type.startsWith('video/');
+    const parts = file.name.split('.');
+    const ext = parts.length > 1 ? parts.pop() : (isVideo ? 'mp4' : 'jpg');
+    const path = `reports_media/${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;    const storageRef = ref(storage, path);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    return new Promise((resolve, reject) => {
+        uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                onProgress?.(progress);
+            },
+            (error) => reject(error),
+            async () => {
+                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve({ url, type: isVideo ? 'video' : 'image' });
+            }
+        );
+    });
 };
 
 /**
@@ -68,6 +101,7 @@ export const getReports = async (): Promise<Report[]> => {
                 status: data.status || 'Pending',
                 date: createdAt ? createdAt.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                 conversationId: data.conversationId || '',
+                mediaUrls: data.mediaUrls || [],
             } as Report;
         });
     } catch (error) {
@@ -94,8 +128,6 @@ export const updateReportStatus = async (
 
 /**
  * Suspend a user — sets 'suspended' field on their users, farmers, and consumers docs.
- * This prevents them from logging in.
- * Note: We try updateDoc directly without getDoc since the admin may not be Firebase-authenticated.
  */
 export const suspendUser = async (
     userId: string,
@@ -104,13 +136,13 @@ export const suspendUser = async (
     const getSuspendedUntil = () => {
         switch (type) {
             case 'warning':
-                return null; // Warning only, no suspension period
+                return null;
             case '1 week suspension':
                 return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
             case '30 days suspension':
                 return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
             case 'permanent':
-                return null; // Permanent, no end date
+                return null;
         }
     };
 
@@ -119,6 +151,7 @@ export const suspendUser = async (
         suspensionType: type,
         suspendedAt: serverTimestamp(),
         suspendedUntil: getSuspendedUntil(),
+        warningAcknowledged: type === 'warning' ? false : null,
     };
 
     const collections = ['users', 'farmers', 'consumers'];
@@ -129,7 +162,6 @@ export const suspendUser = async (
             await updateDoc(ref, suspensionData);
             console.log(`Updated ${col}/${userId} with suspension`);
         } catch (error: any) {
-            // Doc may not exist in this collection — that's fine, skip it
             if (error.code === 'not-found' || error.message?.includes('No document')) {
                 console.log(`No doc in ${col}/${userId}, skipping`);
             } else {

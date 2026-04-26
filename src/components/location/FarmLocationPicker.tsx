@@ -4,14 +4,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import iloiloData from '../../data/iloilo-barangays.json';
-import { 
-  isWithinServiceArea, 
-  getNearestCity, 
+import {
+  isWithinServiceArea,
+  getNearestCity,
   isWithinSelectedBarangay,
   detectLocationFromCoordinates,
   calculateDistance,
   SERVICE_AREA_RADIUS_KM,
-  PROXIMITY_RADIUS_KM,
   DETECTION_CONFIDENCE_THRESHOLD_KM,
   SUPPORTED_CITIES,
 } from '../../services/locationService';
@@ -43,12 +42,12 @@ export interface FarmLocation {
 }
 
 interface FarmLocationPickerProps {
-  value: FarmLocation | null;
+  value?: FarmLocation | null;
   onChange: (location: FarmLocation) => void;
   error?: string;
 }
 
-export default function FarmLocationPicker({ value, onChange, error }: FarmLocationPickerProps) {
+export default function FarmLocationPicker({ onChange, error }: FarmLocationPickerProps) {
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
@@ -68,25 +67,25 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
   const [showUncertainDetection, setShowUncertainDetection] = useState(false);
   const [pendingGPSCoords, setPendingGPSCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [detectedLocation, setDetectedLocation] = useState<{ city: string; barangay: string } | null>(null);
-  const [detectionDistance, setDetectionDistance] = useState<number>(0);
+  const [, setDetectionDistance] = useState<number>(0);
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
   const lastNotifiedLocation = useRef<string>('');
 
   const cities = iloiloData.cities;
-  const barangays = selectedCity 
+  const barangays = selectedCity
     ? cities.find(c => c.name === selectedCity)?.barangays || []
     : [];
 
   const getCurrentCoordinates = useCallback(() => {
     if (markerPosition) return markerPosition;
-    
+
     if (selectedBarangay && selectedCity) {
       const barangay = cities
         .find(c => c.name === selectedCity)
         ?.barangays.find(b => b.name === selectedBarangay);
-      
+
       if (barangay?.centroid) {
         return {
           lat: barangay.centroid.lat,
@@ -94,7 +93,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
         };
       }
     }
-    
+
     return null;
   }, [markerPosition, selectedBarangay, selectedCity, cities]);
 
@@ -109,9 +108,9 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
           coordinates: coords,
           accuracy: markerPosition ? (pinSource ?? 'manual_pin') : 'barangay_centroid',
         };
-        
+
         const locationSignature = `${selectedProvince}-${selectedCity}-${selectedBarangay}-${coords.lat}-${coords.lng}-${markerPosition ? (pinSource ?? 'manual') : 'centroid'}`;
-        
+
         if (locationSignature !== lastNotifiedLocation.current) {
           lastNotifiedLocation.current = locationSignature;
           onChange(locationData);
@@ -130,7 +129,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
 
     if (markerPosition) {
       const { AdvancedMarkerElement } = google.maps.marker;
-      
+
       markerRef.current = new AdvancedMarkerElement({
         map: mapRef.current,
         position: markerPosition,
@@ -159,7 +158,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
   const handleUseGPS = () => {
     setIsLocating(true);
     setLocationError('');
-    
+
     if (!navigator.geolocation) {
       setLocationError('Geolocation is not supported by your browser');
       setIsLocating(false);
@@ -170,7 +169,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
       (position) => {
         const { latitude, longitude } = position.coords;
         const gpsCoords = { lat: latitude, lng: longitude };
-        
+
         validateGPSLocation(gpsCoords);
         setIsLocating(false);
       },
@@ -207,14 +206,14 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
 
     if (selectedCity && selectedBarangay) {
       const proximityCheck = isWithinSelectedBarangay(coords, selectedCity, selectedBarangay);
-      
+
       if (!proximityCheck.isWithin) {
         const detected = detectLocationFromCoordinates(coords);
         if (detected) {
           setPendingGPSCoords(coords);
           setDetectedLocation({ city: detected.city, barangay: detected.barangay });
           setDetectionDistance(detected.distanceFromBarangay);
-          
+
           if (detected.distanceFromBarangay > DETECTION_CONFIDENCE_THRESHOLD_KM) {
             setShowUncertainDetection(true);
           } else {
@@ -226,7 +225,8 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
           );
         }
         return;
-      }    }
+      }
+    }
 
     acceptGPSLocation(coords);
   };
@@ -234,7 +234,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
   const acceptGPSLocation = (coords: { lat: number; lng: number }) => {
     setMarkerPosition(coords);
     setPinSource('gps');
-    
+
     if (!selectedCity) {
       const nearestCity = getNearestCity(coords);
       if (nearestCity) {
@@ -312,12 +312,12 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
 
   const getMapCenter = useCallback(() => {
     if (markerPosition) return markerPosition;
-    
+
     if (selectedBarangay && selectedCity) {
       const barangay = cities
         .find(c => c.name === selectedCity)
         ?.barangays.find(b => b.name === selectedBarangay);
-      
+
       if (barangay?.centroid) {
         return {
           lat: barangay.centroid.lat,
@@ -325,7 +325,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
         };
       }
     }
-    
+
     return defaultCenter;
   }, [markerPosition, selectedBarangay, selectedCity, cities]);
 
@@ -408,7 +408,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
             {detectedLocation && (
               <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                 <p className="text-sm text-blue-900">
-                  <span className="font-semibold">Detected Location:</span><br/>
+                  <span className="font-semibold">Detected Location:</span><br />
                   {detectedLocation.barangay}, {detectedLocation.city}
                 </p>
               </div>
@@ -430,7 +430,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-primary font-semibold text-gray-800 mb-1">
             Province
@@ -439,7 +439,7 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
             type="text"
             value={selectedProvince}
             disabled
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-primary bg-gray-100 text-gray-600"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base font-primary bg-gray-100 text-gray-600"
           />
         </div>
 
@@ -456,9 +456,8 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
               setPinSource(null);
               lastNotifiedLocation.current = '';
             }}
-            className={`w-full border rounded-lg px-4 py-2.5 text-sm font-primary outline-none transition-colors ${
-              error ? 'border-red-500 bg-red-50' : 'border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary'
-            }`}
+            className={`w-full border rounded-lg px-4 py-3 text-base font-primary outline-none transition-colors ${error ? 'border-red-500 bg-red-50' : 'border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary'
+              }`}
           >
             <option value="">Select city</option>
             {cities.map((city) => (
@@ -482,9 +481,8 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
               lastNotifiedLocation.current = '';
             }}
             disabled={!selectedCity}
-            className={`w-full border rounded-lg px-4 py-2.5 text-sm font-primary outline-none transition-colors ${
-              error ? 'border-red-500 bg-red-50' : 'border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary'
-            } ${!selectedCity ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            className={`w-full border rounded-lg px-4 py-3 text-base font-primary outline-none transition-colors ${error ? 'border-red-500 bg-red-50' : 'border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary'
+              } ${!selectedCity ? 'bg-gray-100 cursor-not-allowed' : ''}`}
           >
             <option value="">
               {selectedCity ? 'Select barangay' : 'Select city first'}
@@ -554,8 +552,8 @@ export default function FarmLocationPicker({ value, onChange, error }: FarmLocat
             }}
           />
           <p className="text-xs text-gray-500 font-primary">
-            {markerPosition 
-              ? ` Pin placed (${pinSource === 'gps' ? 'GPS' : 'manual'}). Drag to adjust.` 
+            {markerPosition
+              ? ` Pin placed (${pinSource === 'gps' ? 'GPS' : 'manual'}). Drag to adjust.`
               : '💡 Tip: Click on map to place pin at exact farm entrance'}
           </p>
         </div>
