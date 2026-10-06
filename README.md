@@ -65,8 +65,10 @@ src/
 
 ## Team
 
-- **Branch:** `gly` — Front-end development
-- **Branch:** `rey` — Back-end development
+- **gly** — Front-end development
+- **rey** — Back-end development
+- **mia** - UI/UX Designer
+- **bea** - UI/UX Designer
 
 ## License
 
